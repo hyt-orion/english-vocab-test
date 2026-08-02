@@ -3042,10 +3042,24 @@ function exitListening() {
 function initCover() {
   const cover = document.getElementById('app-cover');
   if (!cover) return;
-  // 同一会话内已看过则直接隐藏，避免每次操作刷新都弹
-  if (sessionStorage.getItem('coverSeen') === '1') {
+  // 同一会话内已手动进入过 → 直接隐藏，不重复弹
+  if (sessionStorage.getItem('coverEntered') === '1') {
     cover.classList.add('hide');
     cover.style.display = 'none';
+    return;
+  }
+  const btn = document.getElementById('cover-enter-btn');
+  const loading = document.getElementById('cover-loading');
+  const visited = localStorage.getItem('coverVisited') === '1';
+  if (visited) {
+    // 第二次及以后：隐藏按钮，显示加载圈，2 秒后自动进入
+    if (btn) btn.style.display = 'none';
+    if (loading) loading.style.display = 'flex';
+    setTimeout(() => enterApp(), 2000);
+  } else {
+    // 第一次：显示「进入应用」按钮
+    if (btn) btn.style.display = '';
+    if (loading) loading.style.display = 'none';
   }
 }
 
@@ -3053,7 +3067,8 @@ function enterApp() {
   const cover = document.getElementById('app-cover');
   if (!cover) return;
   cover.classList.add('hide');
-  sessionStorage.setItem('coverSeen', '1');
+  sessionStorage.setItem('coverEntered', '1');
+  localStorage.setItem('coverVisited', '1');
   setTimeout(() => { cover.style.display = 'none'; }, 560);
   window.scrollTo(0, 0);
 }
