@@ -309,6 +309,7 @@ function renderWordPicker() {
     return `
       <div class="word-picker-item ${isSelected ? 'selected' : ''}"
            data-word-id="${w.id}"
+           onclick="toggleWordSelection(${w.id})"
            onmousedown="dragSelectStart(${w.id}, event)"
            onmouseenter="dragSelectEnter(${w.id})">
         <div class="word-picker-checkbox"></div>
@@ -346,13 +347,13 @@ function wordPickerNextPage() {
 
 // ==================== 拖拽批量选择 ====================
 function dragSelectStart(wordId, event) {
-  // 阻止默认行为（文本选择）
-  event.preventDefault();
+  // 不调用preventDefault，让click事件能正常触发（手机端依赖click）
   // 根据首个项目的当前状态决定模式：已选中→取消，未选中→选中
   const isSelected = App.customSelectedIds.has(wordId);
   App.dragSelect.isDragging = true;
   App.dragSelect.mode = isSelected ? 'deselect' : 'select';
   App.dragSelect.lastId = wordId;
+  App.dragSelect.toggledIds = new Set(); // 记录本次拖拽已切换的词
   // 立即切换首个项目
   applyDragSelect(wordId);
 }
@@ -365,12 +366,14 @@ function dragSelectEnter(wordId) {
 }
 
 function applyDragSelect(wordId) {
+  if (App.dragSelect.toggledIds && App.dragSelect.toggledIds.has(wordId)) return;
   if (App.dragSelect.mode === 'select') {
     App.customSelectedIds.add(wordId);
   } else {
     App.customSelectedIds.delete(wordId);
   }
-  // 只更新该项的UI（不重新渲染整个列表，避免拖拽中断）
+  if (App.dragSelect.toggledIds) App.dragSelect.toggledIds.add(wordId);
+  // 只更新该项的UI
   const item = document.querySelector(`.word-picker-item[data-word-id="${wordId}"]`);
   if (item) {
     item.classList.toggle('selected', App.customSelectedIds.has(wordId));
@@ -383,6 +386,8 @@ function dragSelectEnd() {
     App.dragSelect.isDragging = false;
     App.dragSelect.mode = null;
     App.dragSelect.lastId = null;
+    // 延迟清除toggledIds，让紧随其后的click事件能检查到
+    setTimeout(() => { App.dragSelect.toggledIds = null; }, 150);
   }
 }
 
@@ -414,15 +419,21 @@ function dragSelectTouchMove(event) {
 }
 
 function toggleWordSelection(wordId) {
+  // 如果这个词刚被拖拽切换过，跳过（避免click重复切换）
+  if (App.dragSelect.toggledIds && App.dragSelect.toggledIds.has(wordId)) {
+    return;
+  }
   if (App.customSelectedIds.has(wordId)) {
     App.customSelectedIds.delete(wordId);
   } else {
     App.customSelectedIds.add(wordId);
   }
-  // 更新UI（不重新渲染，只切换样式）
-  const items = document.querySelectorAll('.word-picker-item');
-  // 找到对应的项目并切换样式
-  renderWordPicker();
+  // 更新UI（只切换样式，不重新渲染）
+  const item = document.querySelector(`.word-picker-item[data-word-id="${wordId}"]`);
+  if (item) {
+    item.classList.toggle('selected', App.customSelectedIds.has(wordId));
+  }
+  updateWordPickerCount();
 }
 
 function selectAllWords(selectAll) {
