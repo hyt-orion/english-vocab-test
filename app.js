@@ -309,7 +309,6 @@ function renderWordPicker() {
     return `
       <div class="word-picker-item ${isSelected ? 'selected' : ''}"
            data-word-id="${w.id}"
-           onclick="toggleWordSelection(${w.id})"
            onmousedown="dragSelectStart(${w.id}, event)"
            onmouseenter="dragSelectEnter(${w.id})">
         <div class="word-picker-checkbox"></div>
