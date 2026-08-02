@@ -17,6 +17,7 @@
   <div class="nav-tabs">
     <button class="nav-tab active" data-page="home">🏠 首页</button>
     <button class="nav-tab" data-page="test">📝 测试</button>
+    <button class="nav-tab" data-page="exam">📋 试卷</button>
     <button class="nav-tab" data-page="dict">📖 词典</button>
     <button class="nav-tab" data-page="stats">📊 统计</button>
   </div>
@@ -74,6 +75,11 @@
         <div class="mode-icon">📖</div>
         <div class="mode-title">词典查询</div>
         <div class="mode-desc">查询单词的释义、音标、例句和发音。支持本地词库和在线词典。</div>
+      </div>
+      <div class="mode-card" data-mode="exam">
+        <div class="mode-icon">📋</div>
+        <div class="mode-title">厦门英语试卷</div>
+        <div class="mode-desc">厦门市中考、期末真题试卷练习。自主选择考试时间，自动批改分析。</div>
       </div>
     </div>
 
@@ -284,6 +290,79 @@
     </div>
   </div>
 
+  <!-- ==================== 试卷列表页 ==================== -->
+  <div class="page" id="page-exam">
+    <div id="exam-list-view">
+      <h2 style="font-size:1.4rem; margin-bottom:8px">📋 厦门英语试卷</h2>
+      <p style="color:var(--text-secondary); margin-bottom:24px; font-size:0.9rem">选择一份试卷开始练习，系统自动批改并分析薄弱环节</p>
+      <div id="exam-cards"></div>
+    </div>
+
+    <!-- 试卷考试视图 -->
+    <div id="exam-taking-view" style="display:none;">
+      <!-- 考试头部 -->
+      <div class="exam-header">
+        <div class="exam-info-bar">
+          <span class="exam-title-text" id="exam-taking-title"></span>
+          <span class="exam-timer" id="exam-timer">⏱️ 00:00:00</span>
+        </div>
+        <div class="exam-progress-bar">
+          <div class="progress-fill" id="exam-progress-fill" style="width:0%"></div>
+        </div>
+        <div class="exam-progress-text" id="exam-progress-text">已答 0 / 0 题</div>
+      </div>
+
+      <!-- 题目区域 -->
+      <div id="exam-questions-container"></div>
+
+      <!-- 提交按钮 -->
+      <div class="text-center mt-20" id="exam-submit-area">
+        <button class="btn btn-ghost" onclick="exitExam()">← 退出考试</button>
+        <button class="btn btn-primary btn-lg" onclick="submitExam()">✅ 提交试卷</button>
+      </div>
+    </div>
+
+    <!-- 试卷结果视图 -->
+    <div id="exam-result-view" style="display:none;">
+      <div class="card result-card">
+        <div style="font-size:3rem; margin-bottom:8px" id="exam-result-emoji">🎉</div>
+        <div class="result-score excellent" id="exam-result-score">0分</div>
+        <div class="result-msg" id="exam-result-msg"></div>
+
+        <div class="result-breakdown">
+          <div class="result-stat">
+            <div class="result-stat-num" style="color:var(--success)" id="exam-result-correct">0</div>
+            <div class="result-stat-label">答对</div>
+          </div>
+          <div class="result-stat">
+            <div class="result-stat-num" style="color:var(--danger)" id="exam-result-wrong">0</div>
+            <div class="result-stat-label">答错</div>
+          </div>
+          <div class="result-stat">
+            <div class="result-stat-num" id="exam-result-total">0</div>
+            <div class="result-stat-label">总题数</div>
+          </div>
+          <div class="result-stat">
+            <div class="result-stat-num" style="color:var(--accent)" id="exam-result-time">0'00"</div>
+            <div class="result-stat-label">用时</div>
+          </div>
+        </div>
+
+        <!-- 分析报告 -->
+        <div class="exam-analysis" id="exam-analysis"></div>
+
+        <!-- 题目详情 -->
+        <div class="exam-review-list" id="exam-review-list"></div>
+
+        <!-- 操作按钮 -->
+        <div class="result-actions">
+          <button class="btn btn-ghost" onclick="backToExamList()">📋 返回试卷列表</button>
+          <button class="btn btn-primary" onclick="retakeExam()">🔄 重做试卷</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== 词典页 ==================== -->
   <div class="page" id="page-dict">
     <h2 style="font-size:1.4rem; margin-bottom:24px">📖 词典查询</h2>
@@ -384,6 +463,7 @@
 </div>
 
 <script src="words.js"></script>
+<script src="exams.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
