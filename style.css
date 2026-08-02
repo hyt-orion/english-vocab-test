@@ -25,6 +25,28 @@
   --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* ===== 亮色主题 ===== */
+[data-theme="light"] {
+  --bg-primary: #f5f6fa;
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
+  --bg-hover: #eef0f5;
+  --text-primary: #1a1d27;
+  --text-secondary: #5a6378;
+  --text-muted: #9ba3b5;
+  --accent: #4f6ef7;
+  --accent-hover: #3b5de5;
+  --accent-dim: rgba(79, 110, 247, 0.1);
+  --success: #22c55e;
+  --success-dim: rgba(34, 197, 94, 0.1);
+  --danger: #ef4444;
+  --danger-dim: rgba(239, 68, 68, 0.1);
+  --warning: #f59e0b;
+  --warning-dim: rgba(245, 158, 11, 0.1);
+  --border: rgba(0, 0, 0, 0.1);
+  --shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+
 /* ==================== 基础重置 ==================== */
 * {
   margin: 0;
@@ -1619,6 +1641,353 @@ body {
   display: flex;
   gap: 12px;
   justify-content: flex-end;
+}
+
+/* ==================== 主题切换按钮 ==================== */
+.theme-toggle {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+
+.theme-toggle:hover {
+  border-color: var(--accent);
+  transform: scale(1.1);
+}
+
+/* ==================== 错题本 ==================== */
+.wrong-book-toolbar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.wrong-book-stats {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.wrong-stat-card {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  text-align: center;
+}
+
+.wrong-stat-num {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--danger);
+}
+
+.wrong-stat-label {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.wrong-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+  border-left: 3px solid var(--danger);
+}
+
+.wrong-item.mastered {
+  border-left-color: var(--success);
+  opacity: 0.7;
+}
+
+.wrong-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.wrong-item-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.wrong-kp-tag {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.wrong-source-tag {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+}
+
+.wrong-item-question {
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+
+.wrong-item-answers {
+  display: flex;
+  gap: 16px;
+  font-size: 0.82rem;
+  margin-bottom: 8px;
+}
+
+.wrong-item-answers .your-ans {
+  color: var(--danger);
+}
+
+.wrong-item-answers .correct-ans {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.wrong-item-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.wrong-item-actions button {
+  padding: 4px 12px;
+  font-size: 0.78rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.wrong-item-actions button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ==================== 每日目标 ==================== */
+.daily-goals {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin-bottom: 24px;
+}
+
+.daily-goals-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.daily-goals-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.daily-goals-date {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.daily-goals-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.daily-goal-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.daily-goal-item.done {
+  border-color: var(--success);
+  background: var(--success-dim);
+}
+
+.daily-goal-checkbox {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+
+.daily-goal-item.done .daily-goal-checkbox {
+  border-color: var(--success);
+  background: var(--success);
+}
+
+.daily-goal-checkbox::after {
+  content: '✓';
+  color: white;
+  font-size: 0.8rem;
+  display: none;
+}
+
+.daily-goal-item.done .daily-goal-checkbox::after {
+  display: block;
+}
+
+.daily-goal-text {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.daily-goal-item.done .daily-goal-text {
+  color: var(--text-primary);
+  text-decoration: line-through;
+}
+
+.daily-goal-progress {
+  font-size: 0.78rem;
+  color: var(--accent);
+  font-weight: 600;
+  margin-left: auto;
+}
+
+/* ==================== 收藏按钮 ==================== */
+.fav-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  color: var(--text-muted);
+  transition: var(--transition);
+  padding: 4px 8px;
+}
+
+.fav-btn:hover {
+  transform: scale(1.2);
+}
+
+.fav-btn.active {
+  color: var(--warning);
+}
+
+/* ==================== 键盘提示 ==================== */
+.keyboard-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  padding: 2px 8px;
+  background: var(--bg-secondary);
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+.kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-primary);
+  min-width: 18px;
+  text-align: center;
+}
+
+/* ==================== 即时反馈开关 ==================== */
+.instant-feedback-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  margin-bottom: 16px;
+  cursor: pointer;
+}
+
+.toggle-switch {
+  width: 40px;
+  height: 22px;
+  background: var(--bg-hover);
+  border-radius: 11px;
+  position: relative;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+
+.toggle-switch::after {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  background: var(--text-secondary);
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  transition: var(--transition);
+}
+
+.instant-feedback-toggle.active .toggle-switch {
+  background: var(--accent);
+}
+
+.instant-feedback-toggle.active .toggle-switch::after {
+  left: 20px;
+  background: white;
+}
+
+/* ==================== 试卷进度保存提示 ==================== */
+.exam-resume-banner {
+  background: var(--accent-dim);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.exam-resume-info {
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+
+.exam-resume-actions {
+  display: flex;
+  gap: 8px;
 }
 
 /* ==================== 响应式 ==================== */
