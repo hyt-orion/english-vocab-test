@@ -3038,8 +3038,29 @@ function exitListening() {
 }
 
 // ==================== 初始化 ====================
+// ==================== 软件封面 ====================
+function initCover() {
+  const cover = document.getElementById('app-cover');
+  if (!cover) return;
+  // 同一会话内已看过则直接隐藏，避免每次操作刷新都弹
+  if (sessionStorage.getItem('coverSeen') === '1') {
+    cover.classList.add('hide');
+    cover.style.display = 'none';
+  }
+}
+
+function enterApp() {
+  const cover = document.getElementById('app-cover');
+  if (!cover) return;
+  cover.classList.add('hide');
+  sessionStorage.setItem('coverSeen', '1');
+  setTimeout(() => { cover.style.display = 'none'; }, 560);
+  window.scrollTo(0, 0);
+}
+
 function init() {
   initTheme();
+  initCover();
   loadRecord();
   setupTestConfig();
   renderDashboard();
