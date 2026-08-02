@@ -1107,6 +1107,11 @@ function renderExamList() {
 
   container.innerHTML = EXAM_BANK.map(exam => {
     const totalQuestions = exam.sections.reduce((sum, s) => sum + s.questions.length, 0);
+    const practiceScore = exam.sections.reduce((sum, s) => sum + s.questions.reduce((ss, q) => ss + q.score, 0), 0);
+    const fullScore = exam.fullScore || practiceScore;
+    const scoreDisplay = fullScore > practiceScore
+      ? `💯 练习${practiceScore}分 / 原卷${fullScore}分`
+      : `💯 ${practiceScore}分`;
     return `
       <div class="exam-card" onclick="showTimePicker('${exam.id}')">
         <div class="exam-card-header">
@@ -1120,9 +1125,10 @@ function renderExamList() {
             <span class="exam-tag exam-tag-year">${exam.year}年</span>
           </div>
         </div>
+        ${exam.note ? `<div style="font-size:0.78rem; color:var(--warning); margin:6px 0;">⚠️ ${exam.note}</div>` : ''}
         <div class="exam-card-footer">
           <span>📝 ${totalQuestions} 题</span>
-          <span>💯 ${exam.totalScore} 分</span>
+          <span>${scoreDisplay}</span>
           <span>⏱️ 建议用时 ${exam.totalTime} 分钟</span>
           <span>📂 ${exam.sections.length} 个大题</span>
         </div>
@@ -1394,7 +1400,11 @@ function submitExam() {
   const scorePct = totalScore > 0 ? Math.round((earnedScore / totalScore) * 100) : 0;
 
   // 显示分数
-  document.getElementById('exam-result-score').textContent = `${earnedScore} / ${totalScore} 分`;
+  const fullScore = exam.fullScore || totalScore;
+  const scoreText = fullScore > totalScore
+    ? `${earnedScore} / ${totalScore} 分（原卷满分${fullScore}分）`
+    : `${earnedScore} / ${totalScore} 分`;
+  document.getElementById('exam-result-score').textContent = scoreText;
   document.getElementById('exam-result-correct').textContent = correct;
   document.getElementById('exam-result-wrong').textContent = wrong;
   document.getElementById('exam-result-total').textContent = totalQuestions;
