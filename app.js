@@ -15,6 +15,7 @@ const App = {
     selectMode: 'random',   // random | custom
   },
   customSelectedIds: new Set(), // 自选模式中选中的单词ID
+  wordPickerPage: 1, // 词汇选择器当前页码
   // 试卷模块状态
   examState: {
     currentExam: null,       // 当前试卷对象
@@ -287,11 +288,15 @@ function renderWordPicker() {
     return true;
   });
 
-  // 限制显示数量（性能）
-  const MAX_DISPLAY = 500;
-  const showList = filtered.slice(0, MAX_DISPLAY);
+  // 分页：每页50个词
+  const PAGE_SIZE = 50;
+  if (!App.wordPickerPage) App.wordPickerPage = 1;
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
+  if (App.wordPickerPage > totalPages) App.wordPickerPage = 1;
+  const startIdx = (App.wordPickerPage - 1) * PAGE_SIZE;
+  const showList = filtered.slice(startIdx, startIdx + PAGE_SIZE);
 
-  if (showList.length === 0) {
+  if (filtered.length === 0) {
     list.innerHTML = '<div class="word-picker-empty">没有匹配的单词</div>';
     updateWordPickerCount();
     return;
@@ -304,9 +309,9 @@ function renderWordPicker() {
     return `
       <div class="word-picker-item ${isSelected ? 'selected' : ''}"
            data-word-id="${w.id}"
+           onclick="toggleWordSelection(${w.id})"
            onmousedown="dragSelectStart(${w.id}, event)"
-           onmouseenter="dragSelectEnter(${w.id})"
-           ontouchstart="dragSelectTouchStart(${w.id}, event)">
+           onmouseenter="dragSelectEnter(${w.id})">
         <div class="word-picker-checkbox"></div>
         <span class="wp-word">${w.word}</span>
         <span class="wp-phonetic">${w.phonetic || ''}</span>
@@ -316,11 +321,28 @@ function renderWordPicker() {
     `;
   }).join('');
 
-  if (filtered.length > MAX_DISPLAY) {
-    list.innerHTML += `<div class="word-picker-empty">还有 ${filtered.length - MAX_DISPLAY} 个词未显示，请用搜索缩小范围</div>`;
-  }
+  // 分页导航
+  list.innerHTML += `
+    <div class="word-picker-pagination">
+      <button class="btn btn-ghost btn-sm" onclick="wordPickerPrevPage()" ${App.wordPickerPage <= 1 ? 'disabled' : ''}>← 上一页</button>
+      <span class="page-info">第 ${App.wordPickerPage} / ${totalPages} 页（${startIdx + 1}-${Math.min(startIdx + PAGE_SIZE, filtered.length)} / 共${filtered.length}词）</span>
+      <button class="btn btn-ghost btn-sm" onclick="wordPickerNextPage()" ${App.wordPickerPage >= totalPages ? 'disabled' : ''}>下一页 →</button>
+    </div>
+  `;
 
   updateWordPickerCount();
+}
+
+function wordPickerPrevPage() {
+  if (App.wordPickerPage > 1) {
+    App.wordPickerPage--;
+    renderWordPicker();
+  }
+}
+
+function wordPickerNextPage() {
+  App.wordPickerPage++;
+  renderWordPicker();
 }
 
 // ==================== 拖拽批量选择 ====================
@@ -449,6 +471,7 @@ function invertWordSelection() {
 }
 
 function filterWordPicker() {
+  App.wordPickerPage = 1; // 搜索/筛选时重置到第一页
   renderWordPicker();
 }
 
@@ -2353,8 +2376,6 @@ function init() {
 
   // 全局拖拽结束监听（鼠标松开时结束拖拽选择）
   document.addEventListener('mouseup', dragSelectEnd);
-  document.addEventListener('touchend', dragSelectEnd);
-  document.addEventListener('touchmove', dragSelectTouchMove, { passive: false });
 
   // 导航事件
   document.querySelectorAll('.nav-tab').forEach(tab => {
