@@ -293,8 +293,32 @@
   <!-- ==================== 试卷列表页 ==================== -->
   <div class="page" id="page-exam">
     <div id="exam-list-view">
-      <h2 style="font-size:1.4rem; margin-bottom:8px">📋 厦门英语试卷</h2>
-      <p style="color:var(--text-secondary); margin-bottom:24px; font-size:0.9rem">选择一份试卷开始练习，系统自动批改并分析薄弱环节</p>
+      <h2 style="font-size:1.4rem; margin-bottom:8px">📋 英语试卷库</h2>
+      <p style="color:var(--text-secondary); margin-bottom:16px; font-size:0.9rem">100份试卷 · 覆盖小学到高中 · 选择试卷开始练习，系统自动批改并生成详细分析报告</p>
+
+      <!-- 搜索筛选栏 -->
+      <div style="display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap;">
+        <input type="text" id="exam-search" placeholder="🔍 搜索试卷名称、地区..." 
+               style="flex:1; min-width:200px; padding:10px 16px; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); color:var(--text-primary); font-size:0.9rem;"
+               oninput="filterExams()">
+        <select id="exam-filter-stage" style="padding:10px 16px; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); color:var(--text-primary); font-size:0.9rem;" onchange="filterExams()">
+          <option value="">全部学段</option>
+          <option value="小学">小学</option>
+          <option value="初中">初中</option>
+          <option value="高中">高中</option>
+        </select>
+        <select id="exam-filter-type" style="padding:10px 16px; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); color:var(--text-primary); font-size:0.9rem;" onchange="filterExams()">
+          <option value="">全部类型</option>
+          <option value="期末考试">期末考试</option>
+          <option value="期中考试">期中考试</option>
+          <option value="月考">月考</option>
+          <option value="模拟考试">模拟考试</option>
+          <option value="中考真题">中考真题</option>
+          <option value="中考模拟">中考模拟</option>
+          <option value="单元测试">单元测试</option>
+        </select>
+      </div>
+      <div id="exam-count" style="color:var(--text-secondary); font-size:0.82rem; margin-bottom:12px;"></div>
       <div id="exam-cards"></div>
     </div>
 
