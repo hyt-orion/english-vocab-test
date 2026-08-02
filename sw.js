@@ -1,5 +1,5 @@
 // Service Worker - 缓存离线使用
-const CACHE_NAME = 'english-vocab-v13';
+const CACHE_NAME = 'english-vocab-v14';
 const ASSETS = [
   './',
   './index.html',
@@ -32,6 +32,10 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
   if (url.origin !== location.origin) {
     // 外部请求（如Free Dictionary API）不缓存
+    return;
+  }
+  // 视频文件不进缓存（体积大、走本地/网络直取，避免撑爆缓存配额）
+  if (url.pathname.includes('/videos/')) {
     return;
   }
   e.respondWith(
