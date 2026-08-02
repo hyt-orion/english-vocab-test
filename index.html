@@ -15,6 +15,46 @@
 </head>
 <body>
 
+<!-- ==================== 软件封面 / 启动页 ==================== -->
+<div class="app-cover" id="app-cover">
+  <div class="cover-orb cover-orb-1"></div>
+  <div class="cover-orb cover-orb-2"></div>
+  <div class="cover-orb cover-orb-3"></div>
+  <div class="cover-grid"></div>
+  <div class="cover-content">
+    <div class="cover-logo">📚</div>
+    <h1 class="cover-title">英语词汇大师</h1>
+    <p class="cover-subtitle">高效英语词汇测试与学习系统</p>
+    <p class="cover-tagline">主动回忆 · 间隔重复 · 双向测试 · 即时反馈</p>
+
+    <div class="cover-methods">
+      <div class="cover-method" style="--i:0">
+        <div class="cover-method-icon">🧠</div>
+        <div class="cover-method-title">① 主动回忆</div>
+        <div class="cover-method-desc">通过测试而非被动阅读来记忆，效率提升 3 倍以上</div>
+      </div>
+      <div class="cover-method" style="--i:1">
+        <div class="cover-method-icon">🔄</div>
+        <div class="cover-method-title">② 间隔重复</div>
+        <div class="cover-method-desc">答错的词优先复习，已掌握的词减少出现频率</div>
+      </div>
+      <div class="cover-method" style="--i:2">
+        <div class="cover-method-icon">🔁</div>
+        <div class="cover-method-title">③ 双向测试</div>
+        <div class="cover-method-desc">英→中与中→英交替练习，建立双向词汇联结</div>
+      </div>
+      <div class="cover-method" style="--i:3">
+        <div class="cover-method-icon">⚡</div>
+        <div class="cover-method-title">④ 即时反馈</div>
+        <div class="cover-method-desc">每题立即知道对错和正确答案，强化记忆效果</div>
+      </div>
+    </div>
+
+    <button class="cover-enter-btn" onclick="enterApp()">🚀 进入应用</button>
+    <p class="cover-foot">基于认知科学原理设计 · 让每一个单词都真正记住</p>
+  </div>
+</div>
+
 <!-- ==================== 导航栏 ==================== -->
 <nav class="navbar">
   <div class="navbar-brand">
@@ -100,29 +140,6 @@
       </div>
     </div>
 
-    <!-- 学习方法论说明 -->
-    <div class="card mt-40">
-      <div class="card-title">🧠 科学学习方法</div>
-      <div class="card-desc">本系统基于认知科学原理设计，采用最高效的词汇学习策略</div>
-      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px;">
-        <div>
-          <strong style="color:var(--accent)">① 主动回忆</strong>
-          <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:4px">通过测试而非被动阅读来记忆，效率提升3倍以上</p>
-        </div>
-        <div>
-          <strong style="color:var(--accent)">② 间隔重复</strong>
-          <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:4px">答错的词优先复习，已掌握的词减少出现频率</p>
-        </div>
-        <div>
-          <strong style="color:var(--accent)">③ 双向测试</strong>
-          <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:4px">英→中和中→英交替练习，建立双向词汇联结</p>
-        </div>
-        <div>
-          <strong style="color:var(--accent)">④ 即时反馈</strong>
-          <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:4px">每题立即知道对错和正确答案，强化记忆效果</p>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- ==================== 测试配置页 ==================== -->
