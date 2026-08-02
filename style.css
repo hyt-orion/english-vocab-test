@@ -2016,9 +2016,40 @@ body {
 
 .daily-goal-progress {
   font-size: 0.78rem;
-  color: var(--accent);
+  color: var(--accent-light);
   font-weight: 600;
   margin-left: auto;
+}
+
+/* 自定义文字目标 */
+.custom-goal-item {
+  cursor: pointer;
+}
+
+.custom-goal-item .daily-goal-text {
+  flex: 1;
+  cursor: pointer;
+  user-select: none;
+}
+
+.custom-goal-delete {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  transition: var(--transition-fast);
+  opacity: 0;
+}
+
+.custom-goal-item:hover .custom-goal-delete {
+  opacity: 1;
+}
+
+.custom-goal-delete:hover {
+  color: var(--danger);
 }
 
 /* ==================== 收藏按钮 ==================== */
