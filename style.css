@@ -1990,6 +1990,28 @@ body {
   gap: 8px;
 }
 
+.word-picker-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.word-picker-pagination .page-info {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.word-picker-pagination button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* ==================== 响应式 ==================== */
 @media (max-width: 768px) {
   .navbar { padding: 0 16px; }
