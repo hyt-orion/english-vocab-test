@@ -2698,6 +2698,7 @@ function registerSW() {
 const GRAMMAR_TOPICS = [
   {
     id: 'articles', icon: '🔤', title: '冠词 (a/an/the)', desc: '不定冠词、定冠词、零冠词的用法', diff: '基础',
+    videos: ['50--48冠词（1）.mp4'],
     sections: [
       { title: '📌 不定冠词 a/an', content: 'a用于辅音音素开头的词前，an用于元音音素开头的词前。\n判断依据是【发音】不是拼写！\n• a book, a university (以/j/音开头)\n• an apple, an hour (h不发音，以元音开头)', examples: [
         { en: 'She is a teacher.', cn: '她是一名老师。' },
@@ -2715,6 +2716,7 @@ const GRAMMAR_TOPICS = [
   },
   {
     id: 'tenses', icon: '⏰', title: '时态', desc: '一般现在、过去、将来、进行、完成时', diff: '核心',
+    videos: ['34--32动词时态-一般现在时.mp4','35--33动词时态-一般过去时.mp4','36--34动词时态-一般将来时.mp4','37--35动词时态-过去进行时.mp4','38--36动词时态-现在完成时.mp4','39--37动词时态-过去完成时.mp4'],
     sections: [
       { title: '📌 一般现在时', content: '表习惯、事实、客观规律。第三人称单数加s/es。\n标志词：always, usually, often, every day', examples: [
         { en: 'She walks to school every day.', cn: '她每天步行上学。' },
@@ -2740,6 +2742,7 @@ const GRAMMAR_TOPICS = [
   },
   {
     id: 'passive', icon: '🔄', title: '被动语态', desc: 'be + 过去分词，各时态的被动结构', diff: '进阶',
+    videos: ['40--38动词的语态-主动被动.mp4'],
     sections: [
       { title: '📌 被动语态结构', content: 'be + 过去分词(p.p.)\n各时态变化：\n• 一般现在：am/is/are done\n• 一般过去：was/were done\n• 现在完成：have/has been done\n• 一般将来：will be done\n• 含情态动词：can/must be done', examples: [
         { en: 'English is spoken all over the world.', cn: '全世界都说英语。' },
@@ -2753,6 +2756,7 @@ const GRAMMAR_TOPICS = [
   },
   {
     id: 'clauses', icon: '🔗', title: '从句', desc: '宾语从句、定语从句、状语从句', diff: '高级',
+    videos: ['11--11宾语从句（1）.mp4','12--12宾语从句（2）.mp4','13--13状语从句（1）.mp4','14--14状语从句（2）.mp4','15--15状语从句（3）.mp4','16--16状语从句（4）.mp4','17--17状语从句（5）.mp4','18--18定语从句（1）.mp4','19--19定语从句（2）.mp4','20--20定语从句（3）.mp4'],
     sections: [
       { title: '📌 宾语从句', content: '作宾语的从句。三要素：引导词、语序(陈述语序)、时态。\n• that引导陈述句：I think that...\n• if/whether引导一般疑问句：I wonder if...\n• what/who/when等引导特殊疑问句', examples: [
         { en: 'I don\'t know whether he will come.', cn: '我不知道他是否会来。' },
@@ -2770,6 +2774,7 @@ const GRAMMAR_TOPICS = [
   },
   {
     id: 'modal', icon: '🎭', title: '情态动词', desc: 'can/must/should/may的用法和推测', diff: '核心',
+    videos: ['27--27动词-情态动词（1）.mp4','28--28动词-情态动词（2）.mp4'],
     sections: [
       { title: '📌 基本用法', content: '• can/could：能力、请求\n• must：必须、肯定推测\n• should：应该\n• may/might：可能、许可\n• need：需要\n• mustn\'t：禁止  needn\'t：不必', examples: [
         { en: 'You must finish it today.', cn: '你必须今天完成。' },
@@ -2783,6 +2788,7 @@ const GRAMMAR_TOPICS = [
   },
   {
     id: 'pronouns', icon: '👥', title: '代词', desc: '人称代词、物主代词、反身代词、不定代词', diff: '基础',
+    videos: ['47--45代词（1）.mp4','48--46代词（2）.mp4','49--47代词（3）.mp4'],
     sections: [
       { title: '📌 人称代词', content: '主格(作主语)：I/you/he/she/we/they\n宾格(作宾语)：me/you/him/her/us/them', examples: [
         { en: 'She gave me a book.', cn: '她给了我一本书。(me作宾语)' },
@@ -2797,6 +2803,131 @@ const GRAMMAR_TOPICS = [
         { en: 'I have something important to tell you.', cn: '我有重要的事告诉你。' },
       ]},
     ]
+  },
+  {
+    id: 'sentences', icon: '🏗️', title: '句子结构', desc: '句子成分、五种基本结构、并列句与句子种类', diff: '基础',
+    sections: [
+      { title: '📌 句子成分', content: `英语句子由成分构成：
+• 主语 Subject：句子的主角
+• 谓语 Predicate：动作或状态
+• 宾语 Object：动作的承受者
+• 表语 Predicative：说明主语身份或状态
+• 定语/状语/补语：起修饰与补充作用`, examples: [
+        { en: 'The boy plays football.', cn: '男孩踢足球。(主+谓+宾)' },
+      ] },
+      { title: '📌 五种基本句型', content: `1. 主+谓 (S+V)
+2. 主+谓+宾 (S+V+O)
+3. 主+谓+表 (S+V+P)
+4. 主+谓+双宾 (S+V+IO+DO)
+5. 主+谓+宾+补 (S+V+O+C)`, examples: [
+        { en: 'She gave me a book.', cn: '她给了我一本书。(双宾)' },
+        { en: 'We made him happy.', cn: '我们让他开心。(宾补)' },
+      ] },
+      { title: '📌 并列句与句子种类', content: `并列句用 and / but / or / so 连接两个独立分句。
+句子按用途分为：陈述句、疑问句、祈使句、感叹句。`, examples: [
+        { en: 'I like tea but he likes coffee.', cn: '我喜欢茶，但他喜欢咖啡。' },
+      ] },
+    ],
+    videos: ['1--1汉语与英语句子比较.mp4','2--2句子五种结构（1）.mp4','3--3句子五种结构（2）.mp4','4--4简单句成分-谓语（1）.mp4','5--5简单句成分-谓语（2）-.mp4','6--6简单句成分-主语.mp4','7--7简单句成分-宾语.mp4','8--8简单句成分-表语.mp4','9--9并列句（1）.mp4','10--10并列句（2）.mp4','21--21句子的种类（1）.mp4','22--22句子的种类（2）.mp4','23--23句子的种类（3）.mp4','24--24句子的种类（4）.mp4'],
+  },
+  {
+    id: 'verbs', icon: '🎯', title: '动词', desc: '系动词、助动词、实义动词的分类与用法', diff: '核心',
+    sections: [
+      { title: '📌 系动词', content: `后接表语，说明主语状态或特征。
+常见：be, look(看起来), sound(听起来), feel(感觉), smell(闻起来), become(变得), get(变得)`, examples: [
+        { en: 'She looks happy.', cn: '她看起来很开心。' },
+      ] },
+      { title: '📌 助动词', content: `do/does/did 帮助构成疑问与否定；
+be 帮助构成进行时和被动语态；
+have/has 帮助构成完成时态。`, examples: [
+        { en: 'Does she go to school?', cn: '她去上学吗？' },
+      ] },
+      { title: '📌 实义动词', content: `有实际词义，表示动作或状态。
+分及物动词(带宾语)与不及物动词(不带宾语)。`, examples: [
+        { en: 'He eats an apple.', cn: '他吃一个苹果。(及物)' },
+        { en: 'Birds fly.', cn: '鸟会飞。(不及物)' },
+      ] },
+    ],
+    videos: ['25--25动词-系动词.mp4','26--26动词-助动词.mp4','29--29动词-实义动词（1）.mp4','30--30动词-实义动词（2）.mp4','31--29动词-实义动词（1）.mp4','32--30动词-实义动词（2）.mp4','33--31动词-举例复习.mp4'],
+  },
+  {
+    id: 'nonfinite', icon: '🔁', title: '非谓语动词', desc: '不定式、动名词、分词的用法', diff: '高级',
+    sections: [
+      { title: '📌 不定式 to do', content: `可作主语、宾语、定语、目的状语。
+It is important to study. / I want to sleep.`, examples: [
+        { en: 'He came to help me.', cn: '他来帮我。(目的状语)' },
+      ] },
+      { title: '📌 动名词 doing', content: `动词性名词，作主语或宾语。
+Swimming is fun. / I enjoy reading.`, examples: [
+        { en: 'Reading books is my hobby.', cn: '读书是我的爱好。' },
+      ] },
+      { title: '📌 分词', content: `现在分词(doing)表主动、进行；
+过去分词(done)表被动、完成。`, examples: [
+        { en: 'The broken window was fixed.', cn: '破了的窗户被修好了。(过去分词作定语)' },
+      ] },
+    ],
+    videos: ['41--39非谓语动词（1）.mp4','42--40非谓语动词（2）.mp4'],
+  },
+  {
+    id: 'adjadv', icon: '🎨', title: '形容词与副词', desc: '形容词修饰名词，副词修饰动词/形容词', diff: '基础',
+    sections: [
+      { title: '📌 形容词', content: `修饰名词，通常前置：a big house / an interesting book。
+比较级 -er / more，最高级 -est / most。`, examples: [
+        { en: 'She is a beautiful girl.', cn: '她是个漂亮的女孩。' },
+      ] },
+      { title: '📌 副词', content: `修饰动词、形容词或其他副词，表方式、时间、地点、程度。
+quickly, very, here, yesterday`, examples: [
+        { en: 'He runs fast.', cn: '他跑得快。' },
+      ] },
+      { title: '📌 比较等级', content: `原级 → 比较级 → 最高级
+• 单音节：fast → faster → fastest
+• 多音节：beautiful → more beautiful → most beautiful`, examples: [
+        { en: 'She sings better than me.', cn: '她唱得比我好。' },
+      ] },
+    ],
+    videos: ['43--41形容词副词（1）.mp4','44--42形容词副词（2）.mp4','45--43形容词副词（3）.mp4'],
+  },
+  {
+    id: 'nouns', icon: '📦', title: '名词', desc: '可数与不可数名词、复数变化、所有格', diff: '基础',
+    sections: [
+      { title: '📌 可数与不可数', content: `可数名词有单复数(chair → chairs)；
+不可数名词无复数，表数量用 a piece of / two cups of 等。`, examples: [
+        { en: 'I have two books.', cn: '我有两本书。' },
+        { en: 'I need some water.', cn: '我需要一些水。(不可数)' },
+      ] },
+      { title: '📌 所有格', content: `有生命名词加 's：Tom's book；
+无生命用 of：the door of the room`, examples: [
+        { en: 'This is my mother\'s bag.', cn: '这是我妈妈的包。' },
+      ] },
+    ],
+    videos: ['46--44名词.mp4'],
+  },
+  {
+    id: 'prepositions', icon: '🧩', title: '介词', desc: '时间、方位、方式等介词的用法', diff: '基础',
+    sections: [
+      { title: '📌 时间介词', content: `in + 年/月/季节；on + 具体某天；at + 时刻/年龄。
+in 2024, on Monday, at 7 o'clock`, examples: [
+        { en: 'The party is on Sunday.', cn: '聚会在周日。' },
+      ] },
+      { title: '📌 方位与其他', content: `in 在…里 / on 在…上 / under 在…下；
+with 和、用；for 为了；by 被、乘；from 从`, examples: [
+        { en: 'The cat is under the table.', cn: '猫在桌子下面。' },
+      ] },
+    ],
+    videos: ['51--49介词（1）.mp4','52--50介词（2）.mp4'],
+  },
+  {
+    id: 'numerals', icon: '🔢', title: '数词', desc: '基数词、序数词及常见表达', diff: '基础',
+    sections: [
+      { title: '📌 基数词与序数词', content: `基数词表数量(one, two, three)；
+序数词表顺序(first, second, third)，前常加 the。`, examples: [
+        { en: 'He is the first student.', cn: '他是第一个学生。' },
+      ] },
+      { title: '📌 常见表达', content: `编号：Room 305；年份：in 2024；分数：one third (1/3)`, examples: [
+        { en: 'My birthday is on May 1st.', cn: '我的生日在5月1日。' },
+      ] },
+    ],
+    videos: ['53--51数词（自行看书）.mp4'],
   },
 ];
 
@@ -2830,6 +2961,22 @@ function openGrammarTopic(id) {
 
 function renderGrammarDetail(topic) {
   const container = document.getElementById('grammar-topics');
+  const videoBlock = (topic.videos && topic.videos.length) ? (() => {
+    const items = topic.videos.map(v => {
+      const t = v.replace(/^\d+--\d+/, '').replace(/\.mp4$/i, '');
+      const src = 'videos/' + encodeURI(v);
+      return '<div class="grammar-video-item">'
+        + '<div class="grammar-video-title">&#9654; ' + t + '</div>'
+        + '<video class="grammar-video" controls preload="none" src="' + src + '"></video>'
+        + '</div>';
+    }).join('');
+    return '<div class="grammar-video-section">'
+      + '<div class="grammar-section-title">📺 配套视频课程</div>'
+      + '<p class="grammar-video-hint">刘晓艳《不就是中考英语语法吗》配套视频，结合上方讲解深化理解</p>'
+      + items
+      + '</div>';
+  })() : '';
+
   container.innerHTML = `
     <div class="grammar-detail">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
@@ -2846,6 +2993,7 @@ function renderGrammarDetail(topic) {
           </div>
         `).join('')}
       `).join('')}
+      ${videoBlock}
     </div>
   `;
   window.scrollTo(0, 0);
