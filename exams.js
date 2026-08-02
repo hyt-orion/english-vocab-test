@@ -6,13 +6,14 @@ const EXAM_BANK = [
 {
   id: 'xm-2025-g9-final',
   title: '2024-2025学年厦门市九年级上学期期末考试',
-  subtitle: '英语试题（笔试部分）',
+  subtitle: '英语试题（笔试部分·节选练习）',
   source: '厦门市',
   year: 2025,
   grade: '九年级',
   type: '期末考试',
   totalTime: 90, // 分钟
-  totalScore: 80, // 笔试部分满分
+  fullScore: 150, // 原卷满分（含听力+写作）
+  note: '本试卷为笔试选择题部分节选，原卷满分150分（含听力30分+写作），此处练习题为75分。',
   sections: [
     {
       title: '一、单项选择',
@@ -525,7 +526,8 @@ const EXAM_BANK = [
   grade: '九年级',
   type: '中考真题',
   totalTime: 120,
-  totalScore: 150,
+  fullScore: 150,
+  note: '本试卷为节选练习，原卷满分150分（含听力30分+情景交际+写作），此处练习题为35分。',
   sections: [
     {
       title: '一、单项选择',
@@ -785,7 +787,8 @@ const EXAM_BANK = [
   grade: '九年级',
   type: '中考真题',
   totalTime: 120,
-  totalScore: 150,
+  fullScore: 150,
+  note: '本试卷为节选练习，原卷满分150分（含听力30分+情景交际+写作），此处练习题为35分。',
   sections: [
     {
       title: '一、单项选择',
@@ -1039,13 +1042,14 @@ const EXAM_BANK = [
 {
   id: 'xm-2024-g8-final',
   title: '厦门市八年级英语期末模拟试卷',
-  subtitle: '（集美区改编）',
+  subtitle: '（集美区改编·节选练习）',
   source: '厦门市集美区',
   year: 2024,
   grade: '八年级',
   type: '期末模拟',
   totalTime: 90,
-  totalScore: 100,
+  fullScore: 100,
+  note: '本试卷为节选练习，原卷满分100分（含听力+写作），此处练习题为32分。',
   sections: [
     {
       title: '一、单项选择',
