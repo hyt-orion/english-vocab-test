@@ -2959,12 +2959,19 @@ function openGrammarTopic(id) {
   renderGrammarDetail(currentGrammarTopic);
 }
 
+// ===== 视频源配置 =====
+// 留空 '' 表示使用本地 videos/ 目录（junction 到 D 盘，仅本地/自托管可用）
+// 接入线上：把 53 个 mp4 上传到对象存储，保持原文件名，
+//   并填写可公开访问的基址（末尾带 /）。例如：
+//   const VIDEO_BASE_URL = 'https://your-bucket.cos.ap-guangzhou.myqcloud.com/grammar-videos/';
+const VIDEO_BASE_URL = 'https://english-vocab-video-1462496247.cos.ap-guangzhou.myqcloud.com/grammar-videos/';
+
 function renderGrammarDetail(topic) {
   const container = document.getElementById('grammar-topics');
   const videoBlock = (topic.videos && topic.videos.length) ? (() => {
     const items = topic.videos.map(v => {
       const t = v.replace(/^\d+--\d+/, '').replace(/\.mp4$/i, '');
-      const src = 'videos/' + encodeURI(v);
+      const src = (VIDEO_BASE_URL || 'videos/') + encodeURI(v);
       return '<div class="grammar-video-item">'
         + '<div class="grammar-video-title">&#9654; ' + t + '</div>'
         + '<video class="grammar-video" controls preload="none" src="' + src + '"></video>'
