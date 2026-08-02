@@ -15,6 +15,15 @@ const App = {
     selectMode: 'random',   // random | custom
   },
   customSelectedIds: new Set(), // 自选模式中选中的单词ID
+  // 试卷模块状态
+  examState: {
+    currentExam: null,       // 当前试卷对象
+    answers: {},             // {questionId: 'A'|'B'|'C'|'D'}
+    startTime: null,         // 考试开始时间戳
+    timeLimit: null,         // 考试时长（分钟），null=不限时
+    timerInterval: null,     // 计时器
+    elapsedSeconds: 0,       // 已用秒数
+  },
   // 拖拽选择状态
   dragSelect: {
     isDragging: false,   // 是否正在拖拽
@@ -181,6 +190,9 @@ function navigateTo(page) {
 
   if (page === 'home') renderDashboard();
   if (page === 'stats') renderStats();
+  if (page === 'exam') {
+    showExamListView();
+  }
   if (page === 'test') {
     // 重置测试页面：显示配置，隐藏运行
     const cfg = document.getElementById('page-test-config');
@@ -1077,6 +1089,490 @@ function renderStats() {
   }
 }
 
+// ==================== 试卷模块 ====================
+
+function showExamListView() {
+  document.getElementById('exam-list-view').style.display = 'block';
+  document.getElementById('exam-taking-view').style.display = 'none';
+  document.getElementById('exam-result-view').style.display = 'none';
+  renderExamList();
+}
+
+function renderExamList() {
+  const container = document.getElementById('exam-cards');
+  if (typeof EXAM_BANK === 'undefined') {
+    container.innerHTML = '<p style="color:var(--text-secondary)">试卷数据加载中...</p>';
+    return;
+  }
+
+  container.innerHTML = EXAM_BANK.map(exam => {
+    const totalQuestions = exam.sections.reduce((sum, s) => sum + s.questions.length, 0);
+    return `
+      <div class="exam-card" onclick="showTimePicker('${exam.id}')">
+        <div class="exam-card-header">
+          <div>
+            <div class="exam-card-title">${exam.title}</div>
+            <div class="exam-card-subtitle">${exam.subtitle}</div>
+          </div>
+          <div class="exam-card-tags">
+            <span class="exam-tag exam-tag-type">${exam.type}</span>
+            <span class="exam-tag exam-tag-grade">${exam.grade}</span>
+            <span class="exam-tag exam-tag-year">${exam.year}年</span>
+          </div>
+        </div>
+        <div class="exam-card-footer">
+          <span>📝 ${totalQuestions} 题</span>
+          <span>💯 ${exam.totalScore} 分</span>
+          <span>⏱️ 建议用时 ${exam.totalTime} 分钟</span>
+          <span>📂 ${exam.sections.length} 个大题</span>
+        </div>
+        <div class="exam-card-action">开始考试 →</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function showTimePicker(examId) {
+  const exam = EXAM_BANK.find(e => e.id === examId);
+  if (!exam) return;
+
+  // 移除已有弹窗
+  const existing = document.querySelector('.exam-time-picker');
+  if (existing) existing.remove();
+
+  const defaultTime = exam.totalTime;
+  const times = [30, 45, 60, 90, 120, 150];
+
+  const overlay = document.createElement('div');
+  overlay.className = 'exam-time-picker';
+  overlay.innerHTML = `
+    <div class="exam-time-picker-content">
+      <div class="exam-time-picker-title">⏱️ 选择考试时间</div>
+      <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:16px">
+        《${exam.title}》· 建议用时 ${defaultTime} 分钟
+      </p>
+      <div class="exam-time-options">
+        ${times.map(t => `
+          <button class="exam-time-btn ${t === defaultTime ? 'active' : ''}"
+                  onclick="selectExamTime(${t}, this)">${t} 分钟</button>
+        `).join('')}
+      </div>
+      <div class="exam-time-custom">
+        自定义：
+        <input type="number" id="exam-custom-time" min="1" max="300" value="${defaultTime}" />
+        分钟
+      </div>
+      <div class="exam-time-picker-actions">
+        <button class="btn btn-ghost" onclick="this.closest('.exam-time-picker').remove()">取消</button>
+        <button class="btn btn-ghost" onclick="startExamWithTime('${examId}', 0)">🕐 不限时</button>
+        <button class="btn btn-primary" onclick="startExamWithCustomTime('${examId}')">开始考试</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
+let selectedExamTime = null;
+
+function selectExamTime(minutes, btn) {
+  selectedExamTime = minutes;
+  document.querySelectorAll('.exam-time-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('exam-custom-time').value = minutes;
+}
+
+function startExamWithCustomTime(examId) {
+  const customInput = document.getElementById('exam-custom-time');
+  let minutes = selectedExamTime || parseInt(customInput.value) || 0;
+  minutes = Math.max(0, minutes);
+  startExamWithTime(examId, minutes);
+}
+
+function startExamWithTime(examId, timeLimit) {
+  // 移除弹窗
+  const picker = document.querySelector('.exam-time-picker');
+  if (picker) picker.remove();
+
+  const exam = EXAM_BANK.find(e => e.id === examId);
+  if (!exam) return;
+
+  // 重置状态
+  App.examState.currentExam = exam;
+  App.examState.answers = {};
+  App.examState.startTime = Date.now();
+  App.examState.timeLimit = timeLimit > 0 ? timeLimit : null;
+  App.examState.elapsedSeconds = 0;
+  selectedExamTime = null;
+
+  // 切换视图
+  document.getElementById('exam-list-view').style.display = 'none';
+  document.getElementById('exam-result-view').style.display = 'none';
+  document.getElementById('exam-taking-view').style.display = 'block';
+
+  // 设置标题
+  document.getElementById('exam-taking-title').textContent = exam.title;
+
+  // 渲染题目
+  renderExamQuestions(exam);
+
+  // 启动计时器
+  startExamTimer();
+
+  // 滚动到顶部
+  window.scrollTo(0, 0);
+}
+
+function renderExamQuestions(exam) {
+  const container = document.getElementById('exam-questions-container');
+  let html = '';
+  let qNum = 0;
+
+  exam.sections.forEach(section => {
+    html += `<div class="exam-section">`;
+    html += `<div class="exam-section-title">${section.title}</div>`;
+    html += `<div class="exam-section-instruction">${section.instruction}</div>`;
+
+    if (section.passage) {
+      html += `<div class="exam-passage">${section.passage}</div>`;
+    }
+
+    section.questions.forEach(q => {
+      qNum++;
+      const options = q.options.map((opt, idx) => {
+        const label = String.fromCharCode(65 + idx); // A, B, C, D
+        return `
+          <div class="exam-option" onclick="selectExamAnswer(${q.id}, '${label}', this)">
+            <span class="exam-option-label">${label}.</span>
+            <span>${opt}</span>
+          </div>
+        `;
+      }).join('');
+
+      html += `
+        <div class="exam-question" id="exam-q-${q.id}">
+          <div class="exam-question-text">
+            <span class="exam-question-number">${qNum}.</span>${q.question}
+          </div>
+          <div class="exam-options">${options}</div>
+        </div>
+      `;
+    });
+
+    html += `</div>`;
+  });
+
+  container.innerHTML = html;
+  updateExamProgress();
+}
+
+function selectExamAnswer(questionId, answer, element) {
+  App.examState.answers[questionId] = answer;
+  // 更新UI
+  const questionEl = document.getElementById(`exam-q-${questionId}`);
+  if (questionEl) {
+    questionEl.querySelectorAll('.exam-option').forEach(opt => opt.classList.remove('selected'));
+    element.classList.add('selected');
+  }
+  updateExamProgress();
+}
+
+function updateExamProgress() {
+  const exam = App.examState.currentExam;
+  if (!exam) return;
+  const totalQuestions = exam.sections.reduce((sum, s) => sum + s.questions.length, 0);
+  const answered = Object.keys(App.examState.answers).length;
+  const pct = totalQuestions > 0 ? (answered / totalQuestions * 100) : 0;
+  document.getElementById('exam-progress-fill').style.width = pct + '%';
+  document.getElementById('exam-progress-text').textContent = `已答 ${answered} / ${totalQuestions} 题`;
+}
+
+function startExamTimer() {
+  // 清除已有计时器
+  if (App.examState.timerInterval) clearInterval(App.examState.timerInterval);
+
+  App.examState.timerInterval = setInterval(() => {
+    App.examState.elapsedSeconds++;
+    updateExamTimerDisplay();
+
+    // 限时模式：检查是否超时
+    if (App.examState.timeLimit) {
+      const remaining = App.examState.timeLimit * 60 - App.examState.elapsedSeconds;
+      if (remaining <= 0) {
+        clearInterval(App.examState.timerInterval);
+        alert('⏰ 考试时间到！系统将自动提交试卷。');
+        submitExam();
+      } else if (remaining <= 300) {
+        // 最后5分钟标红
+        document.getElementById('exam-timer').classList.add('warning');
+      }
+    }
+  }, 1000);
+
+  updateExamTimerDisplay();
+}
+
+function updateExamTimerDisplay() {
+  const seconds = App.examState.elapsedSeconds;
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  const display = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+
+  const timerEl = document.getElementById('exam-timer');
+  if (App.examState.timeLimit) {
+    const remaining = App.examState.timeLimit * 60 - seconds;
+    const rh = Math.floor(remaining / 3600);
+    const rm = Math.floor((remaining % 3600) / 60);
+    const rs = remaining % 60;
+    timerEl.textContent = `⏱️ 剩余 ${String(rh).padStart(2, '0')}:${String(rm).padStart(2, '0')}:${String(rs).padStart(2, '0')}`;
+  } else {
+    timerEl.textContent = `⏱️ ${display}`;
+  }
+}
+
+function exitExam() {
+  if (confirm('确定要退出考试吗？已答内容将不会保存。')) {
+    if (App.examState.timerInterval) clearInterval(App.examState.timerInterval);
+    showExamListView();
+  }
+}
+
+function submitExam() {
+  const exam = App.examState.currentExam;
+  if (!exam) return;
+
+  // 检查未答题数
+  const totalQuestions = exam.sections.reduce((sum, s) => sum + s.questions.length, 0);
+  const answered = Object.keys(App.examState.answers).length;
+  const unanswered = totalQuestions - answered;
+
+  if (unanswered > 0) {
+    if (!confirm(`还有 ${unanswered} 题未作答，确定提交吗？`)) return;
+  }
+
+  // 停止计时器
+  if (App.examState.timerInterval) clearInterval(App.examState.timerInterval);
+
+  // 批改
+  let correct = 0, wrong = 0, totalScore = 0, earnedScore = 0;
+  const wrongQuestions = [];
+  const sectionResults = {}; // 按题型统计
+
+  exam.sections.forEach(section => {
+    section.questions.forEach(q => {
+      const userAnswer = App.examState.answers[q.id] || '未作答';
+      const isCorrect = userAnswer === q.answer;
+
+      if (isCorrect) {
+        correct++;
+        earnedScore += q.score;
+      } else {
+        wrong++;
+        wrongQuestions.push({
+          question: q,
+          userAnswer,
+          isCorrect: false,
+        });
+      }
+      totalScore += q.score;
+
+      // 按题型统计
+      if (!sectionResults[section.title]) {
+        sectionResults[section.title] = { total: 0, correct: 0 };
+      }
+      sectionResults[section.title].total++;
+      if (isCorrect) sectionResults[section.title].correct++;
+    });
+  });
+
+  // 切换到结果视图
+  document.getElementById('exam-taking-view').style.display = 'none';
+  document.getElementById('exam-result-view').style.display = 'block';
+
+  // 计算成绩
+  const percentage = totalQuestions > 0 ? Math.round((correct / totalQuestions) * 100) : 0;
+  const scorePct = totalScore > 0 ? Math.round((earnedScore / totalScore) * 100) : 0;
+
+  // 显示分数
+  document.getElementById('exam-result-score').textContent = `${earnedScore} / ${totalScore} 分`;
+  document.getElementById('exam-result-correct').textContent = correct;
+  document.getElementById('exam-result-wrong').textContent = wrong;
+  document.getElementById('exam-result-total').textContent = totalQuestions;
+
+  // 用时
+  const elapsed = App.examState.elapsedSeconds;
+  const mins = Math.floor(elapsed / 60);
+  const secs = elapsed % 60;
+  document.getElementById('exam-result-time').textContent = `${mins}'${String(secs).padStart(2, '0')}"`;
+
+  // 评价
+  let emoji, msg;
+  if (scorePct >= 90) { emoji = '🏆'; msg = '优秀！你的英语水平很棒！'; }
+  else if (scorePct >= 80) { emoji = '🎉'; msg = '很好！继续保持！'; }
+  else if (scorePct >= 60) { emoji = '💪'; msg = '及格了，还有提升空间'; }
+  else if (scorePct >= 40) { emoji = '📚'; msg = '需要加强练习，多复习基础'; }
+  else { emoji = '🔧'; msg = '基础薄弱，建议系统复习'; }
+  document.getElementById('exam-result-emoji').textContent = emoji;
+  document.getElementById('exam-result-msg').textContent = msg;
+
+  // 颜色
+  const scoreEl = document.getElementById('exam-result-score');
+  scoreEl.className = 'result-score ' + (scorePct >= 80 ? 'excellent' : scorePct >= 60 ? 'good' : 'needs-work');
+
+  // 渲染分析报告
+  renderExamAnalysis(sectionResults, exam, wrongQuestions, scorePct);
+
+  // 渲染题目回顾
+  renderExamReview(exam);
+
+  // 保存到历史记录
+  saveExamRecord(exam, correct, wrong, totalQuestions, earnedScore, totalScore, elapsed);
+
+  window.scrollTo(0, 0);
+}
+
+function renderExamAnalysis(sectionResults, exam, wrongQuestions, scorePct) {
+  const container = document.getElementById('exam-analysis');
+
+  // 分析薄弱环节
+  let weakestSection = '';
+  let weakestPct = 100;
+  Object.entries(sectionResults).forEach(([title, result]) => {
+    const pct = result.total > 0 ? (result.correct / result.total * 100) : 0;
+    if (pct < weakestPct) {
+      weakestPct = pct;
+      weakestSection = title;
+    }
+  });
+
+  // 分析建议
+  let advice = '';
+  if (scorePct >= 90) {
+    advice = '你的英语综合能力很强，各题型掌握均衡。建议挑战更高难度的试卷。';
+  } else if (scorePct >= 70) {
+    advice = `整体水平不错，${weakestSection}是薄弱环节，建议针对性加强练习。`;
+  } else if (scorePct >= 50) {
+    advice = `基础有待加强，${weakestSection}失分较多。建议先夯实词汇和语法基础，再做套题。`;
+  } else {
+    advice = `基础薄弱，${weakestSection}需要重点复习。建议从课本基础知识开始系统学习。`;
+  }
+
+  let html = '<div class="exam-analysis-title">📊 能力分析报告</div>';
+
+  // 各题型得分率
+  html += '<div class="exam-analysis-section"><h4>各题型得分率</h4>';
+  Object.entries(sectionResults).forEach(([title, result]) => {
+    const pct = result.total > 0 ? Math.round(result.correct / result.total * 100) : 0;
+    const color = pct >= 80 ? 'var(--success)' : pct >= 60 ? 'var(--warning)' : 'var(--danger)';
+    html += `
+      <div class="exam-skill-bar">
+        <span class="exam-skill-name">${title}</span>
+        <div class="exam-skill-track">
+          <div class="exam-skill-fill" style="width:${pct}%; background:${color}"></div>
+        </div>
+        <span class="exam-skill-pct" style="color:${color}">${pct}%</span>
+      </div>
+    `;
+  });
+  html += '</div>';
+
+  // 建议
+  html += `<div class="exam-analysis-section"><h4>💡 学习建议</h4><p>${advice}</p></div>`;
+
+  // 错题分析
+  if (wrongQuestions.length > 0) {
+    html += `<div class="exam-analysis-section"><h4>❌ 错题统计</h4>`;
+    html += `<p>共答错 ${wrongQuestions.length} 题。建议重点关注以下知识点：</p>`;
+    // 简单归类错题
+    const wrongBySection = {};
+    wrongQuestions.forEach(wq => {
+      const section = exam.sections.find(s => s.questions.includes(wq.question));
+      const title = section ? section.title : '其他';
+      if (!wrongBySection[title]) wrongBySection[title] = 0;
+      wrongBySection[title]++;
+    });
+    Object.entries(wrongBySection).forEach(([title, count]) => {
+      html += `<p>• ${title}：${count} 题错误</p>`;
+    });
+    html += '</div>';
+  }
+
+  container.innerHTML = html;
+}
+
+function renderExamReview(exam) {
+  const container = document.getElementById('exam-review-list');
+  let html = '<div class="exam-section-title" style="margin-bottom:16px">📝 题目详情与解析</div>';
+  let qNum = 0;
+
+  exam.sections.forEach(section => {
+    html += `<div class="exam-section">`;
+    html += `<div class="exam-section-title">${section.title}</div>`;
+    if (section.passage) {
+      html += `<div class="exam-passage">${section.passage}</div>`;
+    }
+
+    section.questions.forEach(q => {
+      qNum++;
+      const userAnswer = App.examState.answers[q.id] || '未作答';
+      const isCorrect = userAnswer === q.answer;
+
+      // 选项渲染
+      const optionsHtml = q.options.map((opt, idx) => {
+        const label = String.fromCharCode(65 + idx);
+        let cls = 'exam-option';
+        if (label === q.answer) cls += ' correct';
+        else if (label === userAnswer && !isCorrect) cls += ' wrong';
+        return `<div class="${cls}"><span class="exam-option-label">${label}.</span><span>${opt}</span></div>`;
+      }).join('');
+
+      html += `
+        <div class="exam-question">
+          <div class="exam-question-text">
+            <span class="exam-question-number">${qNum}.</span>${q.question}
+          </div>
+          <div class="exam-options">${optionsHtml}</div>
+          <div class="exam-question-explanation">
+            <strong>正确答案：${q.answer}</strong> | ${q.explanation || '暂无解析'}
+          </div>
+        </div>
+      `;
+    });
+    html += '</div>';
+  });
+
+  container.innerHTML = html;
+}
+
+function backToExamList() {
+  showExamListView();
+}
+
+function retakeExam() {
+  if (App.examState.currentExam) {
+    startExamWithTime(App.examState.currentExam.id, App.examState.timeLimit || 0);
+  }
+}
+
+function saveExamRecord(exam, correct, wrong, total, earnedScore, totalScore, elapsed) {
+  const records = JSON.parse(localStorage.getItem('examRecords') || '[]');
+  records.unshift({
+    examId: exam.id,
+    examTitle: exam.title,
+    examType: exam.type,
+    correct,
+    wrong,
+    total,
+    earnedScore,
+    totalScore,
+    elapsed,
+    date: new Date().toISOString(),
+  });
+  // 只保留最近50条
+  if (records.length > 50) records.length = 50;
+  localStorage.setItem('examRecords', JSON.stringify(records));
+}
+
 // ==================== 初始化 ====================
 function init() {
   loadRecord();
@@ -1106,6 +1602,9 @@ function init() {
         App.testConfig.direction = 'mixed';
       } else if (mode === 'dictionary') {
         navigateTo('dict');
+        return;
+      } else if (mode === 'exam') {
+        navigateTo('exam');
         return;
       }
       navigateTo('test');
