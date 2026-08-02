@@ -50,7 +50,13 @@
       </div>
     </div>
 
-    <button class="cover-enter-btn" onclick="enterApp()">🚀 进入应用</button>
+    <div class="cover-action">
+      <button class="cover-enter-btn" id="cover-enter-btn" onclick="enterApp()">🚀 进入应用</button>
+      <div class="cover-loading" id="cover-loading" style="display:none">
+        <div class="cover-spinner"></div>
+        <span>正在进入…</span>
+      </div>
+    </div>
     <p class="cover-foot">基于认知科学原理设计 · 让每一个单词都真正记住</p>
   </div>
 </div>
