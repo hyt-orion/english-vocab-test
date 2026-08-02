@@ -1418,13 +1418,18 @@ body {
 
 .exam-question-explanation {
   margin-top: 10px;
-  padding: 10px 14px;
+  padding: 14px 16px;
   background: var(--bg-secondary);
   border-radius: var(--radius-sm);
   font-size: 0.82rem;
   color: var(--text-secondary);
   border-left: 3px solid var(--warning);
-  line-height: 1.6;
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+
+.exam-question-explanation strong {
+  color: var(--accent);
 }
 
 /* 试卷分析报告 */
