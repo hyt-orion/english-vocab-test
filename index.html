@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>英语词汇测试与学习系统</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#6c8eef">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="英语大师">
 </head>
 <body>
 
@@ -18,9 +22,11 @@
     <button class="nav-tab active" data-page="home">🏠 首页</button>
     <button class="nav-tab" data-page="test">📝 测试</button>
     <button class="nav-tab" data-page="exam">📋 试卷</button>
+    <button class="nav-tab" data-page="wrong">❌ 错题本</button>
     <button class="nav-tab" data-page="dict">📖 词典</button>
     <button class="nav-tab" data-page="stats">📊 统计</button>
   </div>
+  <button class="theme-toggle" onclick="toggleTheme()" title="切换主题">🌙</button>
 </nav>
 
 <!-- ==================== 主容器 ==================== -->
@@ -32,6 +38,9 @@
       <h1>高效英语词汇测试系统</h1>
       <p>主动回忆 · 间隔重复 · 双向测试 · 即时反馈</p>
     </div>
+
+    <!-- 每日学习目标 -->
+    <div class="daily-goals" id="daily-goals"></div>
 
     <!-- 统计概览 -->
     <div class="stats-grid">
@@ -385,6 +394,37 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- ==================== 错题本页 ==================== -->
+  <div class="page" id="page-wrong">
+    <h2 style="font-size:1.4rem; margin-bottom:8px">❌ 错题本</h2>
+    <p style="color:var(--text-secondary); margin-bottom:20px; font-size:0.9rem">自动收集所有测试和试卷中的错题，反复练习直到掌握</p>
+
+    <!-- 统计 -->
+    <div class="wrong-book-stats" id="wrong-stats"></div>
+
+    <!-- 工具栏 -->
+    <div class="wrong-book-toolbar">
+      <select id="wrong-filter-kp" style="padding:8px 14px; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); color:var(--text-primary); font-size:0.85rem;" onchange="renderWrongBook()">
+        <option value="">全部知识点</option>
+      </select>
+      <select id="wrong-filter-source" style="padding:8px 14px; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); color:var(--text-primary); font-size:0.85rem;" onchange="renderWrongBook()">
+        <option value="">全部来源</option>
+        <option value="test">词汇测试</option>
+        <option value="exam">试卷</option>
+      </select>
+      <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:var(--text-secondary); cursor:pointer;">
+        <input type="checkbox" id="wrong-show-mastered" onchange="renderWrongBook()"> 显示已掌握
+      </label>
+      <button class="btn btn-ghost btn-sm" onclick="clearAllWrong()">🗑️ 清空错题本</button>
+      <span style="margin-left:auto; font-size:0.82rem; color:var(--text-secondary);">
+        <span class="kbd">A</span><span class="kbd">B</span><span class="kbd">C</span><span class="kbd">D</span> 键盘答题
+      </span>
+    </div>
+
+    <!-- 错题列表 -->
+    <div id="wrong-list"></div>
   </div>
 
   <!-- ==================== 词典页 ==================== -->
