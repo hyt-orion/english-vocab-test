@@ -2268,6 +2268,50 @@ function recordDailyActivity(type, count = 1) {
   saveDailyGoals(goals);
 }
 
+// ==================== 自定义文字目标 ====================
+function getCustomGoals() {
+  const today = new Date().toDateString();
+  const data = JSON.parse(localStorage.getItem('customGoals') || '{}');
+  if (data.date !== today) {
+    return { date: today, goals: [] };
+  }
+  return data;
+}
+
+function saveCustomGoals(data) {
+  localStorage.setItem('customGoals', JSON.stringify(data));
+}
+
+function addCustomGoal() {
+  const input = document.getElementById('custom-goal-input');
+  const text = input.value.trim();
+  if (!text) return;
+  const data = getCustomGoals();
+  data.goals.push({ id: Date.now() + '_' + Math.random().toString(36).substr(2, 6), text, done: false });
+  saveCustomGoals(data);
+  input.value = '';
+  renderDailyGoals();
+  // 重新聚焦输入框方便连续添加
+  setTimeout(() => document.getElementById('custom-goal-input')?.focus(), 50);
+}
+
+function toggleCustomGoal(id) {
+  const data = getCustomGoals();
+  const goal = data.goals.find(g => g.id === id);
+  if (goal) {
+    goal.done = !goal.done;
+    saveCustomGoals(data);
+    renderDailyGoals();
+  }
+}
+
+function deleteCustomGoal(id) {
+  const data = getCustomGoals();
+  data.goals = data.goals.filter(g => g.id !== id);
+  saveCustomGoals(data);
+  renderDailyGoals();
+}
+
 function renderDailyGoals() {
   const container = document.getElementById('daily-goals');
   if (!container) return;
@@ -2279,6 +2323,17 @@ function renderDailyGoals() {
     { key: 'test', icon: '📝', text: '词汇测试', done: goals.testDone, target: goals.testTarget, unit: '次' },
     { key: 'exam', icon: '📋', text: '做试卷', done: goals.examDone, target: goals.examTarget, unit: '份' },
   ];
+
+  const customData = getCustomGoals();
+  const customGoalsHtml = customData.goals.length > 0
+    ? customData.goals.map(g => `
+        <div class="daily-goal-item custom-goal-item ${g.done ? 'done' : ''}">
+          <div class="daily-goal-checkbox" onclick="toggleCustomGoal('${g.id}')"></div>
+          <span class="daily-goal-text" onclick="toggleCustomGoal('${g.id}')">${g.text}</span>
+          <button class="custom-goal-delete" onclick="deleteCustomGoal('${g.id}')" title="删除">×</button>
+        </div>
+      `).join('')
+    : '';
 
   container.innerHTML = `
     <div class="daily-goals-header">
@@ -2299,6 +2354,17 @@ function renderDailyGoals() {
           </div>
         `;
       }).join('')}
+    </div>
+    <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">
+      <div style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:10px; font-weight:600;">✍️ 个人目标</div>
+      <div id="custom-goals-list">${customGoalsHtml}</div>
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <input type="text" id="custom-goal-input" placeholder="输入你的目标，按回车添加..."
+          style="flex:1; padding:9px 14px; background:var(--bg-secondary); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text-primary); font-size:0.85rem; font-family:var(--font-main); outline:none; transition:var(--transition-fast);"
+          onkeydown="if(event.key==='Enter') addCustomGoal()"
+          onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+        <button class="btn btn-primary" onclick="addCustomGoal()" style="padding:9px 16px; font-size:0.82rem;">添加</button>
+      </div>
     </div>
   `;
 }
