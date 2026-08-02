@@ -298,27 +298,55 @@ body {
 .mode-card::before {
   content: '';
   position: absolute;
-  inset: 0;
-  background: var(--accent-gradient-soft);
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--accent-gradient);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: var(--transition);
+}
+
+.mode-card::after {
+  content: '';
+  position: absolute;
+  bottom: -60%;
+  right: -30%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(99,102,241,0.15), transparent 70%);
   opacity: 0;
   transition: var(--transition);
   pointer-events: none;
 }
 
 .mode-card:hover {
-  border-color: var(--border-strong);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  border-color: rgba(99, 102, 241, 0.3);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg), 0 0 48px rgba(99, 102, 241, 0.15);
 }
 
-.mode-card:hover::before { opacity: 1; }
+.mode-card:hover::before {
+  transform: scaleX(1);
+}
+
+.mode-card:hover::after {
+  opacity: 1;
+}
 
 .mode-icon {
-  font-size: 2rem;
+  font-size: 2.2rem;
   margin-bottom: 12px;
   display: inline-block;
+  filter: drop-shadow(0 2px 12px rgba(99, 102, 241, 0.3));
+  transition: var(--transition);
   position: relative;
   z-index: 1;
+}
+
+.mode-card:hover .mode-icon {
+  transform: scale(1.1);
 }
 
 .mode-title {
