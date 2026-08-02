@@ -25,6 +25,8 @@
     <button class="nav-tab active" data-page="home">🏠 首页</button>
     <button class="nav-tab" data-page="test">📝 测试</button>
     <button class="nav-tab" data-page="exam">📋 试卷</button>
+    <button class="nav-tab" data-page="listening">🎧 听力</button>
+    <button class="nav-tab" data-page="grammar">📐 语法</button>
     <button class="nav-tab" data-page="wrong">❌ 错题本</button>
     <button class="nav-tab" data-page="dict">📖 词典</button>
     <button class="nav-tab" data-page="stats">📊 统计</button>
@@ -44,6 +46,9 @@
 
     <!-- 每日学习目标 -->
     <div class="daily-goals" id="daily-goals"></div>
+
+    <!-- 学习打卡日历 -->
+    <div class="study-calendar-wrapper" id="study-calendar"></div>
 
     <!-- 统计概览 -->
     <div class="stats-grid">
@@ -397,6 +402,72 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- ==================== 听力练习页 ==================== -->
+  <div class="page" id="page-listening">
+    <h2 style="font-size:1.4rem; margin-bottom:8px">🎧 听力练习</h2>
+    <p style="color:var(--text-secondary); margin-bottom:20px; font-size:0.9rem">听句子选答案，训练英语听力，支持语速调节</p>
+
+    <div class="card" id="listening-setup">
+      <div class="config-group">
+        <div class="config-label">难度级别</div>
+        <div class="option-row" id="listening-level-options">
+          <button class="option-btn active" data-level="1">⭐ 小学</button>
+          <button class="option-btn" data-level="2">⭐⭐ 初中</button>
+          <button class="option-btn" data-level="3">⭐⭐⭐ 高中</button>
+        </button>
+      </div>
+      <div class="config-group">
+        <div class="config-label">语速</div>
+        <div class="option-row" id="listening-speed-options">
+          <button class="option-btn" data-speed="0.6">🐢 慢速</button>
+          <button class="option-btn active" data-speed="0.9">✅ 正常</button>
+          <button class="option-btn" data-speed="1.2">🐇 快速</button>
+        </button>
+      </div>
+      <div class="config-group">
+        <div class="config-label">题数</div>
+        <div class="option-row" id="listening-count-options">
+          <button class="option-btn" data-count="5">5 题</button>
+          <button class="option-btn active" data-count="10">10 题</button>
+          <button class="option-btn" data-count="20">20 题</button>
+        </button>
+      </div>
+      <div class="text-center mt-20">
+        <button class="btn btn-primary btn-lg" onclick="startListening()">🎧 开始听力</button>
+      </div>
+    </div>
+
+    <div id="listening-running" style="display:none;">
+      <div class="test-header">
+        <div class="test-progress">
+          <div class="progress-bar"><div class="progress-fill" id="listening-progress-fill" style="width:0%"></div></div>
+          <span class="progress-text" id="listening-progress-text">1 / 10</span>
+        </div>
+        <div class="score-badge">
+          <div class="score-item"><div class="score-num correct" id="listening-correct">0</div><div class="score-label">正确</div></div>
+          <div class="score-item"><div class="score-num wrong" id="listening-wrong">0</div><div class="score-label">错误</div></div>
+        </div>
+      </div>
+      <div class="question-card">
+        <span class="question-tag">🎧 听力题</span>
+        <div style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:16px;">点击下方按钮播放音频，然后选择你听到的内容</div>
+        <button class="btn btn-primary btn-lg" id="play-audio-btn" onclick="playListeningAudio()" style="font-size:1.5rem;padding:16px 40px;">🔊 播放</button>
+        <div style="font-size:0.78rem;color:var(--text-muted);margin-top:12px;">提示：可以多次点击播放</div>
+      </div>
+      <div id="listening-options"></div>
+      <div class="text-center mt-20">
+        <button class="btn btn-ghost" onclick="exitListening()">← 退出</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 语法专题页 ==================== -->
+  <div class="page" id="page-grammar">
+    <h2 style="font-size:1.4rem; margin-bottom:8px">📐 语法专题</h2>
+    <p style="color:var(--text-secondary); margin-bottom:20px; font-size:0.9rem">系统学习英语语法，每个专题含讲解、例句和练习题</p>
+    <div id="grammar-topics"></div>
   </div>
 
   <!-- ==================== 错题本页 ==================== -->
