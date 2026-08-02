@@ -189,9 +189,11 @@ function navigateTo(page) {
   const tab = document.querySelector(`.nav-tab[data-page="${page}"]`);
   if (tab) tab.classList.add('active');
 
-  if (page === 'home') renderDashboard();
+  if (page === 'home') { renderDashboard(); renderStudyCalendar(); }
   if (page === 'stats') renderStats();
   if (page === 'wrong') renderWrongBook();
+  if (page === 'listening') setupListening();
+  if (page === 'grammar') renderGrammarTopics();
   if (page === 'exam') {
     showExamListView();
   }
@@ -2266,6 +2268,158 @@ function recordDailyActivity(type, count = 1) {
   if (type === 'exam') goals.examDone += count;
   if (type === 'test') goals.testDone += count;
   saveDailyGoals(goals);
+  // 记录到学习日历
+  logStudyActivity(type, count);
+}
+
+// ==================== 学习打卡日历 ====================
+function logStudyActivity(type, count) {
+  const today = new Date().toISOString().slice(0, 10);
+  const log = JSON.parse(localStorage.getItem('studyLog') || '{}');
+  if (!log[today]) log[today] = { words: 0, tests: 0, exams: 0, total: 0 };
+  if (type === 'word') log[today].words += count;
+  if (type === 'test') log[today].tests += count;
+  if (type === 'exam') log[today].exams += count;
+  log[today].total = log[today].words + log[today].tests * 10 + log[today].exams * 20;
+  localStorage.setItem('studyLog', JSON.stringify(log));
+}
+
+function getStudyLog() {
+  return JSON.parse(localStorage.getItem('studyLog') || '{}');
+}
+
+function calculateStreak(log) {
+  const dates = Object.keys(log).sort();
+  if (dates.length === 0) return { current: 0, longest: 0 };
+  
+  // 当前连胜
+  let current = 0;
+  const today = new Date();
+  const todayStr = today.toISOString().slice(0, 10);
+  const yesterdayStr = new Date(today.getTime() - 86400000).toISOString().slice(0, 10);
+  
+  if (log[todayStr]) {
+    current = 1;
+    let d = new Date(today);
+    while (true) {
+      d.setDate(d.getDate() - 1);
+      const ds = d.toISOString().slice(0, 10);
+      if (log[ds]) current++;
+      else break;
+    }
+  } else if (log[yesterdayStr]) {
+    current = 1;
+    let d = new Date(today.getTime() - 86400000);
+    while (true) {
+      d.setDate(d.getDate() - 1);
+      const ds = d.toISOString().slice(0, 10);
+      if (log[ds]) current++;
+      else break;
+    }
+  }
+
+  // 最长连胜
+  let longest = 0;
+  let tempStreak = 0;
+  let prevDate = null;
+  dates.forEach(d => {
+    if (prevDate) {
+      const diff = (new Date(d) - new Date(prevDate)) / 86400000;
+      if (diff === 1) tempStreak++;
+      else tempStreak = 1;
+    } else {
+      tempStreak = 1;
+    }
+    longest = Math.max(longest, tempStreak);
+    prevDate = d;
+  });
+
+  return { current, longest };
+}
+
+function renderStudyCalendar() {
+  const container = document.getElementById('study-calendar');
+  if (!container) return;
+  const log = getStudyLog();
+  const { current, longest } = calculateStreak(log);
+
+  // 生成最近12周的热力图
+  const weeks = 12;
+  const days = [];
+  const today = new Date();
+  // 从今天往前推12周
+  const startDate = new Date(today);
+  startDate.setDate(startDate.getDate() - (weeks * 7 - 1));
+  // 调整到周日开始
+  startDate.setDate(startDate.getDate() - startDate.getDay());
+
+  for (let w = 0; w < weeks; w++) {
+    const week = [];
+    for (let d = 0; d < 7; d++) {
+      const date = new Date(startDate);
+      date.setDate(date.getDate() + w * 7 + d);
+      const dateStr = date.toISOString().slice(0, 10);
+      const isFuture = date > today;
+      const activity = log[dateStr];
+      let level = 0;
+      if (activity) {
+        if (activity.total >= 50) level = 4;
+        else if (activity.total >= 20) level = 3;
+        else if (activity.total >= 5) level = 2;
+        else if (activity.total > 0) level = 1;
+      }
+      week.push({ date: dateStr, level, isFuture, day: date.getDate(), month: date.getMonth() + 1 });
+    }
+    days.push(week);
+  }
+
+  const monthLabels = [];
+  let lastMonth = -1;
+  days.forEach((week, i) => {
+    const firstDay = week[0];
+    if (firstDay.month !== lastMonth && !firstDay.isFuture) {
+      monthLabels.push({ week: i, label: firstDay.month + '月' });
+      lastMonth = firstDay.month;
+    }
+  });
+
+  const colors = ['var(--bg-secondary)', 'rgba(99,102,241,0.25)', 'rgba(99,102,241,0.5)', 'rgba(99,102,241,0.75)', 'var(--accent)'];
+
+  container.innerHTML = `
+    <div class="study-calendar-header">
+      <div>
+        <span class="study-calendar-title">📅 学习打卡</span>
+        <span class="study-streak">🔥 连续 ${current} 天</span>
+        ${longest > 0 ? `<span class="study-best">🏆 最长 ${longest} 天</span>` : ''}
+      </div>
+      <span class="study-total">累计 ${Object.keys(log).length} 天</span>
+    </div>
+    <div class="heatmap-container">
+      <div class="heatmap-months">
+        ${monthLabels.map(m => `<span style="grid-column:${m.week + 1}">${m.label}</span>`).join('')}
+      </div>
+      <div style="display:flex;gap:2px;">
+        <div class="heatmap-weekdays">
+          <span>一</span><span></span><span>三</span><span></span><span>五</span><span></span><span>日</span>
+        </div>
+        <div class="heatmap-grid">
+          ${days.map(week => `
+            <div class="heatmap-week">
+              ${week.map(day => `
+                <div class="heatmap-cell level-${day.level} ${day.isFuture ? 'future' : ''}"
+                     title="${day.date} ${day.level > 0 ? '· 已学习' : ''}"></div>
+              `).join('')}
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <div class="heatmap-legend">
+        <span style="font-size:0.72rem;color:var(--text-muted);">少</span>
+        ${colors.map(c => `<div class="heatmap-cell" style="background:${c};width:11px;height:11px;"></div>`).join('')}
+        <span style="font-size:0.72rem;color:var(--text-muted);">多</span>
+      </div>
+    </div>
+  `;
 }
 
 // ==================== 自定义文字目标 ====================
@@ -2518,12 +2672,356 @@ function registerSW() {
   }
 }
 
+// ==================== 语法专题 ====================
+const GRAMMAR_TOPICS = [
+  {
+    id: 'articles', icon: '🔤', title: '冠词 (a/an/the)', desc: '不定冠词、定冠词、零冠词的用法', diff: '基础',
+    sections: [
+      { title: '📌 不定冠词 a/an', content: 'a用于辅音音素开头的词前，an用于元音音素开头的词前。\n判断依据是【发音】不是拼写！\n• a book, a university (以/j/音开头)\n• an apple, an hour (h不发音，以元音开头)', examples: [
+        { en: 'She is a teacher.', cn: '她是一名老师。' },
+        { en: 'He is an honest boy.', cn: '他是一个诚实的男孩。(honest的h不发音)' },
+      ]},
+      { title: '📌 定冠词 the', content: '1. 特指：the book on the desk\n2. 独一无二：the sun, the moon\n3. 乐器：play the piano\n4. 序数词/最高级：the first, the best', examples: [
+        { en: 'The earth goes around the sun.', cn: '地球绕着太阳转。' },
+        { en: 'She plays the violin well.', cn: '她小提琴拉得很好。' },
+      ]},
+      { title: '📌 零冠词', content: '1. 三餐前：have breakfast\n2. 球类运动前：play basketball\n3. 学科前：study English\n4. 泛指复数名词：Dogs are loyal.', examples: [
+        { en: 'I play football after school.', cn: '放学后我踢足球。' },
+        { en: 'She has lunch at noon.', cn: '她中午吃午饭。' },
+      ]},
+    ]
+  },
+  {
+    id: 'tenses', icon: '⏰', title: '时态', desc: '一般现在、过去、将来、进行、完成时', diff: '核心',
+    sections: [
+      { title: '📌 一般现在时', content: '表习惯、事实、客观规律。第三人称单数加s/es。\n标志词：always, usually, often, every day', examples: [
+        { en: 'She walks to school every day.', cn: '她每天步行上学。' },
+        { en: 'The sun rises in the east.', cn: '太阳从东方升起。' },
+      ]},
+      { title: '📌 一般过去时', content: '表过去发生的动作。动词用过去式。\n标志词：yesterday, last week, ago, in 2020', examples: [
+        { en: 'I visited Beijing last summer.', cn: '去年夏天我参观了北京。' },
+        { en: 'He didn\'t go to school yesterday.', cn: '他昨天没去上学。' },
+      ]},
+      { title: '📌 现在进行时', content: '结构：am/is/are + doing。表此时此刻正在发生。\n标志词：now, look, listen', examples: [
+        { en: 'I am reading a book now.', cn: '我现在正在读书。' },
+        { en: 'Look! The cat is climbing the tree.', cn: '看！猫正在爬树。' },
+      ]},
+      { title: '📌 现在完成时', content: '结构：have/has + 过去分词。表过去动作影响现在。\n标志词：already, yet, just, ever, never, for, since', examples: [
+        { en: 'I have finished my homework.', cn: '我已经完成了作业。' },
+        { en: 'She has lived here for 5 years.', cn: '她在这里住了5年了。' },
+      ]},
+      { title: '📌 一般将来时', content: '结构：will + 动词原形 / be going to + 动词原形\n标志词：tomorrow, next week, soon', examples: [
+        { en: 'I will call you tomorrow.', cn: '我明天会打电话给你。' },
+        { en: 'It is going to rain.', cn: '快要下雨了。' },
+      ]},
+    ]
+  },
+  {
+    id: 'passive', icon: '🔄', title: '被动语态', desc: 'be + 过去分词，各时态的被动结构', diff: '进阶',
+    sections: [
+      { title: '📌 被动语态结构', content: 'be + 过去分词(p.p.)\n各时态变化：\n• 一般现在：am/is/are done\n• 一般过去：was/were done\n• 现在完成：have/has been done\n• 一般将来：will be done\n• 含情态动词：can/must be done', examples: [
+        { en: 'English is spoken all over the world.', cn: '全世界都说英语。' },
+        { en: 'The bridge was built in 1990.', cn: '这座桥建于1990年。' },
+      ]},
+      { title: '📌 主动变被动', content: '主动：We build houses. → 被动：Houses are built by us.\n步骤：1.宾语变主语 2.动词变be+pp 3.主语变by短语', examples: [
+        { en: 'The letter was written by Tom.', cn: '这封信是Tom写的。' },
+        { en: 'The trees will be planted next week.', cn: '树将于下周种下。' },
+      ]},
+    ]
+  },
+  {
+    id: 'clauses', icon: '🔗', title: '从句', desc: '宾语从句、定语从句、状语从句', diff: '高级',
+    sections: [
+      { title: '📌 宾语从句', content: '作宾语的从句。三要素：引导词、语序(陈述语序)、时态。\n• that引导陈述句：I think that...\n• if/whether引导一般疑问句：I wonder if...\n• what/who/when等引导特殊疑问句', examples: [
+        { en: 'I don\'t know whether he will come.', cn: '我不知道他是否会来。' },
+        { en: 'Could you tell me where the post office is?', cn: '你能告诉我邮局在哪吗？(陈述语序)' },
+      ]},
+      { title: '📌 定语从句', content: '修饰名词/代词的从句。先行词是被修饰的词。\n• who修饰人(作主语)  • whom修饰人(作宾语)\n• which修饰物  • that修饰人或物  • whose表所属', examples: [
+        { en: 'The man who is talking is my father.', cn: '正在说话的那个男人是我爸爸。' },
+        { en: 'This is the book which I bought.', cn: '这是我买的书。' },
+      ]},
+      { title: '📌 状语从句', content: '时间(when/while/as soon as)、条件(if/unless)、原因(because/since)、让步(although/though)、目的(so that)', examples: [
+        { en: 'When I got home, Mom was cooking.', cn: '我到家时，妈妈正在做饭。' },
+        { en: 'If it rains, we will stay home.', cn: '如果下雨，我们就待在家。' },
+      ]},
+    ]
+  },
+  {
+    id: 'modal', icon: '🎭', title: '情态动词', desc: 'can/must/should/may的用法和推测', diff: '核心',
+    sections: [
+      { title: '📌 基本用法', content: '• can/could：能力、请求\n• must：必须、肯定推测\n• should：应该\n• may/might：可能、许可\n• need：需要\n• mustn\'t：禁止  needn\'t：不必', examples: [
+        { en: 'You must finish it today.', cn: '你必须今天完成。' },
+        { en: '—Must I go now? —No, you needn\'t.', cn: '—我必须现在走吗？—不，你不必。' },
+      ]},
+      { title: '📌 表推测', content: '• must do：一定（肯定推测）\n• can\'t do：不可能（否定推测）\n• may/might do：可能\n• should do：按理应该', examples: [
+        { en: 'He must be tired after working all day.', cn: '工作了一天，他一定很累。' },
+        { en: 'That can\'t be true.', cn: '那不可能是真的。' },
+      ]},
+    ]
+  },
+  {
+    id: 'pronouns', icon: '👥', title: '代词', desc: '人称代词、物主代词、反身代词、不定代词', diff: '基础',
+    sections: [
+      { title: '📌 人称代词', content: '主格(作主语)：I/you/he/she/we/they\n宾格(作宾语)：me/you/him/her/us/them', examples: [
+        { en: 'She gave me a book.', cn: '她给了我一本书。(me作宾语)' },
+      ]},
+      { title: '📌 物主代词', content: '形容词性(后接名词)：my/your/his/her/our/their\n名词性(独立使用)：mine/yours/his/hers/ours/theirs', examples: [
+        { en: 'This is my book. Yours is on the desk.', cn: '这是我的书。你的在桌上。' },
+      ]},
+      { title: '📌 反身代词', content: 'myself/yourself/himself/herself/itself/ourselves/themselves\n常见搭配：teach oneself(自学)、enjoy oneself(玩得开心)、help oneself to(自便)', examples: [
+        { en: 'I taught myself English.', cn: '我自学英语。' },
+      ]},
+      { title: '📌 不定代词', content: 'something(肯定句)、anything(否定/疑问)、nothing、everything\n形容词修饰不定代词要后置：something important', examples: [
+        { en: 'I have something important to tell you.', cn: '我有重要的事告诉你。' },
+      ]},
+    ]
+  },
+];
+
+let currentGrammarTopic = null;
+
+function renderGrammarTopics() {
+  const container = document.getElementById('grammar-topics');
+  if (currentGrammarTopic) {
+    // 显示专题详情
+    renderGrammarDetail(currentGrammarTopic);
+    return;
+  }
+
+  container.innerHTML = GRAMMAR_TOPICS.map(t => `
+    <div class="grammar-topic-card" onclick="openGrammarTopic('${t.id}')">
+      <div class="grammar-topic-header">
+        <div>
+          <div class="grammar-topic-title">${t.icon} ${t.title}</div>
+          <div class="grammar-topic-desc">${t.desc}</div>
+        </div>
+        <span class="grammar-topic-badge">${t.diff}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openGrammarTopic(id) {
+  currentGrammarTopic = GRAMMAR_TOPICS.find(t => t.id === id);
+  renderGrammarDetail(currentGrammarTopic);
+}
+
+function renderGrammarDetail(topic) {
+  const container = document.getElementById('grammar-topics');
+  container.innerHTML = `
+    <div class="grammar-detail">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h3 style="font-size:1.2rem;font-weight:800;letter-spacing:-0.02em;">${topic.icon} ${topic.title}</h3>
+        <button class="btn btn-ghost btn-sm" onclick="currentGrammarTopic=null;renderGrammarTopics()">← 返回列表</button>
+      </div>
+      ${topic.sections.map(s => `
+        <div class="grammar-section-title">${s.title}</div>
+        <div class="grammar-content">${s.content}</div>
+        ${s.examples.map(ex => `
+          <div class="grammar-example">
+            <strong>${ex.en}</strong><br>
+            <span style="color:var(--text-secondary);">${ex.cn}</span>
+          </div>
+        `).join('')}
+      `).join('')}
+    </div>
+  `;
+  window.scrollTo(0, 0);
+}
+
+// ==================== 听力练习 ====================
+const listeningState = {
+  level: 1, speed: 0.9, count: 10,
+  queue: [], currentIdx: 0, correct: 0, wrong: 0,
+  currentWord: null, answered: false,
+};
+
+function setupListening() {
+  document.getElementById('listening-setup').style.display = 'block';
+  document.getElementById('listening-running').style.display = 'none';
+
+  // 绑定选项按钮
+  document.querySelectorAll('#listening-level-options .option-btn').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('#listening-level-options .option-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      listeningState.level = parseInt(btn.dataset.level);
+    };
+  });
+  document.querySelectorAll('#listening-speed-options .option-btn').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('#listening-speed-options .option-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      listeningState.speed = parseFloat(btn.dataset.speed);
+    };
+  });
+  document.querySelectorAll('#listening-count-options .option-btn').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('#listening-count-options .option-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      listeningState.count = parseInt(btn.dataset.count);
+    };
+  });
+}
+
+function startListening() {
+  // 从词库选题
+  const pool = WORD_BANK.filter(w => w.level === listeningState.level && w.word && w.meaning);
+  if (pool.length < 4) {
+    alert('该级别词汇不足，请选择其他级别');
+    return;
+  }
+
+  const shuffled = [...pool].sort(() => Math.random() - 0.5);
+  listeningState.queue = shuffled.slice(0, Math.min(listeningState.count, shuffled.length));
+  listeningState.currentIdx = 0;
+  listeningState.correct = 0;
+  listeningState.wrong = 0;
+
+  document.getElementById('listening-setup').style.display = 'none';
+  document.getElementById('listening-running').style.display = 'block';
+
+  renderListeningQuestion();
+}
+
+function renderListeningQuestion() {
+  const q = listeningState.queue[listeningState.currentIdx];
+  listeningState.currentWord = q;
+  listeningState.answered = false;
+
+  const total = listeningState.queue.length;
+  const pct = (listeningState.currentIdx / total) * 100;
+  document.getElementById('listening-progress-fill').style.width = pct + '%';
+  document.getElementById('listening-progress-text').textContent = `${listeningState.currentIdx + 1} / ${total}`;
+  document.getElementById('listening-correct').textContent = listeningState.correct;
+  document.getElementById('listening-wrong').textContent = listeningState.wrong;
+
+  // 生成4个选项（中文释义）
+  const pool = WORD_BANK.filter(w => w.level === listeningState.level && w.meaning && w.word !== q.word);
+  const distractors = [...pool].sort(() => Math.random() - 0.5).slice(0, 3);
+  const options = [...distractors, q].sort(() => Math.random() - 0.5);
+
+  const container = document.getElementById('listening-options');
+  container.innerHTML = options.map((opt, i) => `
+    <div class="listening-option" onclick="selectListeningAnswer('${opt.meaning}', this)">
+      <span class="listening-option-label">${String.fromCharCode(65 + i)}</span>
+      <span>${opt.meaning}</span>
+    </div>
+  `).join('');
+
+  // 自动播放
+  setTimeout(() => playListeningAudio(), 300);
+}
+
+function playListeningAudio() {
+  if (!listeningState.currentWord) return;
+  const utterance = new SpeechSynthesisUtterance(listeningState.currentWord.word);
+  utterance.lang = 'en-US';
+  utterance.rate = listeningState.speed;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(utterance);
+}
+
+function selectListeningAnswer(answer, element) {
+  if (listeningState.answered) return;
+  listeningState.answered = true;
+
+  const correct = listeningState.currentWord.meaning;
+  const isCorrect = answer === correct;
+
+  if (isCorrect) {
+    listeningState.correct++;
+    element.classList.add('correct');
+  } else {
+    listeningState.wrong++;
+    element.classList.add('wrong');
+    // 标出正确答案
+    document.querySelectorAll('.listening-option').forEach(opt => {
+      if (opt.textContent.includes(correct)) opt.classList.add('correct');
+    });
+  }
+
+  // 记录错题和每日目标
+  if (!isCorrect) {
+    addWrongQuestion(
+      { id: listeningState.currentWord.id, question: `🎧 听力：听到的单词`, options: [], answer: `${listeningState.currentWord.word} (${correct})`, explanation: `听到的单词是 '${listeningState.currentWord.word}'，意思是「${correct}」。`, knowledgePoints: ['听力'], skill: 'listening', difficulty: listeningState.level },
+      answer, 'listening', '听力练习'
+    );
+  }
+
+  // 下一题
+  setTimeout(() => {
+    listeningState.currentIdx++;
+    if (listeningState.currentIdx >= listeningState.queue.length) {
+      finishListening();
+    } else {
+      renderListeningQuestion();
+    }
+  }, 1800);
+}
+
+function finishListening() {
+  const total = listeningState.queue.length;
+  const correct = listeningState.correct;
+  const pct = Math.round((correct / total) * 100);
+
+  recordDailyActivity('test');
+  recordDailyActivity('word', correct);
+
+  let emoji, msg;
+  if (pct >= 90) { emoji = '🏆'; msg = '听力很棒！'; }
+  else if (pct >= 70) { emoji = '🎉'; msg = '不错，继续练！'; }
+  else if (pct >= 60) { emoji = '💪'; msg = '及格了，多听多练'; }
+  else { emoji = '🎧'; msg = '需要多听多练'; }
+
+  document.getElementById('listening-running').innerHTML = `
+    <div class="card result-card">
+      <div style="font-size:3rem;margin-bottom:8px;">${emoji}</div>
+      <div class="result-score ${pct >= 80 ? 'excellent' : pct >= 60 ? 'good' : 'needs-work'}">${correct}/${total}</div>
+      <div class="result-msg">${msg}</div>
+      <div class="result-actions">
+        <button class="btn btn-ghost" onclick="exitListening()">← 返回</button>
+        <button class="btn btn-primary" onclick="startListening()">🔄 再练一轮</button>
+      </div>
+    </div>
+  `;
+  window.scrollTo(0, 0);
+}
+
+function exitListening() {
+  document.getElementById('listening-setup').style.display = 'block';
+  document.getElementById('listening-running').style.display = 'none';
+  document.getElementById('listening-running').innerHTML = `
+    <div class="test-header">
+      <div class="test-progress">
+        <div class="progress-bar"><div class="progress-fill" id="listening-progress-fill" style="width:0%"></div></div>
+        <span class="progress-text" id="listening-progress-text">1 / 10</span>
+      </div>
+      <div class="score-badge">
+        <div class="score-item"><div class="score-num correct" id="listening-correct">0</div><div class="score-label">正确</div></div>
+        <div class="score-item"><div class="score-num wrong" id="listening-wrong">0</div><div class="score-label">错误</div></div>
+      </div>
+    </div>
+    <div class="question-card">
+      <span class="question-tag">🎧 听力题</span>
+      <div style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:16px;">点击下方按钮播放音频，然后选择你听到的内容</div>
+      <button class="btn btn-primary btn-lg" id="play-audio-btn" onclick="playListeningAudio()" style="font-size:1.5rem;padding:16px 40px;">🔊 播放</button>
+      <div style="font-size:0.78rem;color:var(--text-muted);margin-top:12px;">提示：可以多次点击播放</div>
+    </div>
+    <div id="listening-options"></div>
+    <div class="text-center mt-20">
+      <button class="btn btn-ghost" onclick="exitListening()">← 退出</button>
+    </div>
+  `;
+}
+
 // ==================== 初始化 ====================
 function init() {
   initTheme();
   loadRecord();
   setupTestConfig();
   renderDashboard();
+  renderStudyCalendar();
   renderQuickWords();
   renderDailyGoals();
   initKeyboardShortcuts();
