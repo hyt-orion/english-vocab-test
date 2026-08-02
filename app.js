@@ -182,10 +182,15 @@ function speak(text, lang = 'en-US') {
 
 // ==================== 页面导航 ====================
 function navigateTo(page) {
+  const pageEl = document.getElementById('page-' + page);
+  if (!pageEl) {
+    console.warn('[navigateTo] 页面不存在:', page);
+    return;
+  }
   App.currentPage = page;
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('page-' + page).classList.add('active');
+  pageEl.classList.add('active');
   const tab = document.querySelector(`.nav-tab[data-page="${page}"]`);
   if (tab) tab.classList.add('active');
 
@@ -194,6 +199,7 @@ function navigateTo(page) {
   if (page === 'wrong') renderWrongBook();
   if (page === 'listening') setupListening();
   if (page === 'grammar') renderGrammarTopics();
+  if (page === 'dict') { renderQuickWords(); }
   if (page === 'exam') {
     showExamListView();
   }
@@ -2667,9 +2673,25 @@ function resumeExam() {
 
 // ==================== PWA 注册 ====================
 function registerSW() {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
-  }
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.register('sw.js').then(reg => {
+    // 检测到新版本时，安装完成后自动刷新以应用最新代码
+    reg.addEventListener('updatefound', () => {
+      const newWorker = reg.installing;
+      if (newWorker) {
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            window.location.reload();
+          }
+        });
+      }
+    });
+  }).catch(() => {});
+  // 新 SW 接管控制权后刷新（配合 skipWaiting）
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!reloading) { reloading = true; window.location.reload(); }
+  });
 }
 
 // ==================== 语法专题 ====================
