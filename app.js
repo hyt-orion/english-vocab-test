@@ -2222,24 +2222,42 @@ function isFavorite(wordId) {
 // ==================== 每日学习目标 ====================
 function getDailyGoals() {
   const today = new Date().toDateString();
+  // 读取自定义目标设置（持久化，不随日期重置）
+  const settings = JSON.parse(localStorage.getItem('goalSettings') || '{}');
+  const wordsTarget = settings.wordsTarget || 20;
+  const examTarget = settings.examTarget || 1;
+  const testTarget = settings.testTarget || 1;
+
   const data = JSON.parse(localStorage.getItem('dailyGoals') || '{}');
   if (data.date !== today) {
-    // 新的一天，重置
+    // 新的一天，重置完成数但保留目标设置
     return {
       date: today,
-      wordsTarget: 20,
-      wordsDone: 0,
-      examTarget: 1,
-      examDone: 0,
-      testTarget: 1,
-      testDone: 0,
+      wordsTarget, wordsDone: 0,
+      examTarget, examDone: 0,
+      testTarget, testDone: 0,
     };
   }
+  // 确保目标值是最新的（用户可能刚改过）
+  data.wordsTarget = wordsTarget;
+  data.examTarget = examTarget;
+  data.testTarget = testTarget;
   return data;
 }
 
 function saveDailyGoals(data) {
   localStorage.setItem('dailyGoals', JSON.stringify(data));
+}
+
+function saveGoalSettings(settings) {
+  localStorage.setItem('goalSettings', JSON.stringify(settings));
+  // 同步更新今天的进度
+  const goals = getDailyGoals();
+  goals.wordsTarget = settings.wordsTarget;
+  goals.examTarget = settings.examTarget;
+  goals.testTarget = settings.testTarget;
+  saveDailyGoals(goals);
+  renderDailyGoals();
 }
 
 function recordDailyActivity(type, count = 1) {
@@ -2257,15 +2275,18 @@ function renderDailyGoals() {
   const today = new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' });
 
   const items = [
-    { key: 'word', icon: '📖', text: '背单词', done: goals.wordsDone, target: goals.wordsTarget },
-    { key: 'test', icon: '📝', text: '词汇测试', done: goals.testDone, target: goals.testTarget },
-    { key: 'exam', icon: '📋', text: '做试卷', done: goals.examDone, target: goals.examTarget },
+    { key: 'word', icon: '📖', text: '背单词', done: goals.wordsDone, target: goals.wordsTarget, unit: '个' },
+    { key: 'test', icon: '📝', text: '词汇测试', done: goals.testDone, target: goals.testTarget, unit: '次' },
+    { key: 'exam', icon: '📋', text: '做试卷', done: goals.examDone, target: goals.examTarget, unit: '份' },
   ];
 
   container.innerHTML = `
     <div class="daily-goals-header">
       <span class="daily-goals-title">🎯 今日学习目标</span>
-      <span class="daily-goals-date">${today}</span>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span class="daily-goals-date">${today}</span>
+        <button class="btn btn-ghost btn-sm" onclick="showGoalEditor()" style="padding:4px 10px; font-size:0.78rem;">⚙️ 自定义</button>
+      </div>
     </div>
     <div class="daily-goals-list">
       ${items.map(item => {
@@ -2274,12 +2295,70 @@ function renderDailyGoals() {
           <div class="daily-goal-item ${isDone ? 'done' : ''}">
             <div class="daily-goal-checkbox"></div>
             <span class="daily-goal-text">${item.icon} ${item.text}</span>
-            <span class="daily-goal-progress">${item.done}/${item.target}</span>
+            <span class="daily-goal-progress">${item.done}/${item.target}${item.unit}</span>
           </div>
         `;
       }).join('')}
     </div>
   `;
+}
+
+function showGoalEditor() {
+  const goals = getDailyGoals();
+  // 移除已有弹窗
+  document.querySelector('.goal-editor-overlay')?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'goal-editor-overlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(4px);';
+  overlay.innerHTML = `
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;max-width:380px;width:90%;box-shadow:var(--shadow-lg);">
+      <div style="font-size:1.1rem;font-weight:700;margin-bottom:20px;letter-spacing:-0.02em;">⚙️ 自定义每日目标</div>
+      <div style="display:flex;flex-direction:column;gap:16px;margin-bottom:24px;">
+        <label style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <span style="font-size:0.9rem;color:var(--text-secondary);">📖 背单词</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input type="number" id="goal-words" value="${goals.wordsTarget}" min="1" max="500"
+              style="width:70px;padding:8px 10px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);font-size:0.95rem;text-align:center;font-family:var(--font-main);">
+            <span style="font-size:0.82rem;color:var(--text-muted);">个/天</span>
+          </div>
+        </label>
+        <label style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <span style="font-size:0.9rem;color:var(--text-secondary);">📝 词汇测试</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input type="number" id="goal-test" value="${goals.testTarget}" min="0" max="20"
+              style="width:70px;padding:8px 10px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);font-size:0.95rem;text-align:center;font-family:var(--font-main);">
+            <span style="font-size:0.82rem;color:var(--text-muted);">次/天</span>
+          </div>
+        </label>
+        <label style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <span style="font-size:0.9rem;color:var(--text-secondary);">📋 做试卷</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <input type="number" id="goal-exam" value="${goals.examTarget}" min="0" max="20"
+              style="width:70px;padding:8px 10px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);font-size:0.95rem;text-align:center;font-family:var(--font-main);">
+            <span style="font-size:0.82rem;color:var(--text-muted);">份/天</span>
+          </div>
+        </label>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button class="btn btn-ghost" onclick="this.closest('.goal-editor-overlay').remove()" style="padding:8px 20px;font-size:0.85rem;">取消</button>
+        <button class="btn btn-primary" onclick="saveGoalEditor()" style="padding:8px 20px;font-size:0.85rem;">保存</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  // 点击遮罩关闭
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+}
+
+function saveGoalEditor() {
+  const wordsTarget = Math.max(1, parseInt(document.getElementById('goal-words').value) || 20);
+  const testTarget = Math.max(0, parseInt(document.getElementById('goal-test').value) || 1);
+  const examTarget = Math.max(0, parseInt(document.getElementById('goal-exam').value) || 1);
+  saveGoalSettings({ wordsTarget, testTarget, examTarget });
+  document.querySelector('.goal-editor-overlay')?.remove();
 }
 
 // ==================== 试卷进度保存 ====================
