@@ -1104,8 +1104,27 @@ function renderExamList() {
     container.innerHTML = '<p style="color:var(--text-secondary)">试卷数据加载中...</p>';
     return;
   }
+  filterExams();
+}
 
-  container.innerHTML = EXAM_BANK.map(exam => {
+function filterExams() {
+  const container = document.getElementById('exam-cards');
+  if (typeof EXAM_BANK === 'undefined') return;
+
+  const search = (document.getElementById('exam-search')?.value || '').toLowerCase();
+  const stage = document.getElementById('exam-filter-stage')?.value || '';
+  const type = document.getElementById('exam-filter-type')?.value || '';
+
+  const filtered = EXAM_BANK.filter(exam => {
+    if (search && !exam.title.toLowerCase().includes(search) && !exam.source.toLowerCase().includes(search)) return false;
+    if (stage && exam.stage !== stage) return false;
+    if (type && exam.type !== type) return false;
+    return true;
+  });
+
+  document.getElementById('exam-count').textContent = `共 ${filtered.length} 份试卷`;
+
+  container.innerHTML = filtered.map(exam => {
     const totalQuestions = exam.sections.reduce((sum, s) => sum + s.questions.length, 0);
     const practiceScore = exam.sections.reduce((sum, s) => sum + s.questions.reduce((ss, q) => ss + q.score, 0), 0);
     const fullScore = exam.fullScore || practiceScore;
@@ -1136,6 +1155,10 @@ function renderExamList() {
       </div>
     `;
   }).join('');
+
+  if (filtered.length === 0) {
+    container.innerHTML = '<p style="color:var(--text-secondary); text-align:center; padding:40px;">没有找到匹配的试卷，试试其他筛选条件</p>';
+  }
 }
 
 function showTimePicker(examId) {
@@ -1444,33 +1467,99 @@ function submitExam() {
 function renderExamAnalysis(sectionResults, exam, wrongQuestions, scorePct) {
   const container = document.getElementById('exam-analysis');
 
-  // 分析薄弱环节
-  let weakestSection = '';
-  let weakestPct = 100;
-  Object.entries(sectionResults).forEach(([title, result]) => {
-    const pct = result.total > 0 ? (result.correct / result.total * 100) : 0;
-    if (pct < weakestPct) {
-      weakestPct = pct;
-      weakestSection = title;
-    }
+  // ===== 收集所有题目数据 =====
+  const allQuestions = [];
+  exam.sections.forEach(section => {
+    section.questions.forEach(q => {
+      const userAnswer = App.examState.answers[q.id] || '未作答';
+      const isCorrect = userAnswer === q.answer;
+      allQuestions.push({
+        question: q,
+        userAnswer,
+        isCorrect,
+        section: section.title,
+      });
+    });
   });
 
-  // 分析建议
-  let advice = '';
-  if (scorePct >= 90) {
-    advice = '你的英语综合能力很强，各题型掌握均衡。建议挑战更高难度的试卷。';
-  } else if (scorePct >= 70) {
-    advice = `整体水平不错，${weakestSection}是薄弱环节，建议针对性加强练习。`;
-  } else if (scorePct >= 50) {
-    advice = `基础有待加强，${weakestSection}失分较多。建议先夯实词汇和语法基础，再做套题。`;
-  } else {
-    advice = `基础薄弱，${weakestSection}需要重点复习。建议从课本基础知识开始系统学习。`;
-  }
+  // ===== 1. 能力维度分析（雷达图）=====
+  const skillStats = {}; // skill -> {total, correct}
+  allQuestions.forEach(item => {
+    const skill = item.question.skill || 'other';
+    if (!skillStats[skill]) skillStats[skill] = { total: 0, correct: 0 };
+    skillStats[skill].total++;
+    if (item.isCorrect) skillStats[skill].correct++;
+  });
 
-  let html = '<div class="exam-analysis-title">📊 能力分析报告</div>';
+  const skillNames = {
+    grammar: '语法',
+    vocabulary: '词汇',
+    reading: '阅读理解',
+    cloze: '完形填空',
+    communication: '情景交际',
+    other: '其他',
+  };
 
-  // 各题型得分率
-  html += '<div class="exam-analysis-section"><h4>各题型得分率</h4>';
+  // ===== 2. 知识点分析 =====
+  const kpStats = {}; // knowledgePoint -> {total, correct}
+  allQuestions.forEach(item => {
+    const kps = item.question.knowledgePoints || ['未分类'];
+    kps.forEach(kp => {
+      if (!kpStats[kp]) kpStats[kp] = { total: 0, correct: 0, wrong: [] };
+      kpStats[kp].total++;
+      if (item.isCorrect) {
+        kpStats[kp].correct++;
+      } else {
+        kpStats[kp].wrong.push(item.question.id);
+      }
+    });
+  });
+
+  // ===== 3. 难度分析 =====
+  const diffStats = {}; // difficulty -> {total, correct}
+  allQuestions.forEach(item => {
+    const diff = item.question.difficulty || 3;
+    if (!diffStats[diff]) diffStats[diff] = { total: 0, correct: 0 };
+    diffStats[diff].total++;
+    if (item.isCorrect) diffStats[diff].correct++;
+  });
+
+  // ===== 4. 生成SVG雷达图 =====
+  const radarSkills = ['grammar', 'vocabulary', 'reading', 'cloze'];
+  const radarData = radarSkills.map(s => {
+    const stat = skillStats[s] || { total: 0, correct: 0 };
+    return {
+      name: skillNames[s] || s,
+      pct: stat.total > 0 ? Math.round(stat.correct / stat.total * 100) : 0,
+    };
+  });
+
+  const radarSvg = generateRadarChart(radarData);
+
+  // ===== 5. 找出薄弱知识点 =====
+  const weakKps = Object.entries(kpStats)
+    .map(([kp, stat]) => ({
+      name: kp,
+      total: stat.total,
+      correct: stat.correct,
+      pct: stat.total > 0 ? Math.round(stat.correct / stat.total * 100) : 0,
+    }))
+    .filter(x => x.total > 0)
+    .sort((a, b) => a.pct - b.pct);
+
+  const strongKps = [...weakKps].sort((a, b) => b.pct - a.pct);
+
+  // ===== 6. 生成个性化建议 =====
+  const recommendations = generateRecommendations(scorePct, weakKps, diffStats, skillStats);
+
+  // ===== 渲染HTML =====
+  let html = '<div class="exam-analysis-title">📊 高级能力分析报告</div>';
+
+  // 雷达图
+  html += `<div class="exam-analysis-section"><h4>🎯 能力雷达图</h4>${radarSvg}</div>`;
+
+  // 各题型得分率（保留原有）
+  html += '<div class="exam-analysis-section"><h4>📋 各题型得分率</h4>';
   Object.entries(sectionResults).forEach(([title, result]) => {
     const pct = result.total > 0 ? Math.round(result.correct / result.total * 100) : 0;
     const color = pct >= 80 ? 'var(--success)' : pct >= 60 ? 'var(--warning)' : 'var(--danger)';
@@ -1480,34 +1569,237 @@ function renderExamAnalysis(sectionResults, exam, wrongQuestions, scorePct) {
         <div class="exam-skill-track">
           <div class="exam-skill-fill" style="width:${pct}%; background:${color}"></div>
         </div>
-        <span class="exam-skill-pct" style="color:${color}">${pct}%</span>
+        <span class="exam-skill-pct" style="color:${color}">${result.correct}/${result.total} (${pct}%)</span>
       </div>
     `;
   });
   html += '</div>';
 
-  // 建议
-  html += `<div class="exam-analysis-section"><h4>💡 学习建议</h4><p>${advice}</p></div>`;
+  // 知识点分析
+  if (Object.keys(kpStats).length > 0) {
+    html += '<div class="exam-analysis-section"><h4>🔬 知识点掌握分析</h4>';
+    html += '<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">';
 
-  // 错题分析
-  if (wrongQuestions.length > 0) {
-    html += `<div class="exam-analysis-section"><h4>❌ 错题统计</h4>`;
-    html += `<p>共答错 ${wrongQuestions.length} 题。建议重点关注以下知识点：</p>`;
-    // 简单归类错题
-    const wrongBySection = {};
-    wrongQuestions.forEach(wq => {
-      const section = exam.sections.find(s => s.questions.includes(wq.question));
-      const title = section ? section.title : '其他';
-      if (!wrongBySection[title]) wrongBySection[title] = 0;
-      wrongBySection[title]++;
+    // 薄弱知识点
+    html += '<div><p style="color:var(--danger); font-size:0.82rem; margin-bottom:8px;">⚠️ 需要加强</p>';
+    weakKps.slice(0, 8).forEach(kp => {
+      const color = kp.pct >= 60 ? 'var(--warning)' : 'var(--danger)';
+      html += `
+        <div class="exam-skill-bar">
+          <span class="exam-skill-name" style="min-width:80px">${kp.name}</span>
+          <div class="exam-skill-track">
+            <div class="exam-skill-fill" style="width:${kp.pct}%; background:${color}"></div>
+          </div>
+          <span class="exam-skill-pct" style="color:${color}; min-width:55px">${kp.correct}/${kp.total}</span>
+        </div>
+      `;
     });
-    Object.entries(wrongBySection).forEach(([title, count]) => {
-      html += `<p>• ${title}：${count} 题错误</p>`;
+    html += '</div>';
+
+    // 掌握较好的知识点
+    html += '<div><p style="color:var(--success); font-size:0.82rem; margin-bottom:8px;">✅ 掌握较好</p>';
+    strongKps.slice(0, 8).forEach(kp => {
+      if (kp.pct >= 80) {
+        html += `
+          <div class="exam-skill-bar">
+            <span class="exam-skill-name" style="min-width:80px">${kp.name}</span>
+            <div class="exam-skill-track">
+              <div class="exam-skill-fill" style="width:${kp.pct}%; background:var(--success)"></div>
+            </div>
+            <span class="exam-skill-pct" style="color:var(--success); min-width:55px">${kp.correct}/${kp.total}</span>
+          </div>
+        `;
+      }
+    });
+    html += '</div></div></div>';
+  }
+
+  // 难度分析
+  html += '<div class="exam-analysis-section"><h4>📊 难度分布分析</h4>';
+  const diffNames = { 1: '基础', 2: '较易', 3: '中等', 4: '较难', 5: '困难' };
+  Object.keys(diffStats).sort((a, b) => a - b).forEach(diff => {
+    const stat = diffStats[diff];
+    const pct = stat.total > 0 ? Math.round(stat.correct / stat.total * 100) : 0;
+    const color = pct >= 80 ? 'var(--success)' : pct >= 60 ? 'var(--warning)' : 'var(--danger)';
+    html += `
+      <div class="exam-skill-bar">
+        <span class="exam-skill-name">${diffNames[diff] || `难度${diff}`}</span>
+        <div class="exam-skill-track">
+          <div class="exam-skill-fill" style="width:${pct}%; background:${color}"></div>
+        </div>
+        <span class="exam-skill-pct" style="color:${color}">${stat.correct}/${stat.total} (${pct}%)</span>
+      </div>
+    `;
+  });
+  html += '</div>';
+
+  // 个性化学习建议
+  html += '<div class="exam-analysis-section"><h4>💡 个性化学习建议</h4>';
+  recommendations.forEach(rec => {
+    const icon = rec.type === 'strength' ? '✅' : rec.type === 'weakness' ? '⚠️' : rec.type === 'action' ? '🎯' : '📝';
+    html += `<p style="margin-bottom:6px;">${icon} ${rec.text}</p>`;
+  });
+  html += '</div>';
+
+  // 错题模式分析
+  if (wrongQuestions.length > 0) {
+    html += '<div class="exam-analysis-section"><h4>🔍 错题模式分析</h4>';
+
+    // 分析错误类型
+    let blankCount = 0; // 未作答
+    let confusedCount = 0; // 干扰项混淆
+    wrongQuestions.forEach(wq => {
+      if (wq.userAnswer === '未作答') {
+        blankCount++;
+      } else {
+        confusedCount++;
+      }
+    });
+
+    html += `<p>📊 共答错 ${wrongQuestions.length} 题（${(wrongQuestions.length / allQuestions.length * 100).toFixed(0)}%）</p>`;
+    if (blankCount > 0) {
+      html += `<p>• ⬜ 未作答：${blankCount} 题 — 建议提高答题速度，合理分配时间</p>`;
+    }
+    if (confusedCount > 0) {
+      html += `<p>• ❌ 选错答案：${confusedCount} 题 — 说明知识点掌握不牢固，易被干扰项迷惑</p>`;
+    }
+
+    // 最常错的知识点
+    if (weakKps.length > 0 && weakKps[0].pct < 60) {
+      html += `<p>• 🔴 最薄弱知识点：<strong>${weakKps[0].name}</strong>（正确率${weakKps[0].pct}%）</p>`;
+    }
+    html += '</div>';
+  }
+
+  // 历史对比
+  const records = JSON.parse(localStorage.getItem('examRecords') || '[]');
+  if (records.length > 1) {
+    html += '<div class="exam-analysis-section"><h4>📈 历史成绩对比</h4>';
+    const recent = records.slice(0, 5).reverse();
+    recent.forEach((r, i) => {
+      const pct = r.totalScore > 0 ? Math.round(r.earnedScore / r.totalScore * 100) : 0;
+      const isCurrent = i === recent.length - 1;
+      const color = pct >= 80 ? 'var(--success)' : pct >= 60 ? 'var(--warning)' : 'var(--danger)';
+      html += `<p style="color:${isCurrent ? 'var(--accent)' : 'var(--text-secondary)'}; font-weight:${isCurrent ? '600' : '400'};">`;
+      html += `${isCurrent ? '👉 本次' : '   上次'}：${r.examTitle.substring(0, 20)}... → ${r.earnedScore}/${r.totalScore}分 (${pct}%)`;
+      html += `</p>`;
     });
     html += '</div>';
   }
 
   container.innerHTML = html;
+}
+
+// ===== 生成SVG雷达图 =====
+function generateRadarChart(data) {
+  const size = 200;
+  const cx = size / 2;
+  const cy = size / 2;
+  const maxRadius = 70;
+  const sides = data.length;
+
+  // 计算各点坐标
+  const points = data.map((d, i) => {
+    const angle = (Math.PI * 2 * i / sides) - Math.PI / 2;
+    const radius = (d.pct / 100) * maxRadius;
+    return {
+      x: cx + Math.cos(angle) * radius,
+      y: cy + Math.sin(angle) * radius,
+      labelX: cx + Math.cos(angle) * (maxRadius + 20),
+      labelY: cy + Math.sin(angle) * (maxRadius + 20),
+      name: d.name,
+      pct: d.pct,
+    };
+  });
+
+  // 网格圆
+  let gridCircles = '';
+  for (let r = 20; r <= maxRadius; r += 20) {
+    let circlePoints = '';
+    for (let i = 0; i <= sides; i++) {
+      const angle = (Math.PI * 2 * i / sides) - Math.PI / 2;
+      const x = cx + Math.cos(angle) * r;
+      const y = cy + Math.sin(angle) * r;
+      circlePoints += `${x},${y} `;
+    }
+    gridCircles += `<polygon points="${circlePoints}" fill="none" stroke="var(--border)" stroke-width="0.5" opacity="0.5"/>`;
+  }
+
+  // 数据多边形
+  const dataPoints = points.map(p => `${p.x},${p.y}`).join(' ');
+  const labels = points.map(p =>
+    `<text x="${p.labelX}" y="${p.labelY}" text-anchor="middle" dominant-baseline="middle" fill="var(--text-secondary)" font-size="11">${p.name}</text>
+     <text x="${p.labelX}" y="${p.labelY + 13}" text-anchor="middle" fill="var(--accent)" font-size="10" font-weight="bold">${p.pct}%</text>`
+  ).join('');
+
+  return `
+    <div style="display:flex; justify-content:center; margin:10px 0;">
+      <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+        ${gridCircles}
+        <polygon points="${dataPoints}" fill="rgba(99,102,241,0.2)" stroke="var(--accent)" stroke-width="2"/>
+        ${points.map(p => `<circle cx="${p.x}" cy="${p.y}" r="3" fill="var(--accent)"/>`).join('')}
+        ${labels}
+      </svg>
+    </div>
+  `;
+}
+
+// ===== 生成个性化建议 =====
+function generateRecommendations(scorePct, weakKps, diffStats, skillStats) {
+  const recs = [];
+
+  // 总体评价
+  if (scorePct >= 90) {
+    recs.push({ type: 'strength', text: '总体表现优秀！英语综合能力很强，可以挑战更高难度的试卷。' });
+  } else if (scorePct >= 75) {
+    recs.push({ type: 'strength', text: '总体表现良好！基础扎实，在部分知识点上还有提升空间。' });
+  } else if (scorePct >= 60) {
+    recs.push({ type: 'weakness', text: '刚刚及格，基础知识和解题技巧都需要加强。' });
+  } else {
+    recs.push({ type: 'weakness', text: '未达及格线，建议系统复习基础知识后再做套题练习。' });
+  }
+
+  // 薄弱知识点建议
+  const reallyWeak = weakKps.filter(k => k.pct < 60 && k.total >= 1);
+  if (reallyWeak.length > 0) {
+    const top3 = reallyWeak.slice(0, 3).map(k => k.name).join('、');
+    recs.push({ type: 'action', text: `重点复习知识点：${top3}。建议查阅课本相关章节，做针对性练习。` });
+  }
+
+  // 难度分析建议
+  const easyWrong = diffStats[1] || diffStats[2];
+  if (easyWrong && easyWrong.total > 0 && easyWrong.correct / easyWrong.total < 0.8) {
+    recs.push({ type: 'weakness', text: '基础题失分较多，说明基本功不够扎实。建议回归课本，夯实基础词汇和语法。' });
+  }
+  const hardStat = diffStats[4] || diffStats[5];
+  if (hardStat && hardStat.total > 0 && hardStat.correct / hardStat.total < 0.5) {
+    recs.push({ type: 'weakness', text: '难题正确率偏低，说明综合运用能力不足。建议多读英语文章，提升语感和推理能力。' });
+  }
+
+  // 技能维度建议
+  const readingStat = skillStats['reading'];
+  if (readingStat && readingStat.total > 0 && readingStat.correct / readingStat.total < 0.6) {
+    recs.push({ type: 'action', text: '阅读理解薄弱，建议每天阅读1-2篇英语短文，练习快速定位信息和理解主旨。' });
+  }
+  const grammarStat = skillStats['grammar'];
+  if (grammarStat && grammarStat.total > 0 && grammarStat.correct / grammarStat.total < 0.6) {
+    recs.push({ type: 'action', text: '语法薄弱，建议系统复习时态、语态、从句等核心语法点，配合专项练习。' });
+  }
+  const vocabStat = skillStats['vocabulary'];
+  if (vocabStat && vocabStat.total > 0 && vocabStat.correct / vocabStat.total < 0.6) {
+    recs.push({ type: 'action', text: '词汇量不足，建议利用本系统的词汇测试功能，每天背诵20-30个新单词。' });
+  }
+
+  // 优势肯定
+  const strongSkills = Object.entries(skillStats).filter(([s, stat]) =>
+    stat.total >= 2 && stat.correct / stat.total >= 0.8
+  );
+  if (strongSkills.length > 0) {
+    const names = strongSkills.map(([s]) => skillNames[s] || s).join('、');
+    recs.push({ type: 'strength', text: `${names}表现突出，继续保持！` });
+  }
+
+  return recs;
 }
 
 function renderExamReview(exam) {
