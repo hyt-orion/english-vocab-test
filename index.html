@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>英语词汇测试与学习系统</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ==================== 导航栏 ==================== -->
+<nav class="navbar">
+  <div class="navbar-brand">
+    <span class="logo">📚</span>
+    <span>英语词汇大师</span>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" data-page="home">🏠 首页</button>
+    <button class="nav-tab" data-page="test">📝 测试</button>
+    <button class="nav-tab" data-page="dict">📖 词典</button>
+    <button class="nav-tab" data-page="stats">📊 统计</button>
+  </div>
+</nav>
+
+<!-- ==================== 主容器 ==================== -->
+<div class="container">
+
+  <!-- ==================== 首页 ==================== -->
+  <div class="page active" id="page-home">
+    <div class="hero">
+      <h1>高效英语词汇测试系统</h1>
+      <p>主动回忆 · 间隔重复 · 双向测试 · 即时反馈</p>
+    </div>
+
+    <!-- 统计概览 -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="stat-mastered">0</div>
+        <div class="stat-label">已掌握单词</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-learning">0</div>
+        <div class="stat-label">学习中</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-accuracy">0%</div>
+        <div class="stat-label">总体正确率</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-tests">0</div>
+        <div class="stat-label">已完成测试</div>
+      </div>
+    </div>
+
+    <!-- 模式选择 -->
+    <h2 style="font-size:1.1rem; margin-bottom:16px; color:var(--text-secondary)">选择学习模式</h2>
+    <div class="mode-grid">
+      <div class="mode-card" data-mode="en2cn">
+        <div class="mode-icon">🇬🇧→🇨🇳</div>
+        <div class="mode-title">看英文选中文</div>
+        <div class="mode-desc">看英文单词，从选项中选择正确的中文释义。适合巩固英译中能力。</div>
+      </div>
+      <div class="mode-card" data-mode="cn2en">
+        <div class="mode-icon">🇨🇳→🇬🇧</div>
+        <div class="mode-title">看中文选英文</div>
+        <div class="mode-desc">看中文释义，从选项中选择正确的英文单词。强化中译英和拼写识别。</div>
+      </div>
+      <div class="mode-card" data-mode="mixed">
+        <div class="mode-icon">🔀</div>
+        <div class="mode-title">混合模式</div>
+        <div class="mode-desc">随机切换英→中和中→英方向，全面锻炼双向词汇联想能力。</div>
+      </div>
+      <div class="mode-card" data-mode="dictionary">
+        <div class="mode-icon">📖</div>
+        <div class="mode-title">词典查询</div>
+        <div class="mode-desc">查询单词的释义、音标、例句和发音。支持本地词库和在线词典。</div>
+      </div>
+    </div>
+
+    <!-- 学习方法论说明 -->
+    <div class="card mt-40">
+      <div class="card-title">🧠 科学学习方法</div>
+      <div class="card-desc">本系统基于认知科学原理设计，采用最高效的词汇学习策略</div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px;">
+        <div>
+          <strong style="color:var(--accent)">① 主动回忆</strong>
+          <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:4px">通过测试而非被动阅读来记忆，效率提升3倍以上</p>
+        </div>
+        <div>
+          <strong style="color:var(--accent)">② 间隔重复</strong>
+          <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:4px">答错的词优先复习，已掌握的词减少出现频率</p>
+        </div>
+        <div>
+          <strong style="color:var(--accent)">③ 双向测试</strong>
+          <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:4px">英→中和中→英交替练习，建立双向词汇联结</p>
+        </div>
+        <div>
+          <strong style="color:var(--accent)">④ 即时反馈</strong>
+          <p style="font-size:0.85rem; color:var(--text-secondary); margin-top:4px">每题立即知道对错和正确答案，强化记忆效果</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 测试配置页 ==================== -->
+  <div class="page" id="page-test">
+    <div id="page-test-config" class="active">
+      <h2 style="font-size:1.4rem; margin-bottom:24px">📝 测试配置</h2>
+
+      <div class="card">
+        <!-- 选题方式 -->
+        <div class="config-group">
+          <div class="config-label">选题方式</div>
+          <div class="option-row">
+            <button class="option-btn" data-config="selectMode" data-value="random">🎲 随机出题</button>
+            <button class="option-btn" data-config="selectMode" data-value="custom">✋ 自选词汇</button>
+          </div>
+        </div>
+
+        <!-- 方向 -->
+        <div class="config-group">
+          <div class="config-label">测试方向</div>
+          <div class="option-row">
+            <button class="option-btn" data-config="direction" data-value="en2cn">🇬🇧→🇨🇳 看英文选中文</button>
+            <button class="option-btn" data-config="direction" data-value="cn2en">🇨🇳→🇬🇧 看中文选英文</button>
+            <button class="option-btn" data-config="direction" data-value="mixed">🔀 混合方向</button>
+          </div>
+        </div>
+
+        <!-- 格式 -->
+        <div class="config-group">
+          <div class="config-label">测试格式</div>
+          <div class="option-row">
+            <button class="option-btn" data-config="format" data-value="choice">📋 选择题（四选一）</button>
+            <button class="option-btn" data-config="format" data-value="recall">✍️ 回忆自评（输入后自评）</button>
+          </div>
+        </div>
+
+        <!-- 难度（仅随机模式显示） -->
+        <div class="config-group" id="config-level">
+          <div class="config-label">难度级别</div>
+          <div class="option-row">
+            <button class="option-btn" data-config="level" data-value="0">全部级别</button>
+            <button class="option-btn" data-config="level" data-value="1">⭐ 小学 (3-6年级)</button>
+            <button class="option-btn" data-config="level" data-value="2">⭐⭐ 初中 (7-9年级)</button>
+            <button class="option-btn" data-config="level" data-value="3">⭐⭐⭐ 高中 (必修1-3)</button>
+          </div>
+        </div>
+
+        <!-- 题量（仅随机模式显示） -->
+        <div class="config-group" id="config-count">
+          <div class="config-label">每轮题数</div>
+          <div class="option-row">
+            <button class="option-btn" data-config="count" data-value="10">10 题</button>
+            <button class="option-btn" data-config="count" data-value="20">20 题</button>
+            <button class="option-btn" data-config="count" data-value="30">30 题</button>
+            <button class="option-btn" data-config="count" data-value="50">50 题</button>
+          </div>
+        </div>
+
+        <!-- 自选词汇面板（仅自选模式显示） -->
+        <div class="config-group" id="config-custom" style="display:none;">
+          <div class="config-label">选择要测试的词汇</div>
+          <div class="word-picker">
+            <!-- 搜索与操作栏 -->
+            <div class="word-picker-toolbar">
+              <input type="text" class="word-picker-search" id="word-picker-search"
+                     placeholder="搜索单词或释义..." oninput="filterWordPicker()">
+              <select class="word-picker-filter" id="word-picker-filter" onchange="filterWordPicker()">
+                <option value="0">全部级别</option>
+                <option value="1">小学</option>
+                <option value="2">初中</option>
+                <option value="3">高中</option>
+              </select>
+            </div>
+            <div class="word-picker-actions">
+              <button class="btn btn-ghost btn-sm" onclick="selectAllWords(true)">✅ 全选</button>
+              <button class="btn btn-ghost btn-sm" onclick="selectAllWords(false)">❌ 全不选</button>
+              <button class="btn btn-ghost btn-sm" onclick="invertWordSelection()">🔄 反选</button>
+              <span class="word-picker-count" id="word-picker-count">已选 0 词</span>
+            </div>
+            <!-- 词汇列表 -->
+            <div class="word-picker-list" id="word-picker-list"></div>
+          </div>
+        </div>
+
+        <div class="text-center mt-20">
+          <button class="btn btn-primary btn-lg" onclick="startTest()">
+            🚀 开始测试
+          </button>
+        </div>
+      </div>
+
+      <!-- 提示 -->
+      <div class="card mt-20" style="background:var(--bg-secondary)">
+        <div style="font-size:0.88rem; color:var(--text-secondary); line-height:1.7">
+          <strong>💡 测试说明：</strong><br>
+          • <strong>选择题</strong>：快速测试，适合大量练习，四选一形式<br>
+          • <strong>回忆自评</strong>：先在脑中回忆答案再揭晓，自我评判对错，记忆效果更佳<br>
+          • 系统会<strong>智能优先</strong>出你常错的词和新词，已掌握的词减少出现<br>
+          • 答错的词可以在测试结束后在"错词复习"中查看<br>
+          • 所有进度自动保存在本地，关闭浏览器也不会丢失
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== 测试进行页 ==================== -->
+    <div id="page-test-running" style="display:none;">
+      <!-- 测试头部 -->
+      <div class="test-header">
+        <div class="test-progress">
+          <div class="progress-bar">
+            <div class="progress-fill" id="test-progress-fill" style="width:0%"></div>
+          </div>
+          <span class="progress-text" id="test-progress-text">1 / 20</span>
+        </div>
+        <div class="score-badge">
+          <div class="score-item">
+            <div class="score-num correct" id="test-correct-count">0</div>
+            <div class="score-label">正确</div>
+          </div>
+          <div class="score-item">
+            <div class="score-num wrong" id="test-wrong-count">0</div>
+            <div class="score-label">错误</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 反馈条 -->
+      <div class="feedback-bar" id="feedback-bar"></div>
+
+      <!-- 题目卡片 -->
+      <div class="question-card">
+        <span class="question-tag" id="question-tag">英 → 中</span>
+        <div class="question-word" id="question-word">word</div>
+        <div class="question-phonetic" id="question-phonetic">/wɜːd/</div>
+        <div class="question-pos" id="question-pos">n.</div>
+      </div>
+
+      <!-- 题目主体（选项/输入） -->
+      <div id="question-body"></div>
+
+      <!-- 返回按钮 -->
+      <div class="text-center mt-20">
+        <button class="btn btn-ghost" onclick="backToConfig()">← 返回配置</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 测试结果页 ==================== -->
+  <div class="page" id="page-result">
+    <div class="card result-card">
+      <div style="font-size:3rem; margin-bottom:8px" id="result-emoji">🎉</div>
+      <div class="result-score excellent" id="result-score">100%</div>
+      <div class="result-msg" id="result-msg">太棒了！</div>
+
+      <div class="result-breakdown">
+        <div class="result-stat">
+          <div class="result-stat-num" style="color:var(--success)" id="result-correct">18</div>
+          <div class="result-stat-label">答对</div>
+        </div>
+        <div class="result-stat">
+          <div class="result-stat-num" style="color:var(--danger)" id="result-wrong">2</div>
+          <div class="result-stat-label">答错</div>
+        </div>
+        <div class="result-stat">
+          <div class="result-stat-num" id="result-total">20</div>
+          <div class="result-stat-label">总题数</div>
+        </div>
+        <div class="result-stat">
+          <div class="result-stat-num" style="color:var(--accent)" id="result-time">2'30"</div>
+          <div class="result-stat-label">用时</div>
+        </div>
+      </div>
+
+      <!-- 错词复习 -->
+      <div class="review-list" id="result-review-list"></div>
+
+      <!-- 操作按钮 -->
+      <div class="result-actions">
+        <button class="btn btn-ghost" onclick="backToHome()">🏠 返回首页</button>
+        <button class="btn btn-primary" onclick="restartTest()">🔄 再测一轮</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 词典页 ==================== -->
+  <div class="page" id="page-dict">
+    <h2 style="font-size:1.4rem; margin-bottom:24px">📖 词典查询</h2>
+
+    <!-- 搜索框 -->
+    <div class="dict-search-wrapper">
+      <span class="dict-search-icon">🔍</span>
+      <input type="text" class="dict-search-box" id="dict-search"
+             placeholder="输入英文单词或中文释义，按回车搜索...">
+      <button class="btn btn-primary" id="dict-search-btn"
+              style="position:absolute; right:8px; top:50%; transform:translateY(-50%); padding:10px 20px;">
+        搜索
+      </button>
+    </div>
+
+    <!-- 搜索结果 -->
+    <div class="dict-result" id="dict-result"></div>
+
+    <!-- 快捷词表 -->
+    <div class="quick-words">
+      <div class="quick-words-title">💡 随机单词 — 点击查看详情</div>
+      <div class="quick-words-grid" id="quick-words-grid"></div>
+    </div>
+  </div>
+
+  <!-- ==================== 统计页 ==================== -->
+  <div class="page" id="page-stats">
+    <h2 style="font-size:1.4rem; margin-bottom:24px">📊 学习统计</h2>
+
+    <!-- 概览 -->
+    <div class="stats-overview">
+      <div class="overview-card">
+        <div class="overview-icon">✅</div>
+        <div class="overview-value" id="stat-overview-mastered">0</div>
+        <div class="overview-label">已掌握</div>
+      </div>
+      <div class="overview-card">
+        <div class="overview-icon">📖</div>
+        <div class="overview-value" id="stat-overview-learning">0</div>
+        <div class="overview-label">学习中</div>
+      </div>
+      <div class="overview-card">
+        <div class="overview-icon">🆕</div>
+        <div class="overview-value" id="stat-overview-new">300</div>
+        <div class="overview-label">未学习</div>
+      </div>
+      <div class="overview-card">
+        <div class="overview-icon">🎯</div>
+        <div class="overview-value" id="stat-overview-accuracy">0%</div>
+        <div class="overview-label">正确率</div>
+      </div>
+      <div class="overview-card">
+        <div class="overview-icon">📝</div>
+        <div class="overview-value" id="stat-overview-reviews">0</div>
+        <div class="overview-label">总答题数</div>
+      </div>
+      <div class="overview-card">
+        <div class="overview-icon">🏁</div>
+        <div class="overview-value" id="stat-overview-tests">0</div>
+        <div class="overview-label">测试次数</div>
+      </div>
+    </div>
+
+    <!-- 掌握度分布 -->
+    <div class="card mb-20">
+      <div class="card-title">📈 词汇掌握度分布</div>
+      <div class="card-desc">你的词汇掌握进度</div>
+      <div class="mastery-section">
+        <div class="mastery-bar" id="mastery-bar"></div>
+        <div class="mastery-legend">
+          <span><span class="legend-dot" style="background:var(--success)"></span>已掌握</span>
+          <span><span class="legend-dot" style="background:var(--warning)"></span>学习中</span>
+          <span><span class="legend-dot" style="background:var(--text-muted)"></span>未学习</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 按级别统计 -->
+    <div class="card mb-20">
+      <div class="card-title">📊 各级别进度</div>
+      <div class="card-desc">不同难度级别的掌握情况</div>
+      <div id="level-breakdown"></div>
+    </div>
+
+    <!-- 测试历史 -->
+    <div class="card mb-20">
+      <div class="card-title">🕐 最近测试记录</div>
+      <div class="card-desc">最近的15次测试成绩</div>
+      <div class="history-list" id="history-list"></div>
+    </div>
+
+    <!-- 重置 -->
+    <div class="text-center mt-20">
+      <button class="btn btn-ghost" id="reset-btn">🗑️ 清除所有记录</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="words.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
