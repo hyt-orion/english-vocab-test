@@ -190,6 +190,7 @@ function navigateTo(page) {
 
   if (page === 'home') renderDashboard();
   if (page === 'stats') renderStats();
+  if (page === 'wrong') renderWrongBook();
   if (page === 'exam') {
     showExamListView();
   }
@@ -728,6 +729,20 @@ function finishTest() {
   App.record.totalTests++;
   saveRecord();
 
+  // 记录每日目标
+  recordDailyActivity('test');
+  recordDailyActivity('word', correct);
+
+  // 收集错题到错题本
+  state.wrongWords.forEach(w => {
+    addWrongQuestion(
+      { id: w.id, question: w.word, options: [], answer: w.meaning, explanation: `'${w.word}' 的意思是「${w.meaning}」`, knowledgePoints: ['词汇-词义'], skill: 'vocabulary', difficulty: w.level || 2 },
+      '未答对',
+      'test',
+      `词汇测试(${App.testConfig.direction})`
+    );
+  });
+
   // 评级
   let grade, gradeClass, msg;
   if (accuracy >= 90) { grade = '🎉'; gradeClass = 'excellent'; msg = '太棒了！你的词汇量很扎实！'; }
@@ -1095,6 +1110,10 @@ function showExamListView() {
   document.getElementById('exam-list-view').style.display = 'block';
   document.getElementById('exam-taking-view').style.display = 'none';
   document.getElementById('exam-result-view').style.display = 'none';
+  // 移除旧的恢复提示
+  document.querySelector('.exam-resume-banner')?.remove();
+  // 检查是否有未完成的试卷
+  checkExamResume();
   renderExamList();
 }
 
@@ -1190,6 +1209,10 @@ function showTimePicker(examId) {
         自定义：
         <input type="number" id="exam-custom-time" min="1" max="300" value="${defaultTime}" />
         分钟
+      </div>
+      <div class="instant-feedback-toggle" onclick="toggleInstantFeedback()">
+        <div class="toggle-switch"></div>
+        <span style="font-size:0.85rem; color:var(--text-secondary);">⚡ 即时反馈模式（做一题看一题解析）</span>
       </div>
       <div class="exam-time-picker-actions">
         <button class="btn btn-ghost" onclick="this.closest('.exam-time-picker').remove()">取消</button>
@@ -1303,6 +1326,11 @@ function selectExamAnswer(questionId, answer, element) {
     element.classList.add('selected');
   }
   updateExamProgress();
+
+  // 即时反馈模式
+  if (instantFeedback) {
+    selectExamAnswerInstant(questionId, answer, element);
+  }
 }
 
 function updateExamProgress() {
@@ -1360,8 +1388,9 @@ function updateExamTimerDisplay() {
 }
 
 function exitExam() {
-  if (confirm('确定要退出考试吗？已答内容将不会保存。')) {
+  if (confirm('退出考试？已答内容会保存，下次可以继续。')) {
     if (App.examState.timerInterval) clearInterval(App.examState.timerInterval);
+    saveExamProgress();
     showExamListView();
   }
 }
@@ -1460,6 +1489,24 @@ function submitExam() {
 
   // 保存到历史记录
   saveExamRecord(exam, correct, wrong, totalQuestions, earnedScore, totalScore, elapsed);
+
+  // 记录每日目标
+  recordDailyActivity('exam');
+
+  // 收集错题到错题本（非即时反馈模式下）
+  if (!instantFeedback) {
+    exam.sections.forEach(section => {
+      section.questions.forEach(q => {
+        const userAnswer = App.examState.answers[q.id] || '未作答';
+        if (userAnswer !== q.answer) {
+          addWrongQuestion(q, userAnswer, 'exam', exam.title);
+        }
+      });
+    });
+  }
+
+  // 清除试卷进度
+  clearExamProgress();
 
   window.scrollTo(0, 0);
 }
@@ -1875,12 +1922,434 @@ function saveExamRecord(exam, correct, wrong, total, earnedScore, totalScore, el
   localStorage.setItem('examRecords', JSON.stringify(records));
 }
 
+// ==================== 主题切换 ====================
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+  document.querySelector('.theme-toggle').textContent = next === 'dark' ? '🌙' : '☀️';
+}
+
+function initTheme() {
+  const saved = localStorage.getItem('theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+  const btn = document.querySelector('.theme-toggle');
+  if (btn) btn.textContent = saved === 'dark' ? '🌙' : '☀️';
+}
+
+// ==================== 键盘快捷键 ====================
+function initKeyboardShortcuts() {
+  document.addEventListener('keydown', (e) => {
+    // 试卷答题中
+    const examRunning = document.getElementById('exam-taking-view');
+    if (examRunning && examRunning.style.display !== 'none') {
+      handleExamKeyboard(e);
+      return;
+    }
+    // 词汇测试中
+    const testRunning = document.getElementById('page-test-running');
+    if (testRunning && testRunning.style.display !== 'none') {
+      handleTestKeyboard(e);
+      return;
+    }
+  });
+}
+
+function handleExamKeyboard(e) {
+  // A/B/C/D 选答案
+  const key = e.key.toUpperCase();
+  if (['A', 'B', 'C', 'D', 'E'].includes(key)) {
+    const idx = key.charCodeAt(0) - 65;
+    const firstQuestion = document.querySelector('.exam-question .exam-option');
+    if (!firstQuestion) return;
+    // 找到当前可视的第一个未答题目
+    const questions = document.querySelectorAll('.exam-question');
+    for (const q of questions) {
+      const qId = q.id.replace('exam-q-', '');
+      if (!App.examState.answers[qId]) {
+        const options = q.querySelectorAll('.exam-option');
+        if (options[idx]) {
+          options[idx].click();
+          // 滚动到下一题
+          const nextQ = q.nextElementSibling;
+          if (nextQ && nextQ.classList.contains('exam-question')) {
+            nextQ.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }
+        break;
+      }
+    }
+  }
+}
+
+function handleTestKeyboard(e) {
+  const key = e.key.toUpperCase();
+  if (['A', 'B', 'C', 'D'].includes(key)) {
+    const idx = key.charCodeAt(0) - 65;
+    const options = document.querySelectorAll('#question-body .choice-option, #question-body .option-btn');
+    if (options[idx]) options[idx].click();
+  }
+}
+
+// ==================== 即时反馈模式 ====================
+let instantFeedback = false;
+
+function toggleInstantFeedback() {
+  instantFeedback = !instantFeedback;
+  const el = document.querySelector('.instant-feedback-toggle');
+  if (el) el.classList.toggle('active', instantFeedback);
+}
+
+// 在试卷答题中，选中后即时反馈
+function selectExamAnswerInstant(questionId, answer, element) {
+  selectExamAnswer(questionId, answer, element);
+
+  if (instantFeedback) {
+    const exam = App.examState.currentExam;
+    let qData = null;
+    for (const s of exam.sections) {
+      qData = s.questions.find(q => q.id === questionId);
+      if (qData) break;
+    }
+    if (!qData) return;
+
+    const isCorrect = answer === qData.answer;
+    const questionEl = document.getElementById(`exam-q-${questionId}`);
+    if (!questionEl) return;
+
+    // 标记对错
+    questionEl.querySelectorAll('.exam-option').forEach(opt => {
+      const label = opt.querySelector('.exam-option-label')?.textContent?.replace('.', '');
+      if (label === qData.answer) {
+        opt.classList.add('correct');
+      } else if (label === answer && !isCorrect) {
+        opt.classList.add('wrong');
+      }
+    });
+
+    // 显示解析
+    const existing = questionEl.querySelector('.exam-question-explanation');
+    if (!existing) {
+      const expDiv = document.createElement('div');
+      expDiv.className = 'exam-question-explanation';
+      expDiv.innerHTML = `<strong>${isCorrect ? '✅ 正确！' : '❌ 错误'}</strong> 正确答案：${qData.answer}\n${qData.explanation || ''}`;
+      questionEl.appendChild(expDiv);
+    }
+
+    // 记录错题
+    if (!isCorrect) {
+      addWrongQuestion(qData, answer, 'exam', exam.title);
+    }
+  }
+}
+
+// ==================== 错题本 ====================
+function getWrongBook() {
+  return JSON.parse(localStorage.getItem('wrongBook') || '[]');
+}
+
+function addWrongQuestion(question, userAnswer, source, sourceTitle) {
+  const book = getWrongBook();
+  // 避免重复（同题同来源）
+  const exists = book.find(w => w.questionId === question.id && w.sourceTitle === sourceTitle);
+  if (!exists) {
+    book.unshift({
+      id: Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+      questionId: question.id,
+      question: question.question,
+      options: question.options,
+      answer: question.answer,
+      userAnswer,
+      explanation: question.explanation || '',
+      knowledgePoints: question.knowledgePoints || [],
+      skill: question.skill || '',
+      source,
+      sourceTitle,
+      date: new Date().toISOString(),
+      mastered: false,
+    });
+    localStorage.setItem('wrongBook', JSON.stringify(book));
+  }
+}
+
+function renderWrongBook() {
+  const container = document.getElementById('wrong-list');
+  const statsContainer = document.getElementById('wrong-stats');
+  let book = getWrongBook();
+
+  if (book.length === 0) {
+    statsContainer.innerHTML = '';
+    container.innerHTML = '<div style="text-align:center; padding:60px; color:var(--text-secondary);"><div style="font-size:3rem; margin-bottom:12px;">🎉</div><p>错题本是空的！</p><p style="font-size:0.85rem; margin-top:8px;">去做些测试或试卷，答错的题会自动收集到这里</p></div>';
+    return;
+  }
+
+  // 统计
+  const mastered = book.filter(w => w.mastered).length;
+  const learning = book.length - mastered;
+  statsContainer.innerHTML = `
+    <div class="wrong-stat-card"><div class="wrong-stat-num" style="color:var(--danger)">${learning}</div><div class="wrong-stat-label">待复习</div></div>
+    <div class="wrong-stat-card"><div class="wrong-stat-num" style="color:var(--success)">${mastered}</div><div class="wrong-stat-label">已掌握</div></div>
+    <div class="wrong-stat-card"><div class="wrong-stat-num" style="color:var(--accent)">${book.length}</div><div class="wrong-stat-label">总错题</div></div>
+  `;
+
+  // 更新知识点筛选
+  const kpSet = new Set();
+  book.forEach(w => w.knowledgePoints.forEach(kp => kpSet.add(kp)));
+  const kpSelect = document.getElementById('wrong-filter-kp');
+  const currentKp = kpSelect.value;
+  kpSelect.innerHTML = '<option value="">全部知识点</option>' +
+    [...kpSet].sort().map(kp => `<option value="${kp}" ${kp === currentKp ? 'selected' : ''}>${kp}</option>`).join('');
+
+  // 筛选
+  const filterKp = kpSelect.value;
+  const filterSource = document.getElementById('wrong-filter-source').value;
+  const showMastered = document.getElementById('wrong-show-mastered').checked;
+
+  let filtered = book.filter(w => {
+    if (!showMastered && w.mastered) return false;
+    if (filterKp && !w.knowledgePoints.includes(filterKp)) return false;
+    if (filterSource && w.source !== filterSource) return false;
+    return true;
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = '<p style="text-align:center; padding:40px; color:var(--text-secondary);">没有符合条件的错题</p>';
+    return;
+  }
+
+  container.innerHTML = filtered.map(w => `
+    <div class="wrong-item ${w.mastered ? 'mastered' : ''}">
+      <div class="wrong-item-header">
+        <div class="wrong-item-tags">
+          ${w.knowledgePoints.map(kp => `<span class="wrong-kp-tag">${kp}</span>`).join('')}
+          <span class="wrong-source-tag">${w.source === 'exam' ? '📋' : '📝'} ${w.sourceTitle.substring(0, 20)}</span>
+        </div>
+        <span style="font-size:0.72rem; color:var(--text-muted);">${new Date(w.date).toLocaleDateString('zh-CN')}</span>
+      </div>
+      <div class="wrong-item-question">${w.question}</div>
+      <div class="wrong-item-answers">
+        <span class="your-ans">你的答案：${w.userAnswer}</span>
+        <span class="correct-ans">正确答案：${w.answer}</span>
+      </div>
+      ${w.explanation ? `<div class="exam-question-explanation" style="margin-top:8px;">${w.explanation}</div>` : ''}
+      <div class="wrong-item-actions">
+        <button onclick="toggleWrongMastered('${w.id}')">${w.mastered ? '↩️ 标记未掌握' : '✅ 标记已掌握'}</button>
+        <button onclick="deleteWrongItem('${w.id}')">🗑️ 删除</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleWrongMastered(id) {
+  const book = getWrongBook();
+  const item = book.find(w => w.id === id);
+  if (item) {
+    item.mastered = !item.mastered;
+    localStorage.setItem('wrongBook', JSON.stringify(book));
+    renderWrongBook();
+  }
+}
+
+function deleteWrongItem(id) {
+  let book = getWrongBook();
+  book = book.filter(w => w.id !== id);
+  localStorage.setItem('wrongBook', JSON.stringify(book));
+  renderWrongBook();
+}
+
+function clearAllWrong() {
+  if (confirm('确定清空所有错题吗？此操作不可撤销。')) {
+    localStorage.setItem('wrongBook', '[]');
+    renderWrongBook();
+  }
+}
+
+// ==================== 单词收藏夹 ====================
+function getFavorites() {
+  return JSON.parse(localStorage.getItem('wordFavorites') || '[]');
+}
+
+function toggleFavorite(wordId) {
+  let favs = getFavorites();
+  const idx = favs.indexOf(wordId);
+  if (idx >= 0) {
+    favs.splice(idx, 1);
+  } else {
+    favs.push(wordId);
+  }
+  localStorage.setItem('wordFavorites', JSON.stringify(favs));
+  return idx < 0; // 返回是否已收藏
+}
+
+function isFavorite(wordId) {
+  return getFavorites().includes(wordId);
+}
+
+// ==================== 每日学习目标 ====================
+function getDailyGoals() {
+  const today = new Date().toDateString();
+  const data = JSON.parse(localStorage.getItem('dailyGoals') || '{}');
+  if (data.date !== today) {
+    // 新的一天，重置
+    return {
+      date: today,
+      wordsTarget: 20,
+      wordsDone: 0,
+      examTarget: 1,
+      examDone: 0,
+      testTarget: 1,
+      testDone: 0,
+    };
+  }
+  return data;
+}
+
+function saveDailyGoals(data) {
+  localStorage.setItem('dailyGoals', JSON.stringify(data));
+}
+
+function recordDailyActivity(type, count = 1) {
+  const goals = getDailyGoals();
+  if (type === 'word') goals.wordsDone += count;
+  if (type === 'exam') goals.examDone += count;
+  if (type === 'test') goals.testDone += count;
+  saveDailyGoals(goals);
+}
+
+function renderDailyGoals() {
+  const container = document.getElementById('daily-goals');
+  if (!container) return;
+  const goals = getDailyGoals();
+  const today = new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' });
+
+  const items = [
+    { key: 'word', icon: '📖', text: '背单词', done: goals.wordsDone, target: goals.wordsTarget },
+    { key: 'test', icon: '📝', text: '词汇测试', done: goals.testDone, target: goals.testTarget },
+    { key: 'exam', icon: '📋', text: '做试卷', done: goals.examDone, target: goals.examTarget },
+  ];
+
+  container.innerHTML = `
+    <div class="daily-goals-header">
+      <span class="daily-goals-title">🎯 今日学习目标</span>
+      <span class="daily-goals-date">${today}</span>
+    </div>
+    <div class="daily-goals-list">
+      ${items.map(item => {
+        const isDone = item.done >= item.target;
+        return `
+          <div class="daily-goal-item ${isDone ? 'done' : ''}">
+            <div class="daily-goal-checkbox"></div>
+            <span class="daily-goal-text">${item.icon} ${item.text}</span>
+            <span class="daily-goal-progress">${item.done}/${item.target}</span>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+// ==================== 试卷进度保存 ====================
+function saveExamProgress() {
+  if (!App.examState.currentExam) return;
+  const progress = {
+    examId: App.examState.currentExam.id,
+    answers: App.examState.answers,
+    elapsedSeconds: App.examState.elapsedSeconds,
+    timeLimit: App.examState.timeLimit,
+    savedAt: Date.now(),
+  };
+  localStorage.setItem('examProgress', JSON.stringify(progress));
+}
+
+function loadExamProgress() {
+  const data = localStorage.getItem('examProgress');
+  if (!data) return null;
+  return JSON.parse(data);
+}
+
+function clearExamProgress() {
+  localStorage.removeItem('examProgress');
+}
+
+function checkExamResume() {
+  const progress = loadExamProgress();
+  if (!progress) return;
+  const exam = EXAM_BANK.find(e => e.id === progress.examId);
+  if (!exam) {
+    clearExamProgress();
+    return;
+  }
+  // 显示恢复提示
+  const list = document.getElementById('exam-cards');
+  const banner = document.createElement('div');
+  banner.className = 'exam-resume-banner';
+  const elapsedMin = Math.floor(progress.elapsedSeconds / 60);
+  const answered = Object.keys(progress.answers).length;
+  banner.innerHTML = `
+    <div class="exam-resume-info">
+      📌 你有未完成的试卷：<strong>${exam.title}</strong>
+      （已答${answered}题，用时${elapsedMin}分钟）
+    </div>
+    <div class="exam-resume-actions">
+      <button class="btn btn-ghost btn-sm" onclick="this.parentElement.parentElement.remove(); clearExamProgress();">放弃</button>
+      <button class="btn btn-primary btn-sm" onclick="resumeExam()">继续答题</button>
+    </div>
+  `;
+  list.parentElement.insertBefore(banner, list);
+}
+
+function resumeExam() {
+  const progress = loadExamProgress();
+  if (!progress) return;
+  const exam = EXAM_BANK.find(e => e.id === progress.examId);
+  if (!exam) return;
+
+  App.examState.currentExam = exam;
+  App.examState.answers = progress.answers || {};
+  App.examState.startTime = Date.now() - progress.elapsedSeconds * 1000;
+  App.examState.timeLimit = progress.timeLimit;
+  App.examState.elapsedSeconds = progress.elapsedSeconds;
+
+  document.querySelector('.exam-resume-banner')?.remove();
+  document.getElementById('exam-list-view').style.display = 'none';
+  document.getElementById('exam-result-view').style.display = 'none';
+  document.getElementById('exam-taking-view').style.display = 'block';
+  document.getElementById('exam-taking-title').textContent = exam.title + '（继续）';
+
+  renderExamQuestions(exam);
+  // 恢复已选答案的UI
+  Object.entries(App.examState.answers).forEach(([qId, ans]) => {
+    const qEl = document.getElementById(`exam-q-${qId}`);
+    if (qEl) {
+      qEl.querySelectorAll('.exam-option').forEach(opt => {
+        const label = opt.querySelector('.exam-option-label')?.textContent?.replace('.', '');
+        if (label === ans) opt.classList.add('selected');
+      });
+    }
+  });
+  updateExamProgress();
+  startExamTimer();
+  window.scrollTo(0, 0);
+}
+
+// ==================== PWA 注册 ====================
+function registerSW() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+}
+
 // ==================== 初始化 ====================
 function init() {
+  initTheme();
   loadRecord();
   setupTestConfig();
   renderDashboard();
   renderQuickWords();
+  renderDailyGoals();
+  initKeyboardShortcuts();
+  registerSW();
 
   // 全局拖拽结束监听（鼠标松开时结束拖拽选择）
   document.addEventListener('mouseup', dragSelectEnd);
