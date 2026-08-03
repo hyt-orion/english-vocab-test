@@ -431,9 +431,17 @@
   <!-- ==================== 听力练习页 ==================== -->
   <div class="page" id="page-listening">
     <h2 style="font-size:1.4rem; margin-bottom:8px">🎧 听力练习</h2>
-    <p style="color:var(--text-secondary); margin-bottom:20px; font-size:0.9rem">听句子选答案，训练英语听力，支持语速调节</p>
+    <p style="color:var(--text-secondary); margin-bottom:20px; font-size:0.9rem">三种题型训练英语听力：听词选义 / 听音拼写 / 听句选义，支持语速调节与答题复盘</p>
 
     <div class="card" id="listening-setup">
+      <div class="config-group">
+        <div class="config-label">题型</div>
+        <div class="option-row" id="listening-type-options">
+          <button class="option-btn active" data-type="word">🎯 听词选义</button>
+          <button class="option-btn" data-type="spell">✍️ 听音拼写</button>
+          <button class="option-btn" data-type="sentence">📚 听句选义</button>
+        </div>
+      </div>
       <div class="config-group">
         <div class="config-label">难度级别</div>
         <div class="option-row" id="listening-level-options">
@@ -458,6 +466,7 @@
           <button class="option-btn" data-count="20">20 题</button>
         </div>
       </div>
+      <div class="listening-best" id="listening-best">📊 还没有练习记录，开始第一轮吧！</div>
       <div class="text-center mt-20">
         <button class="btn btn-primary btn-lg" onclick="startListening()">🎧 开始听力</button>
       </div>
