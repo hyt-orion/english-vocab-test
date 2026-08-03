@@ -3071,10 +3071,44 @@ body[data-app-mode="ielts"] .ielts-tabs {
 .hb-left { flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
 .hb-mascot { transition: transform .35s ease; animation: hbFloat 3s ease-in-out infinite; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
 @keyframes hbFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
-.hb-flame-wrap { position: relative; width: 112px; height: 132px; }
+.hb-flame-wrap { position: relative; width: 180px; height: 200px; }
 .hb-flame { width: 100%; height: 100%; filter: drop-shadow(0 0 14px var(--huo-color)); animation: hbFlicker 1.6s ease-in-out infinite; }
 .hb-flame .stop-mid { stop-color: var(--huo-color); }
 @keyframes hbFlicker { 0%, 100% { transform: scaleY(1) scaleX(1); } 50% { transform: scaleY(1.05) scaleX(0.97); } }
+
+/* 等级越高火焰越亮 */
+.hb-lv-3 .hb-flame, .hb-lv-4 .hb-flame { filter: drop-shadow(0 0 18px var(--huo-color)); }
+.hb-lv-5 .hb-flame, .hb-lv-6 .hb-flame { filter: drop-shadow(0 0 22px var(--huo-color)); }
+.hb-lv-7 .hb-flame { filter: drop-shadow(0 0 26px #ffd700) drop-shadow(0 0 8px var(--huo-color)); }
+
+/* Lv.7 神级金色光环 */
+.hb-mascot.hb-god-aura { position: relative; }
+.hb-mascot.hb-god-aura::before {
+  content: ''; position: absolute; left: 50%; bottom: -18px; transform: translateX(-50%);
+  width: 220px; height: 40px; border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(255,215,0,0.95) 0%, rgba(255,174,0,0.6) 35%, rgba(255,140,0,0.15) 65%, transparent 100%);
+  filter: blur(2px);
+  animation: hbGodAura 2.4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+.hb-mascot.hb-god-aura::after {
+  content: ''; position: absolute; left: 50%; bottom: -22px; transform: translateX(-50%);
+  width: 200px; height: 20px; border-radius: 50%;
+  border: 2px solid rgba(255,215,0,0.85);
+  box-shadow: 0 0 14px rgba(255,215,0,0.9), inset 0 0 8px rgba(255,235,150,0.7);
+  animation: hbGodRing 3.2s linear infinite;
+  pointer-events: none; z-index: -1;
+}
+@keyframes hbGodAura {
+  0%, 100% { opacity: 0.85; transform: translateX(-50%) scale(1); }
+  50% { opacity: 1; transform: translateX(-50%) scale(1.06); }
+}
+@keyframes hbGodRing {
+  0% { transform: translateX(-50%) scale(1) rotate(0); opacity: 0.9; }
+  50% { opacity: 1; }
+  100% { transform: translateX(-50%) scale(1.15) rotate(0); opacity: 0.6; }
+}
 .hb-level-tag {
   position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%);
   background: var(--huo-color); color: #fff; font-size: 0.72rem; font-weight: 800;
