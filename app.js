@@ -3550,8 +3550,11 @@ function init() {
 
 // ==================== 雅思专项模块 ====================
 const IELTS_VOCAB_KEY = 'ieltsVocabProgress_v1';
-let ieltsStudy = { topic: null, idx: 0, flipped: false, mode: 'study', queue: [], current: null, answered: false };
+let ieltsStudy = { ns: 'topic', id: null, listIndex: 0, title: '', icon: '', words: [], idx: 0, flipped: false, mode: 'study', queue: [], current: null, answered: false };
+let ieltsVocabView = 'topic'; // 'topic' | 'level'
 let ieltsSpeakingTimer = null;
+
+function ieltsProgKey(ns, id, word) { return ns + ':' + id + ':' + word; }
 
 function ieltsLoadProgress() {
   try { return JSON.parse(localStorage.getItem(IELTS_VOCAB_KEY) || '{}'); }
@@ -3579,7 +3582,7 @@ function switchIELTS(tab) {
   document.getElementById('ielts-speaking').style.display = tab === 'speaking' ? 'block' : 'none';
   document.getElementById('ielts-writing').style.display = tab === 'writing' ? 'block' : 'none';
   document.getElementById('ielts-bands').style.display = tab === 'bands' ? 'block' : 'none';
-  if (tab === 'vocab') renderIeltsVocabHome();
+  if (tab === 'vocab') { ieltsVocabView = 'topic'; if (document.getElementById('ielts-vocab-subtabs')) document.querySelectorAll('#ielts-vocab-subtabs .ielts-subtab').forEach(b => b.classList.toggle('active', b.dataset.vvocab === 'topic')); renderIeltsVocabHome(); }
   if (tab === 'speaking') switchSpeaking('part1');
   if (tab === 'writing') switchWriting('task1');
   if (tab === 'bands') renderIeltsBands();
@@ -3591,7 +3594,7 @@ function renderIeltsVocabHome() {
   document.getElementById('ielts-vocab-home').style.display = 'block';
   const prog = ieltsLoadProgress();
   const cards = IELTS_VOCAB.map((t, i) => {
-    const learned = t.words.filter(w => prog[i + ':' + w.word]).length;
+    const learned = t.words.filter(w => prog[ieltsProgKey('topic', i, w.word)]).length;
     const pct = Math.round((learned / t.words.length) * 100);
     return `<div class="ielts-topic-card" onclick="openIeltsTopic(${i})">
       <div class="ielts-topic-icon">${t.icon}</div>
@@ -3608,10 +3611,56 @@ function renderIeltsVocabHome() {
 }
 
 function openIeltsTopic(i) {
-  ieltsStudy = { topic: IELTS_VOCAB[i], idx: 0, flipped: false, mode: 'study', queue: [], current: null, answered: false };
+  const t = IELTS_VOCAB[i];
+  ieltsStudy = { ns: 'topic', id: i, listIndex: i, title: t.topic, icon: t.icon, words: t.words, idx: 0, flipped: false, mode: 'study', queue: [], current: null, answered: false };
   document.getElementById('ielts-vocab-home').style.display = 'none';
   document.getElementById('ielts-vocab-study').style.display = 'block';
   renderIeltsStudy();
+}
+
+function switchIeltsVocabView(view) {
+  ieltsVocabView = view;
+  document.querySelectorAll('#ielts-vocab-subtabs .ielts-subtab').forEach(b => b.classList.toggle('active', b.dataset.vvocab === view));
+  if (view === 'level') renderIeltsLevelsHome();
+  else renderIeltsVocabHome();
+}
+
+function renderIeltsLevelsHome() {
+  document.getElementById('ielts-vocab-study').style.display = 'none';
+  document.getElementById('ielts-vocab-home').style.display = 'block';
+  const prog = ieltsLoadProgress();
+  const cards = IELTS_LEVELS.map((lv, i) => {
+    const learned = lv.words.filter(w => prog[ieltsProgKey('level', lv.level, w.word)]).length;
+    const pct = Math.round((learned / lv.words.length) * 100);
+    return `<div class="ielts-level-card lvl-${lv.level}" onclick="openIeltsLevel(${i})">
+      <div class="ielts-level-head">
+        <span class="ielts-level-badge">${lv.level}</span>
+        <span class="ielts-level-band">${lv.band}</span>
+      </div>
+      <div class="ielts-level-name">${lv.name}</div>
+      <div class="ielts-level-desc">${lv.desc}</div>
+      <div class="ielts-topic-count">${learned}/${lv.words.length} 已掌握</div>
+      <div class="ielts-topic-bar"><div class="ielts-topic-fill" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+  document.getElementById('ielts-vocab-home').innerHTML =
+    `<div class="ielts-vocab-tools">
+       <span class="ielts-vocab-hint">🌈 按 CEFR 级别从 A1（最低）到 C2（最高）逐级攻克，已掌握的单词会记录在本地</span>
+     </div>
+     <div class="ielts-level-grid">${cards}</div>`;
+}
+
+function openIeltsLevel(i) {
+  const lv = IELTS_LEVELS[i];
+  ieltsStudy = { ns: 'level', id: lv.level, listIndex: i, title: lv.level + ' · ' + lv.name, icon: '🏅', words: lv.words, idx: 0, flipped: false, mode: 'study', queue: [], current: null, answered: false };
+  document.getElementById('ielts-vocab-home').style.display = 'none';
+  document.getElementById('ielts-vocab-study').style.display = 'block';
+  renderIeltsStudy();
+}
+
+function ieltsVocabReturnHome() {
+  if (ieltsVocabView === 'level') renderIeltsLevelsHome();
+  else renderIeltsVocabHome();
 }
 
 function setIeltsMode(mode) {
@@ -3622,26 +3671,26 @@ function setIeltsMode(mode) {
 }
 
 function renderIeltsStudy() {
-  const t = ieltsStudy.topic;
-  if (!t) return;
+  const words = ieltsStudy.words;
+  if (!words || !words.length) return;
   const prog = ieltsLoadProgress();
-  const learned = t.words.filter(w => prog[IELTS_VOCAB.indexOf(t) + ':' + w.word]).length;
+  const learned = words.filter(w => prog[ieltsProgKey(ieltsStudy.ns, ieltsStudy.id, w.word)]).length;
 
   const head = `
     <div class="ielts-study-head">
-      <button class="btn btn-ghost btn-sm" onclick="renderIeltsVocabHome()">← 返回</button>
-      <div class="ielts-study-title">${t.icon} ${t.topic}</div>
+      <button class="btn btn-ghost btn-sm" onclick="ieltsVocabReturnHome()">← 返回</button>
+      <div class="ielts-study-title">${ieltsStudy.icon} ${ieltsStudy.title}</div>
       <div class="ielts-mode-switch">
         <button class="ielts-mode-btn ${ieltsStudy.mode === 'study' ? 'active' : ''}" onclick="setIeltsMode('study')">📖 学习</button>
         <button class="ielts-mode-btn ${ieltsStudy.mode === 'quiz' ? 'active' : ''}" onclick="setIeltsMode('quiz')">🧪 自测</button>
       </div>
     </div>
-    <div class="ielts-study-progress">已掌握 ${learned}/${t.words.length} · 第 ${ieltsStudy.idx + 1}/${t.words.length} 个</div>
+    <div class="ielts-study-progress">已掌握 ${learned}/${words.length} · 第 ${ieltsStudy.idx + 1}/${words.length} 个</div>
   `;
 
   if (ieltsStudy.mode === 'study') {
-    const w = t.words[ieltsStudy.idx];
-    const isKnown = !!prog[IELTS_VOCAB.indexOf(t) + ':' + w.word];
+    const w = words[ieltsStudy.idx];
+    const isKnown = !!prog[ieltsProgKey(ieltsStudy.ns, ieltsStudy.id, w.word)];
     document.getElementById('ielts-vocab-study').innerHTML = head + `
       <div class="ielts-flashcard ${ieltsStudy.flipped ? 'flipped' : ''}" onclick="flipIeltsCard()">
         <div class="ielts-flash-front">
@@ -3665,9 +3714,9 @@ function renderIeltsStudy() {
     `;
   } else {
     // 自测：四选一
-    const w = t.words[ieltsStudy.idx];
+    const w = words[ieltsStudy.idx];
     if (!ieltsStudy.queue.length || ieltsStudy.current !== w) {
-      const others = t.words.filter(x => x.word !== w.word).sort(() => Math.random() - 0.5).slice(0, 3);
+      const others = words.filter(x => x.word !== w.word).sort(() => Math.random() - 0.5).slice(0, 3);
       ieltsStudy.queue = [...others, w].sort(() => Math.random() - 0.5);
       ieltsStudy.current = w;
       ieltsStudy.answered = false;
@@ -3694,32 +3743,34 @@ function flipIeltsCard() {
   renderIeltsStudy();
 }
 function ieltsVocabKnown() {
-  const t = ieltsStudy.topic, w = t.words[ieltsStudy.idx];
+  const w = ieltsStudy.words[ieltsStudy.idx];
   const prog = ieltsLoadProgress();
-  prog[IELTS_VOCAB.indexOf(t) + ':' + w.word] = 1;
+  prog[ieltsProgKey(ieltsStudy.ns, ieltsStudy.id, w.word)] = 1;
   ieltsSaveProgress(prog);
   ieltsStudy.flipped = false;
   ieltsNextCard();
 }
 function ieltsVocabUnknown() {
   const prog = ieltsLoadProgress();
-  delete prog[IELTS_VOCAB.indexOf(ieltsStudy.topic) + ':' + ieltsStudy.topic.words[ieltsStudy.idx].word];
+  delete prog[ieltsProgKey(ieltsStudy.ns, ieltsStudy.id, ieltsStudy.words[ieltsStudy.idx].word)];
   ieltsSaveProgress(prog);
   ieltsStudy.flipped = false;
   ieltsNextCard();
 }
 function ieltsNextCard() {
   ieltsStudy.idx++;
-  if (ieltsStudy.idx >= ieltsStudy.topic.words.length) {
-    const learned = ieltsStudy.topic.words.filter(w => ieltsLoadProgress()[IELTS_VOCAB.indexOf(ieltsStudy.topic) + ':' + w.word]).length;
+  if (ieltsStudy.idx >= ieltsStudy.words.length) {
+    const learned = ieltsStudy.words.filter(w => ieltsLoadProgress()[ieltsProgKey(ieltsStudy.ns, ieltsStudy.id, w.word)]).length;
+    const total = ieltsStudy.words.length;
+    const replay = ieltsStudy.ns === 'level' ? `openIeltsLevel(${ieltsStudy.listIndex})` : `openIeltsTopic(${ieltsStudy.listIndex})`;
     document.getElementById('ielts-vocab-study').innerHTML = `
       <div class="card result-card">
         <div style="font-size:3rem;margin-bottom:8px">🎉</div>
-        <div class="result-msg">本主题学完啦！</div>
-        <div class="result-sub">已掌握 ${learned}/${ieltsStudy.topic.words.length}</div>
+        <div class="result-msg">${ieltsStudy.title} 学完啦！</div>
+        <div class="result-sub">已掌握 ${learned}/${total}</div>
         <div class="result-actions">
-          <button class="btn btn-ghost" onclick="renderIeltsVocabHome()">← 返回主题</button>
-          <button class="btn btn-primary" onclick="openIeltsTopic(${IELTS_VOCAB.indexOf(ieltsStudy.topic)})">🔄 再来一轮</button>
+          <button class="btn btn-ghost" onclick="ieltsVocabReturnHome()">← 返回</button>
+          <button class="btn btn-primary" onclick="${replay}">🔄 再来一轮</button>
         </div>
       </div>`;
     return;
@@ -3734,7 +3785,7 @@ function selectIeltsQuiz(answer, el) {
   if (ok) {
     el.classList.add('correct');
     const prog = ieltsLoadProgress();
-    prog[IELTS_VOCAB.indexOf(ieltsStudy.topic) + ':' + ieltsStudy.current.word] = 1;
+    prog[ieltsProgKey(ieltsStudy.ns, ieltsStudy.id, ieltsStudy.current.word)] = 1;
     ieltsSaveProgress(prog);
   } else {
     el.classList.add('wrong');
