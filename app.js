@@ -2433,13 +2433,13 @@ function renderStudyCalendar() {
 // ==================== 火宝宝 · 连续打卡奖励系统 ====================
 // 每个等级含两套主题：火系（首页/标准版）+ 冰系（雅思页）。其它文案（title/reward/desc）共用。
 const HUOBAO_LEVELS = [
-  { lv: 1, name: '小火苗',   iceName: '小冰晶',   min: 0,   emoji: '🔥', iceEmoji: '❄️', color: '#fb923c', desc: '刚刚点燃，每天都来喂火吧！',       title: '萌新小火',  reward: '点亮火宝宝，开启你的连续打卡之旅' },
-  { lv: 2, name: '跳跳火',   iceName: '跳跳冰',   min: 3,   emoji: '🔥', iceEmoji: '❄️', color: '#f97316', desc: '连续 3 天，火苗稳住了',         title: '三日萌新',  reward: '解锁「跳跳火」头像框 · 火宝宝动作更活泼' },
-  { lv: 3, name: '烈焰宝宝', iceName: '冰晶宝宝', min: 7,   emoji: '🔥', iceEmoji: '❄️', color: '#ef4444', desc: '坚持一周，超棒！',             title: '周更达人',  reward: '解锁火焰主题光效 · 打卡卡片专属暖色底' },
-  { lv: 4, name: '炽焰精灵', iceName: '寒霜精灵', min: 14,  emoji: '🔥', iceEmoji: '❄️', color: '#ec4899', desc: '两周不间断，渐入佳境',         title: '半月骑士',  reward: '解锁「炽焰精灵」称号牌 · 成就墙点亮' },
-  { lv: 5, name: '炎龙之魂', iceName: '冰龙之魂', min: 30,  emoji: '🔥', iceEmoji: '❄️', color: '#a855f7', desc: '月度学习战士',               title: '月度战神',  reward: '解锁金色流光特效 · 专属荣誉徽章' },
-  { lv: 6, name: '不灭圣火', iceName: '不灭玄冰', min: 60,  emoji: '🔥', iceEmoji: '❄️', color: '#6366f1', desc: '两个月坚如磐石',             title: '两月磐石',  reward: '解锁「不灭圣火」终身勋章 · 段位永久展示' },
-  { lv: 7, name: '传说火神', iceName: '传说冰神', min: 100, emoji: '🔥', iceEmoji: '❄️', color: '#f59e0b', desc: '百天传奇，封神！',           title: '百天传奇',  reward: '解锁传说称号 + 终身荣誉墙 · 全站最靓的仔' },
+  { lv: 1, name: '小火苗',   iceName: '小冰晶',   min: 0,   emoji: '🔥', iceEmoji: '❄️', color: '#fb923c', desc: '刚刚点燃，每天都来喂火吧！',       iceDesc: '刚刚凝结，每天都来养冰吧！',         title: '萌新小火',   iceTitle: '萌新小冰',  reward: '点亮火宝宝，开启你的连续打卡之旅',       iceReward: '点亮小冰人，开启你的连续打卡之旅' },
+  { lv: 2, name: '跳跳火',   iceName: '跳跳冰',   min: 3,   emoji: '🔥', iceEmoji: '❄️', color: '#f97316', desc: '连续 3 天，火苗稳住了',         iceDesc: '连续 3 天，冰晶稳固了',           title: '三日萌新',   iceTitle: '三日萌冰',  reward: '解锁「跳跳火」头像框 · 火宝宝动作更活泼',  iceReward: '解锁「跳跳冰」头像框 · 小冰人动作更活泼' },
+  { lv: 3, name: '烈焰宝宝', iceName: '冰晶宝宝', min: 7,   emoji: '🔥', iceEmoji: '❄️', color: '#ef4444', desc: '坚持一周，超棒！',             iceDesc: '坚持一周，超棒！',             title: '周更达人',   iceTitle: '周更学徒',  reward: '解锁火焰主题光效 · 打卡卡片专属暖色底',    iceReward: '解锁冰晶主题光效 · 打卡卡片专属冷色底' },
+  { lv: 4, name: '炽焰精灵', iceName: '寒霜精灵', min: 14,  emoji: '🔥', iceEmoji: '❄️', color: '#ec4899', desc: '两周不间断，渐入佳境',         iceDesc: '两周不间断，渐入佳境',         title: '半月骑士',   iceTitle: '半月骑士',  reward: '解锁「炽焰精灵」称号牌 · 成就墙点亮',       iceReward: '解锁「寒霜精灵」称号牌 · 成就墙点亮' },
+  { lv: 5, name: '炎龙之魂', iceName: '冰龙之魂', min: 30,  emoji: '🔥', iceEmoji: '❄️', color: '#a855f7', desc: '月度学习战士',               iceDesc: '月度学习战士',               title: '月度战神',   iceTitle: '月度战神',  reward: '解锁金色流光特效 · 专属荣誉徽章',         iceReward: '解锁蓝白流光特效 · 专属荣誉徽章' },
+  { lv: 6, name: '不灭圣火', iceName: '不灭玄冰', min: 60,  emoji: '🔥', iceEmoji: '❄️', color: '#6366f1', desc: '两个月坚如磐石',             iceDesc: '两个月坚如磐石',             title: '两月磐石',   iceTitle: '两月磐冰',  reward: '解锁「不灭圣火」终身勋章 · 段位永久展示',   iceReward: '解锁「不灭玄冰」终身勋章 · 段位永久展示' },
+  { lv: 7, name: '传说火神', iceName: '传说冰神', min: 100, emoji: '🔥', iceEmoji: '❄️', color: '#f59e0b', desc: '百天传奇，封神！',           iceDesc: '百天传奇，封冰！',           title: '百天传奇',   iceTitle: '百天传奇',  reward: '解锁传说称号 + 终身荣誉墙 · 全站最靓的仔', iceReward: '解锁传说称号 + 终身荣誉墙 · 全站最靓的仔' },
 ];
 
 // 按 variant 取等级展示字段（火/冰）
@@ -2498,7 +2498,7 @@ function markDailyCheckIn() {
   } else {
     playSound('checkin');
     showToast(isIce
-      ? `❄️ 打卡成功！小冰人已连续冻结 ${current} 天 · ${lvl.name}`
+      ? `❄️ 打卡成功！小冰人已连续冻结 ${current} 天 · ${lvl.iceName}`
       : `🔥 打卡成功！火宝宝已连续燃烧 ${current} 天 · ${lvl.name}`);
   }
 }
@@ -2621,8 +2621,8 @@ function showBadgeReward(lv) {
       <button class="hb-reward-close" onclick="closeHbReward()">✕</button>
       <div class="hb-reward-emoji">${isIce ? '🧊' : Lemo}</div>
       <div class="hb-reward-lv">Lv.${L.lv} · ${Lname}</div>
-      <div class="hb-reward-title">🏅 段位称号：${L.title}</div>
-      <div class="hb-reward-desc">${L.reward}</div>
+      <div class="hb-reward-title">🏅 段位称号：${isIce ? (L.iceTitle || L.title) : L.title}</div>
+      <div class="hb-reward-desc">${isIce ? (L.iceReward || L.reward) : L.reward}</div>
       <div class="hb-reward-status ${reached ? 'got' : ''}">${reached ? '✅ 已解锁，荣誉归你！' : ('🔒 还需连续 ' + (L.min - cur) + ' 天解锁')}</div>
       <button class="hb-reward-share" onclick="shareHuobaoReward(${L.lv})">📤 复制我的成就语</button>
     </div>`;
@@ -2643,7 +2643,9 @@ function shareHuobaoReward(lv) {
   const isIce = document.body.dataset.appMode === 'ielts';
   const who = isIce ? '小冰人' : '火宝宝';
   const Lname = isIce ? L.iceName : L.name;
-  const text = `${isIce ? '❄️' : '🔥'} 我在「英语词汇大师」连续打卡 ${cur} 天，${who}已成长为 Lv.${L.lv} ${Lname}（${L.title}）！${L.reward} 一起来背单词吧～`;
+  const Ltitle = isIce ? (L.iceTitle || L.title) : L.title;
+  const Lreward = isIce ? (L.iceReward || L.reward) : L.reward;
+  const text = `${isIce ? '❄️' : '🔥'} 我在「英语词汇大师」连续打卡 ${cur} 天，${who}已成长为 Lv.${L.lv} ${Lname}（${Ltitle}）！${Lreward} 一起来背单词吧～`;
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(() => showToast('📤 成就语已复制，去分享吧！')).catch(() => {});
   } else {
@@ -2705,7 +2707,7 @@ function buildHuobaoHtml(variant, ctx) {
     const sub = reached ? '已解锁' : ('还需 ' + (L.min - current) + ' 天');
     const Lname = isIce ? L.iceName : L.name;
     const Lemo  = isIce ? L.iceEmoji : L.emoji;
-    return `<div class="hb-badge ${reached ? 'reached' : ''}" style="--bc:${L.color}" title="${Lname}：${L.desc}" onclick="showBadgeReward(${L.lv})" role="button">
+    return `<div class="hb-badge ${reached ? 'reached' : ''}" style="--bc:${L.color}" title="${Lname}：${isIce ? (L.iceDesc || L.desc) : L.desc}" onclick="showBadgeReward(${L.lv})" role="button">
       <div class="hb-badge-icon">${Lemo}</div>
       <div class="hb-badge-name">${Lname}</div>
       <div class="hb-badge-sub">${sub}</div>
@@ -2727,7 +2729,7 @@ function buildHuobaoHtml(variant, ctx) {
         <div class="hb-top">
           <span class="hb-title">${title}</span>
           <span class="hb-lvname" style="color:${accent}">${lvlName}</span>
-          <span class="hb-title-badge">🏅 ${lvl.title}</span>
+          <span class="hb-title-badge">🏅 ${isIce ? (lvl.iceTitle || lvl.title) : lvl.title}</span>
         </div>
         <div class="hb-stats">
           <div class="hb-stat"><span class="hb-num">${current}</span><span class="hb-lbl">连续天数</span></div>
