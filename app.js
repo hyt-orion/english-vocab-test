@@ -2815,11 +2815,37 @@ function spawnHuobaoHeart(wrap) {
 }
 
 // ==================== 顶栏常驻小火苗 ====================
+// 顶栏常驻迷你火焰（独立渐变 ID，避免与火宝宝卡片的 hbGrad/hbShine 冲突）
+function navFlameSvg(color) {
+  return `<svg class="nav-flame-mini-svg" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="--huo-color:${color}">
+    <defs>
+      <linearGradient id="navHbGrad" x1="0" y1="1" x2="0" y2="0">
+        <stop offset="0%" stop-color="#ffd166"/>
+        <stop offset="55%" stop-color="${color}"/>
+        <stop offset="100%" stop-color="#ffb703"/>
+      </linearGradient>
+      <radialGradient id="navHbShine" cx="38%" cy="28%" r="62%">
+        <stop offset="0%" stop-color="#fff6d8" stop-opacity="0.92"/>
+        <stop offset="100%" stop-color="#fff6d8" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <path d="M50 16 C 70 40, 86 58, 80 84 C 76 106, 59 116, 50 116 C 41 116, 24 106, 20 84 C 14 58, 30 40, 50 16 Z" fill="url(#navHbGrad)"/>
+    <path d="M50 3 C 58 14, 55 22, 50 24 C 45 22, 42 14, 50 3 Z" fill="#ffd166"/>
+    <ellipse cx="40" cy="48" rx="21" ry="29" fill="url(#navHbShine)"/>
+  </svg>`;
+}
+
 function renderStreakFlame() {
   const num = document.getElementById('nav-streak-num');
   if (!num) return;
   const { current } = getStreakState();
   num.textContent = current;
+  const mini = document.getElementById('nav-flame-mini');
+  if (mini && !mini.dataset.built) {
+    const lvl = getHuobaoLevel(current);
+    mini.innerHTML = navFlameSvg(lvl.color);
+    mini.dataset.built = '1';
+  }
 }
 
 function goToHuobao() {
