@@ -4097,57 +4097,113 @@ function startIeltsSpeakingTimer() {
 }
 
 /* ---------- 写作 ---------- */
+// 写作提示卡 & 批改引擎
+const IELTS_WRITE_LINKERS = ['however','moreover','furthermore','therefore','thus','consequently','in addition','additionally','besides','on the other hand','in contrast','by contrast','for instance','for example','such as','as a result','as a consequence','nevertheless','nonetheless','meanwhile','similarly','likewise','in other words','to illustrate','on the contrary','what is more','as well as','in particular','specifically','overall','in conclusion','to conclude','in summary','to sum up','firstly','first','secondly','second','thirdly','third','finally','last but not least','in my opinion','from my perspective','i believe','i think','as far as i am concerned','on the one hand','that is to say','in fact','indeed','after all'];
+const IELTS_WRITE_SUBORD = ['because','although','though','while','whereas','if','when','since','after','before','until','unless','that','which','who','whom','whose','where','why','despite','in spite of','not only','even though','even if','provided that','as long as','so that'];
+const IELTS_WRITE_ADV = ['significant','significantly','substantial','dramatically','inevitable','fundamental','crucial','vital','essential','prominent','notable','considerable','paramount','compelling','advocate','alleviate','mitigate','deteriorate','profound','exacerbate','contribute','demonstrate','illustrate','reflect','highlight','emphasize','underscore','consequently','moreover','nevertheless','nonetheless','whereas','furthermore','ubiquitous','implement','establish','facilitate','generate','fluctuate','proportion','trend','category','robust','sustain','sustainable','phenomenon','perspective','consequence','implication','distribution','correlation','variation','approximately','predominant','marginal','negligible','stable','peak','plateau','respectively'];
+let ieltsWrite = { task: 'task1', idx: 0, target: 150 };
+let _ieltsWriteSec = 0;
+
 function switchWriting(task) {
   document.querySelectorAll('#ielts-writing-sub .ielts-subtab').forEach(b => b.classList.toggle('active', b.dataset.task === task));
-  let html = '';
+  if (task === 'phrases') {
+    if (window._ieltsWriteTimer) { clearInterval(window._ieltsWriteTimer); window._ieltsWriteTimer = null; }
+    document.getElementById('ielts-writing-view').innerHTML = renderIeltsPhrases();
+    return;
+  }
+  ieltsWrite.task = task;
+  ieltsWrite.target = task === 'task1' ? 150 : 250;
+  ieltsWrite.idx = 0;
+  renderIeltsWritePanel();
+}
+
+function curPrompt() { return IELTS_WRITING_PROMPTS[ieltsWrite.task][ieltsWrite.idx]; }
+
+function renderIeltsWriteGuide(task) {
+  const t = IELTS_WRITING[task];
   if (task === 'task1') {
-    const t = IELTS_WRITING.task1;
-    html = `<div class="ielts-write-guide">
-      <h3>${t.title}</h3>
-      <p class="ielts-write-intro">${t.intro}</p>
+    return `<details class="ielts-guide"><summary>📐 写作要点 · Task 1（点击展开/收起）</summary>
       <div class="ielts-write-block"><h4>📐 结构</h4><ul>${t.structure.map(s => `<li>${s}</li>`).join('')}</ul></div>
       <div class="ielts-write-block"><h4>🔤 趋势动词</h4><div class="ielts-chip-row">${t.verbs.map(v => `<span class="ielts-chip">${v}</span>`).join('')}</div></div>
       <div class="ielts-write-block"><h4>📈 程度副词</h4><div class="ielts-chip-row">${t.adverbs.map(v => `<span class="ielts-chip">${v}</span>`).join('')}</div></div>
       <div class="ielts-write-block"><h4>🧩 句型模板</h4>${t.frames.map(f => `<div class="ielts-frame">${f}</div>`).join('')}</div>
-    </div>`;
-  } else if (task === 'task2') {
-    const t = IELTS_WRITING.task2;
-    html = `<div class="ielts-write-guide">
-      <h3>${t.title}</h3>
-      <p class="ielts-write-intro">${t.intro}</p>
-      <div class="ielts-write-block"><h4>🗂️ 题型</h4><ul>${t.types.map(s => `<li>${s}</li>`).join('')}</ul></div>
-      <div class="ielts-write-block"><h4>📐 结构</h4><ul>${t.structure.map(s => `<li>${s}</li>`).join('')}</ul></div>
-      <div class="ielts-write-block"><h4>🚀 开头/过渡句型</h4>${t.starters.map(f => `<div class="ielts-frame">${f}</div>`).join('')}</div>
-      <div class="ielts-write-block"><h4>🔗 连接词</h4><div class="ielts-chip-row">${t.links.slice(0,7).map(v => `<span class="ielts-chip">${v}</span>`).join('')}</div></div>
-    </div>`;
-  } else {
-    html = `<div class="ielts-write-guide">
-      <h3>🏆 高分短语库</h3>
-      <p class="ielts-write-intro">熟记并灵活使用以下表达，可显著提升写作与口语的 Lexical Resource 分数。</p>
-      <div class="ielts-phrase-list">${IELTS_PHRASES.map(p => {
-        const [en, cn] = p.split(' ');
-        const rest = p.slice(p.indexOf(' ') + 1);
-        return `<div class="ielts-phrase"><span class="ielts-phrase-en">${en}</span><span class="ielts-phrase-cn">${rest}</span></div>`;
-      }).join('')}</div>
-    </div>`;
+    </details>`;
   }
-  // 写作练习区（仅 task1/task2 显示）
-  if (task === 'task1' || task === 'task2') {
-    const target = task === 'task1' ? 150 : 250;
-    html += `<div class="ielts-write-practice">
+  return `<details class="ielts-guide"><summary>📐 写作要点 · Task 2（点击展开/收起）</summary>
+    <div class="ielts-write-block"><h4>🗂️ 题型</h4><ul>${t.types.map(s => `<li>${s}</li>`).join('')}</ul></div>
+    <div class="ielts-write-block"><h4>📐 结构</h4><ul>${t.structure.map(s => `<li>${s}</li>`).join('')}</ul></div>
+    <div class="ielts-write-block"><h4>🚀 开头/过渡句型</h4>${t.starters.map(f => `<div class="ielts-frame">${f}</div>`).join('')}</div>
+    <div class="ielts-write-block"><h4>🔗 连接词</h4><div class="ielts-chip-row">${t.links.slice(0,7).map(v => `<span class="ielts-chip">${v}</span>`).join('')}</div></div>
+  </details>`;
+}
+
+function renderIeltsWritePanel() {
+  const task = ieltsWrite.task;
+  const target = ieltsWrite.target;
+  const p = curPrompt();
+  const html = renderIeltsWriteGuide(task) + `
+    <div class="ielts-write-prompt-card">
+      <div class="ielts-write-prompt-top">
+        <span class="ielts-write-prompt-tag">${p.type}</span>
+        <button class="btn btn-ghost btn-sm" onclick="shuffleIeltsWritePrompt()">🔄 换一题</button>
+      </div>
+      <div class="ielts-write-prompt-q">${p.prompt}</div>
+      <div class="ielts-write-prompt-cn">📋 ${p.promptCn}</div>
+      <div class="ielts-write-prompt-tip">💡 ${p.tip}</div>
+    </div>
+    <div class="ielts-write-practice">
       <div class="ielts-write-practice-head">
-        <span>✍️ 实战练习（目标约 ${target} 词）</span>
+        <span>✍️ 你的作文（目标约 ${target} 词）</span>
         <span id="ielts-write-timer" class="ielts-timer-text">00:00</span>
         <button class="btn btn-ghost btn-sm" id="ielts-write-timer-btn" onclick="toggleIeltsWriteTimer()">⏱ 计时</button>
       </div>
-      <textarea id="ielts-write-box" class="ielts-write-box" placeholder="在这里输入你的作文…" oninput="countIeltsWords(${target})"></textarea>
+      <textarea id="ielts-write-box" class="ielts-write-box" placeholder="在这里输入你的作文，写完后点“提交批改”…" oninput="countIeltsWords()"></textarea>
       <div class="ielts-write-foot"><span id="ielts-write-count">0 词</span><span id="ielts-write-target">目标 ${target} 词</span></div>
+      <div class="ielts-write-actions">
+        <button class="btn btn-ghost btn-sm" onclick="ieltsWriteClear()">🗑 清空</button>
+        <button class="btn btn-ghost btn-sm" id="ielts-sample-btn" onclick="toggleIeltsWriteSample()">👀 看范文</button>
+        <button class="btn btn-primary btn-sm" onclick="gradeIeltsEssay()">📝 提交批改</button>
+      </div>
+      <div id="ielts-write-sample" class="ielts-write-sample" style="display:none"></div>
+      <div id="ielts-write-feedback"></div>
     </div>`;
-  }
   document.getElementById('ielts-writing-view').innerHTML = html;
-  if (window._ieltsWriteTimer) { clearInterval(window._ieltsWriteTimer); window._ieltsWriteTimer = null; document.getElementById('ielts-write-timer').textContent = '00:00'; }
+  resetWriteTimer();
 }
-let _ieltsWriteSec = 0;
+
+function shuffleIeltsWritePrompt() {
+  const arr = IELTS_WRITING_PROMPTS[ieltsWrite.task];
+  let n = ieltsWrite.idx;
+  if (arr.length > 1) { while (n === ieltsWrite.idx) n = Math.floor(Math.random() * arr.length); }
+  ieltsWrite.idx = n;
+  renderIeltsWritePanel();
+}
+
+function ieltsWriteClear() {
+  const box = document.getElementById('ielts-write-box'); if (box) box.value = '';
+  const fb = document.getElementById('ielts-write-feedback'); if (fb) fb.innerHTML = '';
+  const sp = document.getElementById('ielts-write-sample'); if (sp) { sp.style.display = 'none'; sp.innerHTML = ''; }
+  const b = document.getElementById('ielts-sample-btn'); if (b) b.textContent = '👀 看范文';
+  countIeltsWords();
+  resetWriteTimer();
+}
+
+function toggleIeltsWriteSample() {
+  const sp = document.getElementById('ielts-write-sample'); if (!sp) return;
+  const b = document.getElementById('ielts-sample-btn');
+  if (sp.style.display === 'none' || !sp.style.display) {
+    sp.innerHTML = `<div class="ielts-sample-head">📄 参考范文（${curPrompt().type}）</div><div class="ielts-sample-body">${ieltsEscapeHtml(curPrompt().sample)}</div>`;
+    sp.style.display = 'block'; b.textContent = '🙈 收起范文';
+  } else { sp.style.display = 'none'; sp.innerHTML = ''; b.textContent = '👀 看范文'; }
+}
+
+function resetWriteTimer() {
+  if (window._ieltsWriteTimer) { clearInterval(window._ieltsWriteTimer); window._ieltsWriteTimer = null; }
+  const btn = document.getElementById('ielts-write-timer-btn'); if (btn) btn.textContent = '⏱ 计时';
+  const out = document.getElementById('ielts-write-timer'); if (out) out.textContent = '00:00';
+  _ieltsWriteSec = 0;
+}
+
 function toggleIeltsWriteTimer() {
   const btn = document.getElementById('ielts-write-timer-btn');
   const out = document.getElementById('ielts-write-timer');
@@ -4162,12 +4218,164 @@ function toggleIeltsWriteTimer() {
     out.textContent = m + ':' + s;
   }, 1000);
 }
-function countIeltsWords(target) {
-  const box = document.getElementById('ielts-write-box');
+
+function countIeltsWords() {
+  const box = document.getElementById('ielts-write-box'); if (!box) return;
   const words = (box.value.trim().match(/\S+/g) || []).length;
-  const countEl = document.getElementById('ielts-write-count');
-  countEl.textContent = words + ' 词';
-  countEl.className = words >= target ? 'ielts-write-count ok' : 'ielts-write-count';
+  const el = document.getElementById('ielts-write-count'); if (!el) return;
+  const target = ieltsWrite.target || 150;
+  el.textContent = words + ' 词';
+  el.className = words >= target ? 'ielts-write-count ok' : 'ielts-write-count';
+}
+
+function gradeIeltsEssay() {
+  const box = document.getElementById('ielts-write-box'); if (!box) return;
+  const text = box.value.trim();
+  const words = (text.match(/\S+/g) || []).length;
+  if (words < 20) { alert('请先写一点内容（至少 20 词）再提交批改哦～'); return; }
+  const res = analyzeIeltsEssay(text, ieltsWrite.task, ieltsWrite.target);
+  document.getElementById('ielts-write-feedback').innerHTML = renderIeltsWriteFeedback(res);
+  const fb = document.getElementById('ielts-write-feedback'); if (fb) fb.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function ieltsEscapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function clamp(x, a, b) { return Math.max(a, Math.min(b, x)); }
+function roundHalf(x) { return Math.round(x * 2) / 2; }
+
+function analyzeIeltsEssay(text, task, minWords) {
+  const isT1 = task === 'task1';
+  const paras = text.split(/\n{1,}/).map(s => s.trim()).filter(Boolean);
+  const sentences = text.replace(/([.!?]+)\s*/g, '$1|').split('|').map(s => s.trim()).filter(Boolean);
+  const wordTokens = text.match(/[A-Za-z']+/g) || [];
+  const wordCount = wordTokens.length;
+  const lower = wordTokens.map(w => w.toLowerCase());
+  const unique = new Set(lower);
+  const ttr = unique.size / Math.max(wordCount, 1);
+  const avgWordLen = lower.join('').length / Math.max(wordCount, 1);
+  const avgSentLen = wordCount / Math.max(sentences.length, 1);
+
+  const esc = w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const countHits = (list) => {
+    let n = 0; const used = [];
+    list.forEach(w => { const re = new RegExp('\\b' + esc(w) + '\\b', 'gi'); const m = text.match(re); if (m) { n += m.length; if (m.length) used.push(w); } });
+    return { n, used };
+  };
+  const lk = countHits(IELTS_WRITE_LINKERS);
+  const cx = countHits(IELTS_WRITE_SUBORD);
+  const av = countHits(IELTS_WRITE_ADV);
+  const linkerCount = lk.n, complexCount = cx.n, advCount = av.n;
+  const advUsed = av.used.slice(0, 6);
+
+  const issues = [];
+  let m;
+  const repRe = /\b([a-z']+)\s+\1\b/gi; const seenRep = new Set();
+  while ((m = repRe.exec(text))) { const w = m[1].toLowerCase(); if (!seenRep.has(w)) { seenRep.add(w); issues.push({ type: '重复词', text: w + ' ' + w, advice: `连续重复了 “${w} ${w}”，检查是否多打了一遍。` }); } }
+  const iRe = /(^|[^A-Za-z])i([^A-Za-z]|$)/g;
+  if ((m = iRe.exec(text))) { issues.push({ type: '大小写', text: 'i', advice: '句中的 “i” 应大写为 “I”。' }); }
+  const msRe = /\.([A-Za-z])/g;
+  if ((m = msRe.exec(text))) { if (!'.!?'.includes(m[1])) issues.push({ type: '空格', text: '.' + m[1], advice: `句号后缺少空格：“.${m[1]}”。` }); }
+  sentences.forEach((s, i) => { if (s && /^[a-z]/.test(s)) issues.push({ type: '大小写', text: s.slice(0, 22) + '…', advice: `第 ${i + 1} 句以一个小写字母开头，句首单词应大写。` }); });
+  sentences.forEach((s, i) => { const c = (s.match(/\S+/g) || []).length; if (c > 55) issues.push({ type: '长句', text: s.slice(0, 26) + '…', advice: `第 ${i + 1} 句长达 ${c} 词，可能缺少标点，建议拆分为短句。` }); });
+
+  // TR
+  let tr = 5.0;
+  if (wordCount >= minWords) tr = 6.5;
+  if (wordCount >= minWords * 1.15) tr = 7.0;
+  const hasOverview = isT1 && /overall|in general|generally|to sum up|it is clear|it can be seen|it is evident|it is obvious/i.test(text);
+  const hasPosition = !isT1 && /(in my opinion|from my perspective|i believe|i think|i argue|i contend|this essay (will|agrees|argues)|my view|as far as i am concerned)/i.test(text);
+  if ((isT1 && hasOverview) || (!isT1 && hasPosition)) tr += 0.5;
+  if (wordCount < minWords * 0.6) tr -= 1.0;
+  // CC
+  let cc = 5.0;
+  if (paras.length >= 3) cc = 6.0;
+  if (paras.length >= 4) cc = 6.5;
+  if (linkerCount >= 3) cc += 0.5;
+  if (linkerCount >= 6) cc += 0.5;
+  if (avgSentLen >= 10 && avgSentLen <= 28) cc += 0.5;
+  // LR
+  let lr = 5.0;
+  if (ttr >= 0.45) lr = 6.0;
+  if (ttr >= 0.55) lr = 6.5;
+  if (ttr >= 0.65) lr = 7.0;
+  if (advCount >= 3) lr += 0.5;
+  if (advCount >= 6) lr += 0.5;
+  if (avgWordLen >= 4.8) lr += 0.5;
+  // GRA
+  let gra = 5.0;
+  if (sentences.length >= 5) gra = 6.0;
+  if (sentences.length >= 8) gra = 6.5;
+  if (complexCount >= 2) gra += 0.5;
+  if (complexCount >= 5) gra += 0.5;
+  const errN = issues.filter(i => i.type !== '长句').length;
+  gra -= Math.min(2, errN * 0.5);
+  tr = clamp(tr, 5, 9); cc = clamp(cc, 5, 9); lr = clamp(lr, 5, 9); gra = clamp(gra, 5, 9);
+  let overall = (tr + cc + lr + gra) / 4;
+  if (wordCount < minWords) overall = Math.min(overall, 5.0);
+  overall = roundHalf(overall);
+  tr = roundHalf(tr); cc = roundHalf(cc); lr = roundHalf(lr); gra = roundHalf(gra);
+
+  const fb = { tr: [], cc: [], lr: [], gra: [] };
+  if (wordCount < minWords) fb.tr.push(`词数 ${wordCount} 未达到 Task ${isT1 ? 1 : 2} 的最低要求 ${minWords} 词，会被扣分（TR 上限约 5.0）。`);
+  else fb.tr.push(`词数 ${wordCount} 达标（要求 ${minWords}+）。`);
+  if (isT1) fb.tr.push(hasOverview ? '已包含 Overview 总览段，概括了最显著趋势，符合 Task 1 要求。' : '缺少明确的 Overview（如 overall / in general），建议加一段概括最显著特征。');
+  else fb.tr.push(hasPosition ? '文章有明确立场（opinion / position），Task Response 到位。' : '未清晰表达个人立场，Task 2 建议加入 In my opinion / I believe 等表明态度。');
+
+  fb.cc.push(paras.length >= 3 ? `段落结构清晰（${paras.length} 段），分段合理。` : `段落偏少（${paras.length} 段），建议 Task ${isT1 ? 1 : 2} 至少分 ${isT1 ? 3 : 4} 段。`);
+  fb.cc.push(linkerCount >= 3 ? `使用了 ${linkerCount} 处连接词/短语，衔接较自然。` : `连接词偏少（${linkerCount} 处），建议增加 however / moreover / therefore 等提升连贯。`);
+
+  fb.lr.push(`词汇多样性 TTR=${ttr.toFixed(2)}（越接近 1 越好），平均词长 ${avgWordLen.toFixed(1)} 字母。`);
+  fb.lr.push(advCount >= 3 ? `用到了 ${advCount} 个较高级词汇（如 ${advUsed.slice(0, 3).join(', ')}），LR 有亮点。` : `较高级词汇偏少（${advCount} 个），可适当引入学术/书面表达提升 LR。`);
+
+  fb.gra.push(sentences.length >= 5 ? `句式数量充足（${sentences.length} 句），复合句标记 ${complexCount} 处。` : `句子数量偏少（${sentences.length} 句），建议多写完整句并加入从句。`);
+  fb.gra.push(errN > 0 ? `检测到 ${errN} 处疑似语法/拼写问题，详见下方“具体问题”。` : `未检测到明显语法/拼写问题，准确性较好。`);
+
+  return { wordCount, minWords, isT1, paras: paras.length, sentences: sentences.length, linkerCount, complexCount, advCount, ttr, avgSentLen, tr, cc, lr, gra, overall, issues, advUsed, fb };
+}
+
+function renderIeltsWriteFeedback(r) {
+  const cls = b => b >= 7 ? 'good' : b >= 6 ? 'mid' : 'low';
+  const crit = [
+    { code: 'TR', name: '任务回应 Task Response', band: r.tr, items: r.fb.tr },
+    { code: 'CC', name: '连贯衔接 Coherence & Cohesion', band: r.cc, items: r.fb.cc },
+    { code: 'LR', name: '词汇资源 Lexical Resource', band: r.lr, items: r.fb.lr },
+    { code: 'GRA', name: '语法 Grammatical Range & Accuracy', band: r.gra, items: r.fb.gra }
+  ];
+  const critHtml = crit.map(c => `
+    <div class="ielts-fb-crit">
+      <div class="ielts-fb-crit-head">
+        <span class="ielts-fb-code">${c.code}</span>
+        <span class="ielts-fb-crit-name">${c.name}</span>
+        <span class="ielts-fb-band ${cls(c.band)}">${c.band.toFixed(1)}</span>
+      </div>
+      <ul class="ielts-fb-items">${c.items.map(i => `<li>${i}</li>`).join('')}</ul>
+    </div>`).join('');
+  const issuesHtml = r.issues.length
+    ? `<div class="ielts-fb-issues"><h4>⚠ 具体问题（${r.issues.length}）</h4><ul>${r.issues.map(i => `<li><span class="ielts-issue-type">${i.type}</span> <code>${ieltsEscapeHtml(i.text)}</code> — ${i.advice}</li>`).join('')}</ul></div>`
+    : `<div class="ielts-fb-issues ok">✅ 未发现明显语法/拼写问题。</div>`;
+  return `
+    <div class="ielts-feedback">
+      <div class="ielts-fb-overall">
+        <div class="ielts-fb-overall-num ${cls(r.overall)}">${r.overall.toFixed(1)}</div>
+        <div class="ielts-fb-overall-meta">
+          <div class="ielts-fb-overall-label">预估总分（Band）</div>
+          <div class="ielts-fb-overall-sub">${r.wordCount} 词 · 目标 ${r.minWords} 词 · ${r.isT1 ? 'Task 1' : 'Task 2'}</div>
+        </div>
+      </div>
+      <p class="ielts-fb-disclaimer">ⓘ 本分数为基于词汇、语法、结构等维度的 <b>AI 启发式估算</b>，仅供参考，不等同于官方成绩。你也可以把作文贴给 WorkBuddy，让我给出更细致的逐句批改。</p>
+      <div class="ielts-fb-crits">${critHtml}</div>
+      ${issuesHtml}
+    </div>`;
+}
+
+function renderIeltsPhrases() {
+  return `<div class="ielts-write-guide">
+    <h3>🏆 高分短语库</h3>
+    <p class="ielts-write-intro">熟记并灵活使用以下表达，可显著提升写作与口语的 Lexical Resource 分数。</p>
+    <div class="ielts-phrase-list">${IELTS_PHRASES.map(p => { const sp = p.indexOf(' '); const en = p.slice(0, sp); const rest = p.slice(sp + 1); return `<div class="ielts-phrase"><span class="ielts-phrase-en">${en}</span><span class="ielts-phrase-cn">${rest}</span></div>`; }).join('')}</div>
+  </div>`;
 }
 
 /* ---------- 评分标准 ---------- */
