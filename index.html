@@ -74,6 +74,7 @@
     <button class="nav-tab" data-page="exam">📋 试卷</button>
     <button class="nav-tab" data-page="listening">🎧 听力</button>
     <button class="nav-tab" data-page="grammar">📐 语法</button>
+    <button class="nav-tab" data-page="ielts">🎓 雅思</button>
     <button class="nav-tab" data-page="wrong">❌ 错题本</button>
     <button class="nav-tab" data-page="dict">📖 词典</button>
     <button class="nav-tab" data-page="stats">📊 统计</button>
@@ -638,10 +639,56 @@
     </div>
   </div>
 
+  <!-- ==================== 雅思专项页 ==================== -->
+  <div class="page" id="page-ielts">
+    <h2 style="font-size:1.4rem; margin-bottom:8px">🎓 雅思专项学习</h2>
+    <p style="color:var(--text-secondary); margin-bottom:20px; font-size:0.9rem">词汇 · 口语 · 写作 · 评分标准，一站式雅思备考</p>
+
+    <!-- 子标签 -->
+    <div class="ielts-tabs" id="ielts-tabs">
+      <button class="ielts-tab active" data-ielts="vocab" onclick="switchIELTS('vocab')">📚 词汇</button>
+      <button class="ielts-tab" data-ielts="speaking" onclick="switchIELTS('speaking')">🗣️ 口语</button>
+      <button class="ielts-tab" data-ielts="writing" onclick="switchIELTS('writing')">✍️ 写作</button>
+      <button class="ielts-tab" data-ielts="bands" onclick="switchIELTS('bands')">📊 评分标准</button>
+    </div>
+
+    <!-- 词汇子模块 -->
+    <div class="ielts-panel active" id="ielts-vocab">
+      <div id="ielts-vocab-home"></div>
+      <div id="ielts-vocab-study" style="display:none"></div>
+    </div>
+
+    <!-- 口语子模块 -->
+    <div class="ielts-panel" id="ielts-speaking" style="display:none">
+      <div class="ielts-subtabs" id="ielts-speaking-sub">
+        <button class="ielts-subtab active" data-part="part1" onclick="switchSpeaking('part1')">Part 1 日常</button>
+        <button class="ielts-subtab" data-part="part2" onclick="switchSpeaking('part2')">Part 2 独白</button>
+        <button class="ielts-subtab" data-part="part3" onclick="switchSpeaking('part3')">Part 3 讨论</button>
+      </div>
+      <div id="ielts-speaking-list"></div>
+    </div>
+
+    <!-- 写作子模块 -->
+    <div class="ielts-panel" id="ielts-writing" style="display:none">
+      <div class="ielts-subtabs" id="ielts-writing-sub">
+        <button class="ielts-subtab active" data-task="task1" onclick="switchWriting('task1')">Task 1 图表</button>
+        <button class="ielts-subtab" data-task="task2" onclick="switchWriting('task2')">Task 2 议论文</button>
+        <button class="ielts-subtab" data-task="phrases" onclick="switchWriting('phrases')">高分短语</button>
+      </div>
+      <div id="ielts-writing-view"></div>
+    </div>
+
+    <!-- 评分标准子模块 -->
+    <div class="ielts-panel" id="ielts-bands" style="display:none">
+      <div id="ielts-bands-view"></div>
+    </div>
+  </div>
+
 </div>
 
 <script src="words.js"></script>
 <script src="exams.js"></script>
+<script src="ielts.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
