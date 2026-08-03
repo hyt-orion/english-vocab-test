@@ -199,6 +199,7 @@ function navigateTo(page) {
   if (page === 'wrong') renderWrongBook();
   if (page === 'listening') setupListening();
   if (page === 'grammar') renderGrammarTopics();
+  if (page === 'ielts') setupIELTS();
   if (page === 'dict') { renderQuickWords(); }
   if (page === 'exam') {
     showExamListView();
@@ -3545,6 +3546,367 @@ function init() {
   if ('speechSynthesis' in window) {
     speechSynthesis.getVoices();
   }
+}
+
+// ==================== 雅思专项模块 ====================
+const IELTS_VOCAB_KEY = 'ieltsVocabProgress_v1';
+let ieltsStudy = { topic: null, idx: 0, flipped: false, mode: 'study', queue: [], current: null, answered: false };
+let ieltsSpeakingTimer = null;
+
+function ieltsLoadProgress() {
+  try { return JSON.parse(localStorage.getItem(IELTS_VOCAB_KEY) || '{}'); }
+  catch (e) { return {}; }
+}
+function ieltsSaveProgress(obj) {
+  try { localStorage.setItem(IELTS_VOCAB_KEY, JSON.stringify(obj)); } catch (e) {}
+}
+function ieltsSpeak(text, rate) {
+  if (!('speechSynthesis' in window)) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'en-US';
+  u.rate = rate || 0.9;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+}
+
+function setupIELTS() {
+  switchIELTS('vocab');
+}
+
+function switchIELTS(tab) {
+  document.querySelectorAll('#ielts-tabs .ielts-tab').forEach(b => b.classList.toggle('active', b.dataset.ielts === tab));
+  document.getElementById('ielts-vocab').style.display = tab === 'vocab' ? 'block' : 'none';
+  document.getElementById('ielts-speaking').style.display = tab === 'speaking' ? 'block' : 'none';
+  document.getElementById('ielts-writing').style.display = tab === 'writing' ? 'block' : 'none';
+  document.getElementById('ielts-bands').style.display = tab === 'bands' ? 'block' : 'none';
+  if (tab === 'vocab') renderIeltsVocabHome();
+  if (tab === 'speaking') switchSpeaking('part1');
+  if (tab === 'writing') switchWriting('task1');
+  if (tab === 'bands') renderIeltsBands();
+}
+
+/* ---------- 词汇：主题首页 ---------- */
+function renderIeltsVocabHome() {
+  document.getElementById('ielts-vocab-study').style.display = 'none';
+  document.getElementById('ielts-vocab-home').style.display = 'block';
+  const prog = ieltsLoadProgress();
+  const cards = IELTS_VOCAB.map((t, i) => {
+    const learned = t.words.filter(w => prog[i + ':' + w.word]).length;
+    const pct = Math.round((learned / t.words.length) * 100);
+    return `<div class="ielts-topic-card" onclick="openIeltsTopic(${i})">
+      <div class="ielts-topic-icon">${t.icon}</div>
+      <div class="ielts-topic-name">${t.topic}</div>
+      <div class="ielts-topic-count">${learned}/${t.words.length} 已掌握</div>
+      <div class="ielts-topic-bar"><div class="ielts-topic-fill" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+  document.getElementById('ielts-vocab-home').innerHTML =
+    `<div class="ielts-vocab-tools">
+       <span class="ielts-vocab-hint">💡 点击主题开始学习，已掌握的单词会记录在本地</span>
+     </div>
+     <div class="ielts-topic-grid">${cards}</div>`;
+}
+
+function openIeltsTopic(i) {
+  ieltsStudy = { topic: IELTS_VOCAB[i], idx: 0, flipped: false, mode: 'study', queue: [], current: null, answered: false };
+  document.getElementById('ielts-vocab-home').style.display = 'none';
+  document.getElementById('ielts-vocab-study').style.display = 'block';
+  renderIeltsStudy();
+}
+
+function setIeltsMode(mode) {
+  ieltsStudy.mode = mode;
+  ieltsStudy.idx = 0;
+  ieltsStudy.flipped = false;
+  renderIeltsStudy();
+}
+
+function renderIeltsStudy() {
+  const t = ieltsStudy.topic;
+  if (!t) return;
+  const prog = ieltsLoadProgress();
+  const learned = t.words.filter(w => prog[IELTS_VOCAB.indexOf(t) + ':' + w.word]).length;
+
+  const head = `
+    <div class="ielts-study-head">
+      <button class="btn btn-ghost btn-sm" onclick="renderIeltsVocabHome()">← 返回</button>
+      <div class="ielts-study-title">${t.icon} ${t.topic}</div>
+      <div class="ielts-mode-switch">
+        <button class="ielts-mode-btn ${ieltsStudy.mode === 'study' ? 'active' : ''}" onclick="setIeltsMode('study')">📖 学习</button>
+        <button class="ielts-mode-btn ${ieltsStudy.mode === 'quiz' ? 'active' : ''}" onclick="setIeltsMode('quiz')">🧪 自测</button>
+      </div>
+    </div>
+    <div class="ielts-study-progress">已掌握 ${learned}/${t.words.length} · 第 ${ieltsStudy.idx + 1}/${t.words.length} 个</div>
+  `;
+
+  if (ieltsStudy.mode === 'study') {
+    const w = t.words[ieltsStudy.idx];
+    const isKnown = !!prog[IELTS_VOCAB.indexOf(t) + ':' + w.word];
+    document.getElementById('ielts-vocab-study').innerHTML = head + `
+      <div class="ielts-flashcard ${ieltsStudy.flipped ? 'flipped' : ''}" onclick="flipIeltsCard()">
+        <div class="ielts-flash-front">
+          <button class="ielts-speak-btn" onclick="event.stopPropagation();ieltsSpeak('${w.word}',1)">🔊</button>
+          <div class="ielts-flash-word">${w.word}</div>
+          <div class="ielts-flash-phon">${w.phonetic}</div>
+          <div class="ielts-flash-hint">点击卡片翻面看释义</div>
+        </div>
+        <div class="ielts-flash-back">
+          <div class="ielts-flash-pos">${w.pos}</div>
+          <div class="ielts-flash-meaning">${w.meaning}</div>
+          <div class="ielts-flash-ex">${w.example}</div>
+          <div class="ielts-flash-excn">${w.exampleCn}</div>
+          <button class="ielts-speak-btn ielts-speak-btn-sm" onclick="event.stopPropagation();ieltsSpeak('${w.example}',0.9)">🔊 朗读例句</button>
+        </div>
+      </div>
+      <div class="ielts-flash-actions">
+        <button class="btn btn-ghost" onclick="ieltsVocabUnknown()">🔁 还不熟</button>
+        <button class="btn btn-primary" onclick="ieltsVocabKnown()">✓ ${isKnown ? '已掌握' : '认识'}</button>
+      </div>
+    `;
+  } else {
+    // 自测：四选一
+    const w = t.words[ieltsStudy.idx];
+    if (!ieltsStudy.queue.length || ieltsStudy.current !== w) {
+      const others = t.words.filter(x => x.word !== w.word).sort(() => Math.random() - 0.5).slice(0, 3);
+      ieltsStudy.queue = [...others, w].sort(() => Math.random() - 0.5);
+      ieltsStudy.current = w;
+      ieltsStudy.answered = false;
+    }
+    const opts = ieltsStudy.queue.map((o, i) => `
+      <div class="listening-option" onclick="selectIeltsQuiz('${o.meaning.replace(/'/g, "\\'")}', this)">
+        <span class="listening-option-label">${String.fromCharCode(65 + i)}</span>
+        <span>${o.meaning}</span>
+      </div>`).join('');
+    document.getElementById('ielts-vocab-study').innerHTML = head + `
+      <div class="question-card">
+        <span class="question-tag">🧪 自测</span>
+        <div class="question-word">${w.word}</div>
+        <div class="question-phonetic">${w.phonetic}</div>
+        <button class="btn btn-primary btn-lg" onclick="ieltsSpeak('${w.word}',1)" style="font-size:1.4rem;padding:14px 34px;margin-top:8px;">🔊 朗读</button>
+      </div>
+      <div id="ielts-quiz-options">${opts}</div>
+    `;
+  }
+}
+
+function flipIeltsCard() {
+  ieltsStudy.flipped = !ieltsStudy.flipped;
+  renderIeltsStudy();
+}
+function ieltsVocabKnown() {
+  const t = ieltsStudy.topic, w = t.words[ieltsStudy.idx];
+  const prog = ieltsLoadProgress();
+  prog[IELTS_VOCAB.indexOf(t) + ':' + w.word] = 1;
+  ieltsSaveProgress(prog);
+  ieltsStudy.flipped = false;
+  ieltsNextCard();
+}
+function ieltsVocabUnknown() {
+  const prog = ieltsLoadProgress();
+  delete prog[IELTS_VOCAB.indexOf(ieltsStudy.topic) + ':' + ieltsStudy.topic.words[ieltsStudy.idx].word];
+  ieltsSaveProgress(prog);
+  ieltsStudy.flipped = false;
+  ieltsNextCard();
+}
+function ieltsNextCard() {
+  ieltsStudy.idx++;
+  if (ieltsStudy.idx >= ieltsStudy.topic.words.length) {
+    const learned = ieltsStudy.topic.words.filter(w => ieltsLoadProgress()[IELTS_VOCAB.indexOf(ieltsStudy.topic) + ':' + w.word]).length;
+    document.getElementById('ielts-vocab-study').innerHTML = `
+      <div class="card result-card">
+        <div style="font-size:3rem;margin-bottom:8px">🎉</div>
+        <div class="result-msg">本主题学完啦！</div>
+        <div class="result-sub">已掌握 ${learned}/${ieltsStudy.topic.words.length}</div>
+        <div class="result-actions">
+          <button class="btn btn-ghost" onclick="renderIeltsVocabHome()">← 返回主题</button>
+          <button class="btn btn-primary" onclick="openIeltsTopic(${IELTS_VOCAB.indexOf(ieltsStudy.topic)})">🔄 再来一轮</button>
+        </div>
+      </div>`;
+    return;
+  }
+  renderIeltsStudy();
+}
+function selectIeltsQuiz(answer, el) {
+  if (ieltsStudy.answered) return;
+  ieltsStudy.answered = true;
+  const correct = ieltsStudy.current.meaning;
+  const ok = answer === correct;
+  if (ok) {
+    el.classList.add('correct');
+    const prog = ieltsLoadProgress();
+    prog[IELTS_VOCAB.indexOf(ieltsStudy.topic) + ':' + ieltsStudy.current.word] = 1;
+    ieltsSaveProgress(prog);
+  } else {
+    el.classList.add('wrong');
+    document.querySelectorAll('#ielts-quiz-options .listening-option').forEach(o => {
+      if (o.textContent.includes(correct)) o.classList.add('correct');
+    });
+  }
+  setTimeout(ieltsNextCard, 1500);
+}
+
+/* ---------- 口语 ---------- */
+function switchSpeaking(part) {
+  document.querySelectorAll('#ielts-speaking-sub .ielts-subtab').forEach(b => b.classList.toggle('active', b.dataset.part === part));
+  const data = IELTS_SPEAKING[part] || [];
+  let html = '';
+  if (part === 'part2') {
+    html += `<div class="ielts-speak-timer-bar">
+      <span>⏱️ Part 2 练习：准备 1 分钟 + 作答 2 分钟</span>
+      <button class="btn btn-primary btn-sm" id="ielts-speak-timer-btn" onclick="startIeltsSpeakingTimer()">开始计时</button>
+      <span id="ielts-speak-timer" class="ielts-timer-text"></span>
+    </div>`;
+  }
+  html += data.map((d, i) => `
+    <div class="ielts-speak-card">
+      <div class="ielts-speak-q"><span class="ielts-speak-part">${part.toUpperCase()}</span> ${d.q}</div>
+      <button class="ielts-speak-toggle" onclick="toggleSpeakingSample(this)">查看范例与提示 ▾</button>
+      <div class="ielts-speak-detail" style="display:none">
+        <div class="ielts-speak-sample"><strong>范例：</strong>${d.sample}</div>
+        <div class="ielts-speak-tips"><strong>💡 提示：</strong>${d.tips}</div>
+      </div>
+    </div>`).join('');
+  document.getElementById('ielts-speaking-list').innerHTML = html;
+  if (ieltsSpeakingTimer) { clearInterval(ieltsSpeakingTimer); ieltsSpeakingTimer = null; }
+}
+function toggleSpeakingSample(btn) {
+  const box = btn.nextElementSibling;
+  const open = box.style.display === 'none';
+  box.style.display = open ? 'block' : 'none';
+  btn.textContent = open ? '收起范例与提示 ▴' : '查看范例与提示 ▾';
+}
+function startIeltsSpeakingTimer() {
+  if (ieltsSpeakingTimer) { clearInterval(ieltsSpeakingTimer); ieltsSpeakingTimer = null; }
+  const btn = document.getElementById('ielts-speak-timer-btn');
+  const out = document.getElementById('ielts-speak-timer');
+  let phase = 'prep', left = 60;
+  btn.disabled = true;
+  const tick = () => {
+    const m = String(Math.floor(left / 60)).padStart(2, '0');
+    const s = String(left % 60).padStart(2, '0');
+    out.textContent = (phase === 'prep' ? '准备 ' : '作答 ') + m + ':' + s;
+    out.className = 'ielts-timer-text ' + (phase === 'prep' ? 'prep' : 'speak');
+    if (left <= 0) {
+      if (phase === 'prep') { phase = 'speak'; left = 120; }
+      else { clearInterval(ieltsSpeakingTimer); ieltsSpeakingTimer = null; out.textContent = '✅ 完成！'; btn.disabled = false; return; }
+    }
+    left--;
+  };
+  tick();
+  ieltsSpeakingTimer = setInterval(tick, 1000);
+}
+
+/* ---------- 写作 ---------- */
+function switchWriting(task) {
+  document.querySelectorAll('#ielts-writing-sub .ielts-subtab').forEach(b => b.classList.toggle('active', b.dataset.task === task));
+  let html = '';
+  if (task === 'task1') {
+    const t = IELTS_WRITING.task1;
+    html = `<div class="ielts-write-guide">
+      <h3>${t.title}</h3>
+      <p class="ielts-write-intro">${t.intro}</p>
+      <div class="ielts-write-block"><h4>📐 结构</h4><ul>${t.structure.map(s => `<li>${s}</li>`).join('')}</ul></div>
+      <div class="ielts-write-block"><h4>🔤 趋势动词</h4><div class="ielts-chip-row">${t.verbs.map(v => `<span class="ielts-chip">${v}</span>`).join('')}</div></div>
+      <div class="ielts-write-block"><h4>📈 程度副词</h4><div class="ielts-chip-row">${t.adverbs.map(v => `<span class="ielts-chip">${v}</span>`).join('')}</div></div>
+      <div class="ielts-write-block"><h4>🧩 句型模板</h4>${t.frames.map(f => `<div class="ielts-frame">${f}</div>`).join('')}</div>
+    </div>`;
+  } else if (task === 'task2') {
+    const t = IELTS_WRITING.task2;
+    html = `<div class="ielts-write-guide">
+      <h3>${t.title}</h3>
+      <p class="ielts-write-intro">${t.intro}</p>
+      <div class="ielts-write-block"><h4>🗂️ 题型</h4><ul>${t.types.map(s => `<li>${s}</li>`).join('')}</ul></div>
+      <div class="ielts-write-block"><h4>📐 结构</h4><ul>${t.structure.map(s => `<li>${s}</li>`).join('')}</ul></div>
+      <div class="ielts-write-block"><h4>🚀 开头/过渡句型</h4>${t.starters.map(f => `<div class="ielts-frame">${f}</div>`).join('')}</div>
+      <div class="ielts-write-block"><h4>🔗 连接词</h4><div class="ielts-chip-row">${t.links.slice(0,7).map(v => `<span class="ielts-chip">${v}</span>`).join('')}</div></div>
+    </div>`;
+  } else {
+    html = `<div class="ielts-write-guide">
+      <h3>🏆 高分短语库</h3>
+      <p class="ielts-write-intro">熟记并灵活使用以下表达，可显著提升写作与口语的 Lexical Resource 分数。</p>
+      <div class="ielts-phrase-list">${IELTS_PHRASES.map(p => {
+        const [en, cn] = p.split(' ');
+        const rest = p.slice(p.indexOf(' ') + 1);
+        return `<div class="ielts-phrase"><span class="ielts-phrase-en">${en}</span><span class="ielts-phrase-cn">${rest}</span></div>`;
+      }).join('')}</div>
+    </div>`;
+  }
+  // 写作练习区（仅 task1/task2 显示）
+  if (task === 'task1' || task === 'task2') {
+    const target = task === 'task1' ? 150 : 250;
+    html += `<div class="ielts-write-practice">
+      <div class="ielts-write-practice-head">
+        <span>✍️ 实战练习（目标约 ${target} 词）</span>
+        <span id="ielts-write-timer" class="ielts-timer-text">00:00</span>
+        <button class="btn btn-ghost btn-sm" id="ielts-write-timer-btn" onclick="toggleIeltsWriteTimer()">⏱ 计时</button>
+      </div>
+      <textarea id="ielts-write-box" class="ielts-write-box" placeholder="在这里输入你的作文…" oninput="countIeltsWords(${target})"></textarea>
+      <div class="ielts-write-foot"><span id="ielts-write-count">0 词</span><span id="ielts-write-target">目标 ${target} 词</span></div>
+    </div>`;
+  }
+  document.getElementById('ielts-writing-view').innerHTML = html;
+  if (window._ieltsWriteTimer) { clearInterval(window._ieltsWriteTimer); window._ieltsWriteTimer = null; document.getElementById('ielts-write-timer').textContent = '00:00'; }
+}
+let _ieltsWriteSec = 0;
+function toggleIeltsWriteTimer() {
+  const btn = document.getElementById('ielts-write-timer-btn');
+  const out = document.getElementById('ielts-write-timer');
+  if (window._ieltsWriteTimer) {
+    clearInterval(window._ieltsWriteTimer); window._ieltsWriteTimer = null; btn.textContent = '⏱ 计时'; return;
+  }
+  btn.textContent = '⏹ 停止';
+  window._ieltsWriteTimer = setInterval(() => {
+    _ieltsWriteSec++;
+    const m = String(Math.floor(_ieltsWriteSec / 60)).padStart(2, '0');
+    const s = String(_ieltsWriteSec % 60).padStart(2, '0');
+    out.textContent = m + ':' + s;
+  }, 1000);
+}
+function countIeltsWords(target) {
+  const box = document.getElementById('ielts-write-box');
+  const words = (box.value.trim().match(/\S+/g) || []).length;
+  const countEl = document.getElementById('ielts-write-count');
+  countEl.textContent = words + ' 词';
+  countEl.className = words >= target ? 'ielts-write-count ok' : 'ielts-write-count';
+}
+
+/* ---------- 评分标准 ---------- */
+function renderIeltsBands() {
+  const lr = IELTS_BANDS.listeningReading;
+  const sp = IELTS_BANDS.speaking;
+  const wr = IELTS_BANDS.writing;
+  const crit = IELTS_BANDS.writingCriteria;
+  document.getElementById('ielts-bands-view').innerHTML = `
+    <div class="ielts-band-section">
+      <h3>🎧 听力 / 📖 阅读（学术类）正确数 → 分数</h3>
+      <table class="ielts-band-table">
+        <thead><tr><th>正确题数（共40）</th><th>对应分数</th></tr></thead>
+        <tbody>${lr.map(r => `<tr><td>${r.raw}</td><td><b>${r.band}</b></td></tr>`).join('')}</tbody>
+      </table>
+    </div>
+    <div class="ielts-band-grid">
+      <div class="ielts-band-col">
+        <h3>🗣️ 口语评分</h3>
+        <table class="ielts-band-table">
+          <thead><tr><th>分数</th><th>描述</th></tr></thead>
+          <tbody>${sp.map(r => `<tr><td><b>${r.band}</b></td><td>${r.desc}</td></tr>`).join('')}</tbody>
+        </table>
+      </div>
+      <div class="ielts-band-col">
+        <h3>✍️ 写作评分</h3>
+        <table class="ielts-band-table">
+          <thead><tr><th>分数</th><th>描述</th></tr></thead>
+          <tbody>${wr.map(r => `<tr><td><b>${r.band}</b></td><td>${r.desc}</td></tr>`).join('')}</tbody>
+        </table>
+      </div>
+    </div>
+    <div class="ielts-band-section">
+      <h3>✍️ 写作四大评分项</h3>
+      <div class="ielts-crit-grid">
+        ${crit.map(c => `<div class="ielts-crit"><div class="ielts-crit-code">${c.code}</div><div class="ielts-crit-name">${c.name}</div><div class="ielts-crit-note">${c.note}</div></div>`).join('')}
+      </div>
+    </div>
+  `;
 }
 
 // 启动
