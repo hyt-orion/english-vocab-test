@@ -237,6 +237,7 @@ function renderDashboard() {
   document.getElementById('stat-learning').textContent = learning;
   document.getElementById('stat-accuracy').textContent = avgAccuracy + '%';
   document.getElementById('stat-tests').textContent = App.record.totalTests;
+  renderHuobao();
 }
 
 // ==================== 测试配置页 ====================
@@ -2427,6 +2428,150 @@ function renderStudyCalendar() {
       </div>
     </div>
   `;
+}
+
+// ==================== 火宝宝 · 连续打卡奖励系统 ====================
+const HUOBAO_LEVELS = [
+  { lv: 1, name: '小火苗',   min: 0,   emoji: '🔥', color: '#fb923c', desc: '刚刚点燃，每天都来喂火吧！' },
+  { lv: 2, name: '跳跳火',   min: 3,   emoji: '🔥', color: '#f97316', desc: '连续 3 天，火苗稳住了' },
+  { lv: 3, name: '烈焰宝宝', min: 7,   emoji: '🔥', color: '#ef4444', desc: '坚持一周，超棒！' },
+  { lv: 4, name: '炽焰精灵', min: 14,  emoji: '🔥', color: '#ec4899', desc: '两周不间断，渐入佳境' },
+  { lv: 5, name: '炎龙之魂', min: 30,  emoji: '🔥', color: '#a855f7', desc: '月度学习战士' },
+  { lv: 6, name: '不灭圣火', min: 60,  emoji: '🔥', color: '#6366f1', desc: '两个月坚如磐石' },
+  { lv: 7, name: '传说火神', min: 100, emoji: '🔥', color: '#f59e0b', desc: '百天传奇，封神！' },
+];
+
+function getHuobaoLevel(streak) {
+  let lvl = HUOBAO_LEVELS[0];
+  for (const L of HUOBAO_LEVELS) if (streak >= L.min) lvl = L;
+  return lvl;
+}
+
+function getStreakState() {
+  const log = getStudyLog();
+  const { current, longest } = calculateStreak(log);
+  const today = new Date().toISOString().slice(0, 10);
+  const checkedInToday = !!(log[today] && log[today].checkedIn);
+  return { current, longest, checkedInToday, total: Object.keys(log).length };
+}
+
+function markDailyCheckIn() {
+  const today = new Date().toISOString().slice(0, 10);
+  const log = getStudyLog();
+  if (!log[today]) log[today] = { words: 0, tests: 0, exams: 0, total: 0 };
+  if (log[today].checkedIn) { renderHuobao(); return; }
+  log[today].checkedIn = true;
+  log[today].total = Math.max(log[today].total || 0, 1);
+  localStorage.setItem('studyLog', JSON.stringify(log));
+  const { current } = getStreakState();
+  const lvl = getHuobaoLevel(current);
+  renderHuobao();
+  renderStudyCalendar();
+  showToast(`🔥 打卡成功！火宝宝已连续燃烧 ${current} 天 · ${lvl.name}`);
+}
+
+function flameSvg() {
+  return `<svg class="hb-flame" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <linearGradient id="hbGrad" x1="0" y1="1" x2="0" y2="0">
+        <stop offset="0%" stop-color="#ffd166"/>
+        <stop class="stop-mid" offset="50%" stop-color="#ff7b00"/>
+        <stop offset="100%" stop-color="#ff7b00"/>
+      </linearGradient>
+    </defs>
+    <path class="hb-flame-body" d="M50 12 C 64 40, 86 52, 79 80 C 75 102, 57 112, 50 112 C 43 112, 25 102, 21 80 C 14 52, 36 40, 50 12 Z" fill="url(#hbGrad)"/>
+    <ellipse cx="50" cy="44" rx="11" ry="20" fill="#fff3c4" opacity="0.85"/>
+    <circle cx="42" cy="82" r="4.6" fill="#3a2410"/>
+    <circle cx="58" cy="82" r="4.6" fill="#3a2410"/>
+    <circle cx="38" cy="90" r="3" fill="#ff9aa2" opacity="0.7"/>
+    <circle cx="62" cy="90" r="3" fill="#ff9aa2" opacity="0.7"/>
+    <path d="M43 92 Q50 99 57 92" stroke="#3a2410" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </svg>`;
+}
+
+function renderHuobao() {
+  const card = document.getElementById('huobao-card');
+  if (!card) return;
+  const { current, longest, checkedInToday, total } = getStreakState();
+  const lvl = getHuobaoLevel(current);
+  const idx = HUOBAO_LEVELS.indexOf(lvl);
+  const next = HUOBAO_LEVELS[idx + 1] || null;
+  let progress = 1, remain = 0;
+  if (next) {
+    progress = (current - lvl.min) / (next.min - lvl.min);
+    remain = next.min - current;
+  }
+  progress = Math.max(0, Math.min(1, progress));
+
+  const badges = HUOBAO_LEVELS.filter(L => L.min > 0).map(L => {
+    const reached = current >= L.min;
+    const sub = reached ? '已解锁' : ('还需 ' + (L.min - current) + ' 天');
+    return `<div class="hb-badge ${reached ? 'reached' : ''}" style="--bc:${L.color}" title="${L.name}：${L.desc}">
+      <div class="hb-badge-icon">${L.emoji}</div>
+      <div class="hb-badge-name">${L.name}</div>
+      <div class="hb-badge-sub">${sub}</div>
+    </div>`;
+  }).join('');
+
+  const scale = (1 + idx * 0.07).toFixed(2);
+  const checkInBtn = checkedInToday
+    ? `<button class="hb-checkin done" disabled>✅ 今日已打卡</button>`
+    : `<button class="hb-checkin" onclick="markDailyCheckIn()">🔥 今日打卡</button>`;
+  const hint = checkedInToday
+    ? `<span class="hb-hint ok">火苗旺盛中，明天记得再来续火 💪</span>`
+    : (current > 0
+        ? `<span class="hb-hint warn">⚠️ 今天还没打卡，火苗快熄灭了，快续上！</span>`
+        : `<span class="hb-hint">👋 点亮你的第一个火宝宝，从今天开始打卡吧！</span>`);
+
+  card.innerHTML = `
+    <div class="huobao-card" style="--huo-color:${lvl.color}">
+      <div class="hb-left">
+        <div class="hb-mascot" style="transform:scale(${scale})">
+          <div class="hb-flame-wrap">
+            ${flameSvg()}
+            <div class="hb-level-tag">Lv.${lvl.lv}</div>
+          </div>
+        </div>
+      </div>
+      <div class="hb-right">
+        <div class="hb-top">
+          <span class="hb-title">🔥 火宝宝</span>
+          <span class="hb-lvname" style="color:${lvl.color}">${lvl.name}</span>
+        </div>
+        <div class="hb-stats">
+          <div class="hb-stat"><span class="hb-num">${current}</span><span class="hb-lbl">连续天数</span></div>
+          <div class="hb-stat"><span class="hb-num">${longest}</span><span class="hb-lbl">最长纪录</span></div>
+          <div class="hb-stat"><span class="hb-num">${total}</span><span class="hb-lbl">累计天数</span></div>
+        </div>
+        <div class="hb-progress-wrap">
+          ${next
+            ? `<div class="hb-progress-label">距 <b style="color:${next.color}">${next.name}</b> 还需 <b>${remain}</b> 天</div>`
+            : `<div class="hb-progress-label">🏆 已达最高等级 · 传说火神</div>`}
+          <div class="hb-progress"><div class="hb-progress-fill" style="width:${Math.round(progress * 100)}%;background:${lvl.color}"></div></div>
+        </div>
+        <div class="hb-actions">
+          ${checkInBtn}
+          ${hint}
+        </div>
+        <div class="hb-badges-title">🎁 成长奖励</div>
+        <div class="hb-badges">${badges}</div>
+      </div>
+    </div>
+  `;
+}
+
+function showToast(msg) {
+  let t = document.getElementById('hb-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'hb-toast';
+    t.className = 'hb-toast';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2400);
 }
 
 // ==================== 自定义文字目标 ====================
