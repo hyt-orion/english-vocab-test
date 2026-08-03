@@ -21,7 +21,7 @@
   ls.setItem = (k, v) => _set(nsKey(k), v);
   ls.removeItem = (k) => _remove(nsKey(k));
   try {
-    window.__evmUser__ = (localStorage.getItem('evm_current_user') || '').trim();
+    window.__evmUser__ = (localStorage.getItem('evm_current_user') || sessionStorage.getItem('evm_current_user') || '').trim();
   } catch (e) {
     window.__evmUser__ = '';
   }
@@ -4107,8 +4107,9 @@ async function evmSubmitLogin(e) {
   let hash;
   try { hash = (await evmHashPassword(p, acct.salt)).hash; }
   catch (err) { evmErr('login-form', '登录失败：当前浏览器不支持加密'); return; }
-  if (hash !== acct.hash) { evmErr('login-form', '密码错误，请重试'); return; }
-  evmLoginSuccess(u);
+    if (hash !== acct.hash) { evmErr('login-form', '密码错误，请重试'); return; }
+  const remember = document.getElementById('login-remember') ? document.getElementById('login-remember').checked : true;
+  evmLoginSuccess(u, remember);
 }
 
 async function evmSubmitRegister(e) {
@@ -4131,9 +4132,16 @@ async function evmSubmitRegister(e) {
   evmLoginSuccess(u);
 }
 
-function evmLoginSuccess(username) {
+function evmLoginSuccess(username, remember) {
   window.__evmUser__ = username;
-  localStorage.setItem('evm_current_user', username);
+  remember = (remember !== false);
+  if (remember) {
+    localStorage.setItem('evm_current_user', username);
+    try { sessionStorage.removeItem('evm_current_user'); } catch (e) {}
+  } else {
+    sessionStorage.setItem('evm_current_user', username);
+    localStorage.removeItem('evm_current_user');
+  }
   localStorage.setItem('evm_last_user', username);
   const screen = document.getElementById('login-screen');
   if (screen) screen.style.display = 'none';
@@ -4145,6 +4153,7 @@ function evmLoginSuccess(username) {
 function evmLogout() {
   if (typeof confirm === 'function' && !confirm('确定要退出登录吗？当前进度已保存在本账号下。')) return;
   localStorage.removeItem('evm_current_user');
+  try { sessionStorage.removeItem('evm_current_user'); } catch (e) {}
   window.__evmUser__ = '';
   location.reload();
 }
@@ -4493,6 +4502,13 @@ function init() {
     if (navUser) navUser.style.display = 'none';
     const screen = document.getElementById('login-screen');
     if (screen) screen.style.display = 'flex';
+    // 预填上次用户名 + 默认勾选「记住我」
+    try {
+      const lu = document.getElementById('login-username');
+      if (lu) lu.value = (localStorage.getItem('evm_last_user') || '');
+      const rp = document.getElementById('login-remember');
+      if (rp) rp.checked = true;
+    } catch (e) {}
     evmPositionTabInd();
   }
 }
