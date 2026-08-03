@@ -2475,20 +2475,42 @@ function flameSvg() {
     <defs>
       <linearGradient id="hbGrad" x1="0" y1="1" x2="0" y2="0">
         <stop offset="0%" stop-color="#ffd166"/>
-        <stop class="stop-mid" offset="50%" stop-color="#ff7b00"/>
-        <stop offset="100%" stop-color="#ff7b00"/>
+        <stop class="stop-mid" offset="55%" stop-color="#ff7b00"/>
+        <stop offset="100%" stop-color="#ffb703"/>
       </linearGradient>
+      <radialGradient id="hbShine" cx="38%" cy="28%" r="62%">
+        <stop offset="0%" stop-color="#fff6d8" stop-opacity="0.92"/>
+        <stop offset="100%" stop-color="#fff6d8" stop-opacity="0"/>
+      </radialGradient>
     </defs>
     <g class="hb-body">
-      <path class="hb-flame-body" d="M50 12 C 64 40, 86 52, 79 80 C 75 102, 57 112, 50 112 C 43 112, 25 102, 21 80 C 14 52, 36 40, 50 12 Z" fill="url(#hbGrad)"/>
-      <ellipse cx="50" cy="44" rx="11" ry="20" fill="#fff3c4" opacity="0.85"/>
-      <circle class="hb-eye hb-eye-l" cx="42" cy="82" r="4.6" fill="#3a2410"/>
-      <circle class="hb-eye hb-eye-r" cx="58" cy="82" r="4.6" fill="#3a2410"/>
-      <circle cx="38" cy="90" r="3" fill="#ff9aa2" opacity="0.7"/>
-      <circle cx="62" cy="90" r="3" fill="#ff9aa2" opacity="0.7"/>
-      <path d="M43 92 Q50 99 57 92" stroke="#3a2410" stroke-width="3" fill="none" stroke-linecap="round"/>
-      <circle class="hb-hand hb-hand-left" cx="16" cy="96" r="7" fill="#ff7b00" stroke="#ffd166" stroke-width="2"/>
-      <circle class="hb-hand hb-hand-right" cx="84" cy="96" r="7" fill="#ff7b00" stroke="#ffd166" stroke-width="2"/>
+      <!-- 圆胖火焰身体 -->
+      <path class="hb-flame-body" d="M50 16 C 70 40, 86 58, 80 84 C 76 106, 59 116, 50 116 C 41 116, 24 106, 20 84 C 14 58, 30 40, 50 16 Z" fill="url(#hbGrad)"/>
+      <!-- 顶部小火舌 -->
+      <path d="M50 3 C 58 14, 55 22, 50 24 C 45 22, 42 14, 50 3 Z" fill="#ffd166"/>
+      <!-- 光泽 -->
+      <ellipse cx="40" cy="48" rx="21" ry="29" fill="url(#hbShine)"/>
+      <!-- 左眼（眼白+瞳+高光） -->
+      <g class="hb-eye hb-eye-l">
+        <circle cx="38" cy="74" r="9.2" fill="#fff"/>
+        <circle cx="40" cy="76" r="5.2" fill="#3a2410"/>
+        <circle cx="37.4" cy="73.4" r="2.3" fill="#fff"/>
+      </g>
+      <!-- 右眼 -->
+      <g class="hb-eye hb-eye-r">
+        <circle cx="62" cy="74" r="9.2" fill="#fff"/>
+        <circle cx="60" cy="76" r="5.2" fill="#3a2410"/>
+        <circle cx="59.4" cy="73.4" r="2.3" fill="#fff"/>
+      </g>
+      <!-- 腮红 -->
+      <ellipse cx="27" cy="89" rx="5.6" ry="3.4" fill="#ff7a8a" opacity="0.55"/>
+      <ellipse cx="73" cy="89" rx="5.6" ry="3.4" fill="#ff7a8a" opacity="0.55"/>
+      <!-- 张嘴笑 + 舌头 -->
+      <path d="M42 90 Q50 101 58 90 Z" fill="#7a2e16"/>
+      <path d="M45 94 Q50 99 55 94 Z" fill="#ff8a9a"/>
+      <!-- 双手 -->
+      <circle class="hb-hand hb-hand-left" cx="15" cy="94" r="7.6" fill="#ff7b00" stroke="#ffd166" stroke-width="2"/>
+      <circle class="hb-hand hb-hand-right" cx="85" cy="94" r="7.6" fill="#ff7b00" stroke="#ffd166" stroke-width="2"/>
     </g>
   </svg>`;
 }
