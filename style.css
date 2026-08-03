@@ -3171,6 +3171,98 @@ body[data-app-mode="ielts"] .ielts-tabs {
   100% { opacity: 0; transform: translate(-50%, -64px) scale(1.25); }
 }
 
+/* ---------- 段位称号 / 徽章可点击 ---------- */
+.hb-title-badge {
+  font-size: .7rem; font-weight: 800; color: #fff;
+  background: linear-gradient(135deg, var(--huo-color), #ff8a00);
+  padding: 2px 9px; border-radius: 999px; white-space: nowrap;
+  box-shadow: 0 2px 8px -2px var(--huo-color);
+}
+.hb-badge { cursor: pointer; transition: transform .18s ease, box-shadow .18s ease; }
+.hb-badge:hover { transform: translateY(-3px) scale(1.04); }
+.hb-badge:active { transform: scale(.97); }
+
+/* ---------- 顶栏常驻小火苗 ---------- */
+.nav-streak-flame {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 5px 9px 5px 6px; border: 1px solid var(--border);
+  background: var(--bg-card-elevated); border-radius: 999px; cursor: pointer;
+  font-family: var(--font-main); font-size: .82rem; font-weight: 800;
+  color: var(--text-primary); transition: var(--transition-fast);
+}
+[data-theme="light"] .nav-streak-flame { background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+.nav-streak-flame:hover { border-color: #ff8a00; transform: translateY(-1px); box-shadow: 0 0 12px -2px #ff8a00; }
+.nav-streak-flame .nav-icon { font-size: 1rem; filter: drop-shadow(0 0 4px #ff8a00); }
+.nav-streak-num { color: #ff6a00; min-width: 14px; text-align: center; }
+.huobao-card-ielts { margin-bottom: 22px; }
+
+/* ---------- 庆祝彩带 ---------- */
+.hb-confetti { position: fixed; inset: 0; pointer-events: none; z-index: 9998; overflow: hidden; }
+.hb-confetti-piece {
+  position: absolute; top: -24px; width: 9px; height: 14px; opacity: .95;
+  animation-name: hbConfettiFall; animation-timing-function: linear; animation-fill-mode: forwards;
+}
+@keyframes hbConfettiFall {
+  0% { transform: translateY(-24px) rotate(0); opacity: 1; }
+  100% { transform: translateY(105vh) rotate(720deg); opacity: .9; }
+}
+
+/* ---------- 升级横幅 ---------- */
+.hb-levelup {
+  position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+  pointer-events: none; z-index: 9999; opacity: 0; transition: opacity .3s ease;
+}
+.hb-levelup.show { opacity: 1; }
+.hb-levelup-card {
+  background: var(--bg-card); color: var(--text-primary);
+  padding: 26px 34px; border-radius: 20px; text-align: center;
+  box-shadow: 0 20px 60px -12px rgba(0,0,0,.5);
+  border: 2px solid var(--huo-color);
+  animation: hbLevelupPop .5s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+.hb-levelup.show .hb-levelup-card { animation: hbLevelupPop .5s cubic-bezier(.34,1.56,.64,1) forwards; }
+@keyframes hbLevelupPop { 0% { transform: scale(.6); } 100% { transform: scale(1); } }
+.hb-levelup-emoji { font-size: 3rem; animation: hbLevelupBounce 1s ease infinite; }
+@keyframes hbLevelupBounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+.hb-levelup-title { font-size: 1.1rem; font-weight: 800; margin-top: 4px; }
+.hb-levelup-lv { font-size: 1.7rem; font-weight: 900; margin: 6px 0 2px; }
+.hb-levelup-title2 { font-size: .95rem; font-weight: 700; color: var(--huo-color); margin-bottom: 8px; }
+.hb-levelup-reward { font-size: .82rem; color: var(--text-secondary); max-width: 260px; }
+
+/* ---------- 奖励弹窗 ---------- */
+.hb-reward-modal {
+  position: fixed; inset: 0; z-index: 10000; display: none;
+  align-items: center; justify-content: center;
+  background: rgba(0,0,0,.5); backdrop-filter: blur(3px);
+}
+.hb-reward-modal.show { display: flex; animation: hbFadeIn .25s ease; }
+@keyframes hbFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.hb-reward-card {
+  position: relative; background: var(--bg-card); color: var(--text-primary);
+  width: min(360px, 88vw); border-radius: 22px; padding: 28px 24px 24px; text-align: center;
+  border: 2px solid var(--huo-color); box-shadow: 0 24px 70px -14px rgba(0,0,0,.55);
+  animation: hbLevelupPop .4s cubic-bezier(.34,1.56,.64,1);
+}
+.hb-reward-close {
+  position: absolute; top: 12px; right: 14px; border: none; background: transparent;
+  font-size: 1.1rem; color: var(--text-muted); cursor: pointer; line-height: 1;
+}
+.hb-reward-emoji { font-size: 3.2rem; filter: drop-shadow(0 0 14px var(--huo-color)); }
+.hb-reward-lv { font-size: 1.4rem; font-weight: 900; margin: 6px 0; }
+.hb-reward-title { font-size: .95rem; font-weight: 800; color: var(--huo-color); margin-bottom: 8px; }
+.hb-reward-desc { font-size: .85rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 14px; }
+.hb-reward-status {
+  font-size: .8rem; font-weight: 700; padding: 6px 12px; border-radius: 999px;
+  background: rgba(120,120,120,.14); color: var(--text-muted); margin-bottom: 14px; display: inline-block;
+}
+.hb-reward-status.got { background: rgba(34,197,94,.16); color: #16a34a; }
+.hb-reward-share {
+  border: none; background: linear-gradient(135deg, var(--huo-color), #ff8a00);
+  color: #fff; font-weight: 800; font-size: .9rem; padding: 11px 18px; border-radius: 12px;
+  cursor: pointer; font-family: var(--font-main); transition: transform .15s ease;
+}
+.hb-reward-share:hover { transform: translateY(-2px); }
+
 @media (max-width: 768px) {
   .huobao-card { flex-direction: column; text-align: center; gap: 14px; }
   .hb-top, .hb-stats, .hb-actions, .hb-badges { justify-content: center; }
