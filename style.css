@@ -3557,6 +3557,22 @@ body[data-app-mode="ielts"] .ielts-tabs {
   font-weight: 600;
   color: #ff7a8a;
 }
+.login-remember {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 2px 6px;
+  font-size: 0.82rem;
+  color: rgba(238, 240, 246, 0.7);
+  cursor: pointer;
+  user-select: none;
+}
+.login-remember input {
+  width: 15px;
+  height: 15px;
+  accent-color: #6366f1;
+  cursor: pointer;
+}
 .login-form.login-shake { animation: loginShake 0.4s ease; }
 @keyframes loginShake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-7px); } 40% { transform: translateX(7px); } 60% { transform: translateX(-5px); } 80% { transform: translateX(5px); } }
 .login-submit {
@@ -3794,6 +3810,7 @@ body[data-app-mode="ielts"] .ielts-tabs {
 [data-theme="light"] .login-ico { opacity: 0.5; }
 [data-theme="light"] .login-input { background: rgba(255,255,255,0.85); color: #1a1d2e; border-color: rgba(0,0,0,0.15); }
 [data-theme="light"] .login-input::placeholder { color: rgba(26,29,46,0.4); }
+[data-theme="light"] .login-remember { color: rgba(26, 29, 46, 0.7); }
 
 /* 背景光球 */
 .cover-orb {
