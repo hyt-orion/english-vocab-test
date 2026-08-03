@@ -3251,3 +3251,54 @@ body {
 @media (max-width: 680px) {
   .ielts-band-grid { grid-template-columns: 1fr; }
 }
+
+/* ---------- 雅思写作提示卡 / 批改 ---------- */
+.ielts-guide { background: var(--card-bg, #fff); border: 1px solid var(--border, #e6e8ef); border-radius: 14px; padding: 4px 16px; margin-bottom: 14px; }
+.ielts-guide summary { cursor: pointer; font-weight: 600; padding: 12px 0; color: var(--text, #233); list-style: none; }
+.ielts-guide summary::-webkit-details-marker { display: none; }
+.ielts-guide[open] summary { border-bottom: 1px dashed var(--border, #e6e8ef); margin-bottom: 8px; }
+
+.ielts-write-prompt-card { background: linear-gradient(135deg, #eef4ff, #f7f0ff); border: 1px solid #dfe6f5; border-radius: 16px; padding: 18px 20px; margin-bottom: 16px; }
+.ielts-write-prompt-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.ielts-write-prompt-tag { background: var(--accent-gradient, linear-gradient(90deg,#6a8dff,#9b6bff)); color: #fff; font-size: .8rem; font-weight: 700; padding: 4px 12px; border-radius: 999px; }
+.ielts-write-prompt-q { font-size: 1.06rem; font-weight: 700; line-height: 1.6; color: #1f2a44; }
+.ielts-write-prompt-cn { margin-top: 8px; color: #3a4a6b; line-height: 1.6; }
+.ielts-write-prompt-tip { margin-top: 8px; font-size: .9rem; color: #5a6b8c; background: rgba(255,255,255,.6); border-left: 3px solid #8aa0ff; padding: 8px 12px; border-radius: 8px; }
+
+.ielts-write-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+.ielts-write-sample { margin-top: 14px; border: 1px dashed #b9c6e6; border-radius: 12px; padding: 14px 16px; background: #fbfdff; }
+.ielts-sample-head { font-weight: 700; color: #2a3a5c; margin-bottom: 8px; }
+.ielts-sample-body { white-space: pre-wrap; line-height: 1.8; color: #33425f; font-size: .96rem; }
+
+/* 批改面板 */
+.ielts-feedback { margin-top: 18px; background: var(--card-bg, #fff); border: 1px solid var(--border, #e6e8ef); border-radius: 16px; padding: 18px 20px; }
+.ielts-fb-overall { display: flex; align-items: center; gap: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--border, #e6e8ef); }
+.ielts-fb-overall-num { font-size: 2.6rem; font-weight: 800; width: 84px; height: 84px; border-radius: 18px; display: flex; align-items: center; justify-content: center; color: #fff; background: #8a93a8; }
+.ielts-fb-overall-num.good { background: linear-gradient(135deg,#2e9e5b,#37b86b); }
+.ielts-fb-overall-num.mid { background: linear-gradient(135deg,#e0a000,#f0b73c); }
+.ielts-fb-overall-num.low { background: linear-gradient(135deg,#d9534f,#e8716d); }
+.ielts-fb-overall-label { font-weight: 700; font-size: 1.05rem; color: #1f2a44; }
+.ielts-fb-overall-sub { font-size: .88rem; color: #5a6b8c; margin-top: 2px; }
+.ielts-fb-disclaimer { font-size: .82rem; color: #7a88a3; background: #f3f6fb; border-radius: 10px; padding: 8px 12px; margin: 12px 0; line-height: 1.6; }
+.ielts-fb-crits { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.ielts-fb-crit { background: #fafbfe; border: 1px solid var(--border, #e6e8ef); border-radius: 12px; padding: 12px 14px; }
+.ielts-fb-crit-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.ielts-fb-code { font-weight: 800; font-size: .85rem; color: #fff; background: #6a8dff; border-radius: 6px; padding: 2px 8px; }
+.ielts-fb-crit-name { flex: 1; font-size: .9rem; font-weight: 600; color: #2a3a5c; }
+.ielts-fb-band { font-weight: 800; font-size: 1rem; padding: 2px 10px; border-radius: 8px; color: #fff; background: #8a93a8; }
+.ielts-fb-band.good { background: #2e9e5b; }
+.ielts-fb-band.mid { background: #e0a000; }
+.ielts-fb-band.low { background: #d9534f; }
+.ielts-fb-items { margin: 0; padding-left: 18px; }
+.ielts-fb-items li { font-size: .86rem; color: #41506e; line-height: 1.65; margin-bottom: 4px; }
+.ielts-fb-issues { margin-top: 14px; background: #fff7f6; border: 1px solid #f3d2cf; border-radius: 12px; padding: 12px 14px; }
+.ielts-fb-issues.ok { background: #f1faf3; border-color: #cfe9d3; }
+.ielts-fb-issues h4 { margin: 0 0 8px; font-size: .95rem; color: #c0392b; }
+.ielts-fb-issues.ok h4 { color: #2e9e5b; }
+.ielts-fb-issues ul { margin: 0; padding-left: 0; list-style: none; }
+.ielts-fb-issues li { font-size: .86rem; color: #5a463f; line-height: 1.7; margin-bottom: 6px; }
+.ielts-issue-type { display: inline-block; font-size: .72rem; font-weight: 700; color: #fff; background: #d9534f; border-radius: 6px; padding: 1px 7px; margin-right: 6px; }
+.ielts-fb-issues code { background: #fbe9e7; padding: 1px 6px; border-radius: 5px; font-size: .82rem; color: #b03a30; }
+@media (max-width: 680px) {
+  .ielts-fb-crits { grid-template-columns: 1fr; }
+}
