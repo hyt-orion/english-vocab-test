@@ -3071,15 +3071,13 @@ body[data-app-mode="ielts"] .ielts-tabs {
 .hb-left { flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
 .hb-mascot { transition: transform .35s ease; animation: hbFloat 3s ease-in-out infinite; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
 @keyframes hbFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
-.hb-flame-wrap { position: relative; width: 180px; height: 200px; }
-.hb-flame { width: 100%; height: 100%; filter: drop-shadow(0 0 14px var(--huo-color)); animation: hbFlicker 1.6s ease-in-out infinite; }
-.hb-flame .stop-mid { stop-color: var(--huo-color); }
-@keyframes hbFlicker { 0%, 100% { transform: scaleY(1) scaleX(1); } 50% { transform: scaleY(1.05) scaleX(0.97); } }
+.hb-flame-wrap { position: relative; width: 200px; height: 220px; display: flex; align-items: center; justify-content: center; }
+.hb-img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; filter: drop-shadow(0 0 14px var(--huo-color)); pointer-events: none; }
 
 /* 等级越高火焰越亮 */
-.hb-lv-3 .hb-flame, .hb-lv-4 .hb-flame { filter: drop-shadow(0 0 18px var(--huo-color)); }
-.hb-lv-5 .hb-flame, .hb-lv-6 .hb-flame { filter: drop-shadow(0 0 22px var(--huo-color)); }
-.hb-lv-7 .hb-flame { filter: drop-shadow(0 0 26px #ffd700) drop-shadow(0 0 8px var(--huo-color)); }
+.hb-lv-3 .hb-img, .hb-lv-4 .hb-img { filter: drop-shadow(0 0 18px var(--huo-color)); }
+.hb-lv-5 .hb-img, .hb-lv-6 .hb-img { filter: drop-shadow(0 0 22px var(--huo-color)); }
+.hb-lv-7 .hb-img { filter: drop-shadow(0 0 26px #ffd700) drop-shadow(0 0 8px var(--huo-color)); }
 
 /* Lv.7 神级金色光环 */
 .hb-mascot.hb-god-aura { position: relative; }
@@ -3160,24 +3158,16 @@ body[data-app-mode="ielts"] .ielts-tabs {
 }
 .hb-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-/* ---------- 火宝宝互动 ---------- */
-.hb-body { transform-box: fill-box; transform-origin: 50% 100%; }
-.hb-eye { transform-box: fill-box; transform-origin: center; }
-.hb-hand { transform-box: fill-box; }
-.hb-hand-left { transform-origin: 100% 50%; }
-.hb-hand-right { transform-origin: 0% 50%; }
+/* ---------- 火宝宝互动（图片素材） ---------- */
+.hb-mascot.wave .hb-img { animation: hbWiggle .42s ease 3; }
+.hb-mascot.jump .hb-img { animation: hbJump .5s ease 2; }
+.hb-mascot.spin .hb-img { animation: hbSpin .7s ease 1; }
+.hb-mascot.blink .hb-img { animation: hbSquash .45s ease 2; }
 
-.hb-mascot.wave .hb-hand-left { animation: hbWaveL .42s ease 3; }
-.hb-mascot.wave .hb-hand-right { animation: hbWaveR .42s ease 3; }
-.hb-mascot.jump .hb-body { animation: hbJump .5s ease 2; }
-.hb-mascot.spin .hb-body { animation: hbSpin .7s ease 1; }
-.hb-mascot.blink .hb-eye { animation: hbBlink .45s ease 2; }
-
-@keyframes hbWaveL { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-28deg) translateY(-3px); } }
-@keyframes hbWaveR { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(28deg) translateY(-3px); } }
+@keyframes hbWiggle { 0%, 100% { transform: rotate(0) translateX(0); } 25% { transform: rotate(-9deg) translateX(-3px); } 75% { transform: rotate(9deg) translateX(3px); } }
 @keyframes hbJump { 0%, 100% { transform: translateY(0); } 25% { transform: translateY(-20px); } 50% { transform: translateY(0); } 75% { transform: translateY(-10px); } }
 @keyframes hbSpin { 0% { transform: rotate(0); } 100% { transform: rotate(360deg); } }
-@keyframes hbBlink { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(.1); } }
+@keyframes hbSquash { 0%, 100% { transform: scaleY(1) scaleX(1); } 50% { transform: scaleY(.92) scaleX(1.08); } }
 
 .hb-poke-tip { text-align: center; font-size: .72rem; color: var(--text-muted); margin-top: 10px; }
 
@@ -3240,9 +3230,9 @@ body[data-app-mode="ielts"] .ielts-tabs {
   background: linear-gradient(135deg, #eff9ff, #ffffff);
   border-color: #bae6fd;
 }
-.hb-ice {
-  width: 100%; height: 100%;
-  filter: drop-shadow(0 0 14px var(--huo-color));
+/* 雅思页小冰人：复用同一张麒麟图。先 sepia 压成单色棕黄（保留明暗层次），再 hue-rotate 统一染冰蓝，避免彩色转色相时红角/金身变青绿紫 */
+.hb-img-ice {
+  filter: drop-shadow(0 0 14px #38bdf8) sepia(1) hue-rotate(175deg) saturate(2.8) brightness(1.08) contrast(1.03);
   animation: hbShimmer 2.4s ease-in-out infinite;
 }
 @keyframes hbShimmer {
