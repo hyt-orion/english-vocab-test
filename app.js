@@ -2432,13 +2432,13 @@ function renderStudyCalendar() {
 
 // ==================== 火宝宝 · 连续打卡奖励系统 ====================
 const HUOBAO_LEVELS = [
-  { lv: 1, name: '小火苗',   min: 0,   emoji: '🔥', color: '#fb923c', desc: '刚刚点燃，每天都来喂火吧！' },
-  { lv: 2, name: '跳跳火',   min: 3,   emoji: '🔥', color: '#f97316', desc: '连续 3 天，火苗稳住了' },
-  { lv: 3, name: '烈焰宝宝', min: 7,   emoji: '🔥', color: '#ef4444', desc: '坚持一周，超棒！' },
-  { lv: 4, name: '炽焰精灵', min: 14,  emoji: '🔥', color: '#ec4899', desc: '两周不间断，渐入佳境' },
-  { lv: 5, name: '炎龙之魂', min: 30,  emoji: '🔥', color: '#a855f7', desc: '月度学习战士' },
-  { lv: 6, name: '不灭圣火', min: 60,  emoji: '🔥', color: '#6366f1', desc: '两个月坚如磐石' },
-  { lv: 7, name: '传说火神', min: 100, emoji: '🔥', color: '#f59e0b', desc: '百天传奇，封神！' },
+  { lv: 1, name: '小火苗',   min: 0,   emoji: '🔥', color: '#fb923c', desc: '刚刚点燃，每天都来喂火吧！', title: '萌新小火',  reward: '点亮火宝宝，开启你的连续打卡之旅' },
+  { lv: 2, name: '跳跳火',   min: 3,   emoji: '🔥', color: '#f97316', desc: '连续 3 天，火苗稳住了',     title: '三日萌新',  reward: '解锁「跳跳火」头像框 · 火宝宝动作更活泼' },
+  { lv: 3, name: '烈焰宝宝', min: 7,   emoji: '🔥', color: '#ef4444', desc: '坚持一周，超棒！',         title: '周更达人',  reward: '解锁火焰主题光效 · 打卡卡片专属暖色底' },
+  { lv: 4, name: '炽焰精灵', min: 14,  emoji: '🔥', color: '#ec4899', desc: '两周不间断，渐入佳境',     title: '半月骑士',  reward: '解锁「炽焰精灵」称号牌 · 成就墙点亮' },
+  { lv: 5, name: '炎龙之魂', min: 30,  emoji: '🔥', color: '#a855f7', desc: '月度学习战士',           title: '月度战神',  reward: '解锁金色流光特效 · 专属荣誉徽章' },
+  { lv: 6, name: '不灭圣火', min: 60,  emoji: '🔥', color: '#6366f1', desc: '两个月坚如磐石',         title: '两月磐石',  reward: '解锁「不灭圣火」终身勋章 · 段位永久展示' },
+  { lv: 7, name: '传说火神', min: 100, emoji: '🔥', color: '#f59e0b', desc: '百天传奇，封神！',       title: '百天传奇',  reward: '解锁传说称号 + 终身荣誉墙 · 全站最靓的仔' },
 ];
 
 function getHuobaoLevel(streak) {
@@ -2465,9 +2465,30 @@ function markDailyCheckIn() {
   localStorage.setItem('studyLog', JSON.stringify(log));
   const { current } = getStreakState();
   const lvl = getHuobaoLevel(current);
+  // 升级 / 解锁检测：在 render 之前读取旧的 seen 等级
+  const seen = parseInt(localStorage.getItem('huobao_seen_level') || '1', 10);
+  let unlocked = JSON.parse(localStorage.getItem('huobao_unlocked') || '[]');
+  const newUnlocked = HUOBAO_LEVELS.filter(L => L.min > 0 && current >= L.min && !unlocked.includes(L.lv)).map(L => L.lv);
   renderHuobao();
   renderStudyCalendar();
-  showToast(`🔥 打卡成功！火宝宝已连续燃烧 ${current} 天 · ${lvl.name}`);
+  if (newUnlocked.length) {
+    unlocked = unlocked.concat(newUnlocked);
+    localStorage.setItem('huobao_unlocked', JSON.stringify(unlocked));
+  }
+  if (lvl.lv > seen) {
+    localStorage.setItem('huobao_seen_level', String(lvl.lv));
+    spawnConfetti(130);
+    showLevelUpBanner(lvl);
+    playSound('levelup');
+  } else if (newUnlocked.length) {
+    const L = HUOBAO_LEVELS.find(x => x.lv === newUnlocked[newUnlocked.length - 1]);
+    spawnConfetti(80);
+    showLevelUpBanner(L);
+    playSound('unlock');
+  } else {
+    playSound('checkin');
+    showToast(`🔥 打卡成功！火宝宝已连续燃烧 ${current} 天 · ${lvl.name}`);
+  }
 }
 
 function flameSvg() {
@@ -2515,10 +2536,135 @@ function flameSvg() {
   </svg>`;
 }
 
+// ==================== 火宝宝音效（Web Audio，无需外部文件） ====================
+let _hbAudioCtx = null;
+function playSound(type) {
+  try {
+    if (!_hbAudioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      _hbAudioCtx = new AC();
+    }
+    const ctx = _hbAudioCtx;
+    if (ctx.state === 'suspended') ctx.resume();
+    const now = ctx.currentTime;
+    // 每个音效 = 一串 [频率, 延迟(秒), 时长(秒)]
+    const patterns = {
+      checkin: [[660, 0, 0.12], [880, 0.08, 0.16]],
+      levelup: [[523, 0, 0.10], [659, 0.10, 0.10], [784, 0.20, 0.10], [1047, 0.30, 0.26]],
+      unlock:  [[784, 0, 0.10], [1047, 0.10, 0.20]],
+      poke:    [[523, 0, 0.06], [330, 0.05, 0.09]],
+      click:   [[520, 0, 0.05]],
+    };
+    const beeps = patterns[type] || patterns.click;
+    beeps.forEach(([f, t, d]) => {
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.value = f;
+      o.connect(g); g.connect(ctx.destination);
+      const s = now + t;
+      g.gain.setValueAtTime(0.0001, s);
+      g.gain.linearRampToValueAtTime(0.18, s + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, s + d);
+      o.start(s); o.stop(s + d + 0.03);
+    });
+  } catch (e) { /* 音效失败不影响主流程 */ }
+}
+
+// ==================== 火宝宝庆祝动效 ====================
+const HB_CONFETTI_COLORS = ['#fb923c','#f97316','#ef4444','#ec4899','#a855f7','#6366f1','#f59e0b','#22c55e','#06b6d4','#facc15'];
+
+function spawnConfetti(count = 90) {
+  let layer = document.getElementById('hb-confetti');
+  if (!layer) {
+    layer = document.createElement('div');
+    layer.id = 'hb-confetti';
+    layer.className = 'hb-confetti';
+    document.body.appendChild(layer);
+  }
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'hb-confetti-piece';
+    p.style.background = HB_CONFETTI_COLORS[Math.floor(Math.random() * HB_CONFETTI_COLORS.length)];
+    p.style.left = (Math.random() * 100) + 'vw';
+    p.style.animationDuration = (1.1 + Math.random() * 1.2) + 's';
+    p.style.animationDelay = (Math.random() * 0.35) + 's';
+    p.style.transform = 'rotate(' + (Math.random() * 360) + 'deg)';
+    p.style.borderRadius = Math.random() > 0.5 ? '2px' : '50%';
+    layer.appendChild(p);
+    setTimeout(() => p.remove(), 2800);
+  }
+}
+
+function showLevelUpBanner(lvl) {
+  let b = document.getElementById('hb-levelup');
+  if (!b) {
+    b = document.createElement('div');
+    b.id = 'hb-levelup';
+    b.className = 'hb-levelup';
+    document.body.appendChild(b);
+  }
+  b.innerHTML = `<div class="hb-levelup-card" style="--huo-color:${lvl.color}">
+      <div class="hb-levelup-emoji">🎉</div>
+      <div class="hb-levelup-title">火宝宝升级啦！</div>
+      <div class="hb-levelup-lv" style="color:${lvl.color}">Lv.${lvl.lv} ${lvl.name}</div>
+      <div class="hb-levelup-title2">🏅 ${lvl.title}</div>
+      <div class="hb-levelup-reward">${lvl.reward}</div>
+    </div>`;
+  void b.offsetWidth;
+  b.classList.add('show');
+  clearTimeout(b._t);
+  b._t = setTimeout(() => b.classList.remove('show'), 3300);
+}
+
+function showBadgeReward(lv) {
+  const L = HUOBAO_LEVELS.find(x => x.lv === lv);
+  if (!L) return;
+  const cur = getStreakState().current;
+  const reached = cur >= L.min;
+  let m = document.getElementById('hb-reward-modal');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 'hb-reward-modal';
+    m.className = 'hb-reward-modal';
+    document.body.appendChild(m);
+  }
+  m.innerHTML = `
+    <div class="hb-reward-card" style="--huo-color:${L.color}">
+      <button class="hb-reward-close" onclick="closeHbReward()">✕</button>
+      <div class="hb-reward-emoji">${L.emoji}</div>
+      <div class="hb-reward-lv">Lv.${L.lv} · ${L.name}</div>
+      <div class="hb-reward-title">🏅 段位称号：${L.title}</div>
+      <div class="hb-reward-desc">${L.reward}</div>
+      <div class="hb-reward-status ${reached ? 'got' : ''}">${reached ? '✅ 已解锁，荣誉归你！' : ('🔒 还需连续 ' + (L.min - cur) + ' 天解锁')}</div>
+      <button class="hb-reward-share" onclick="shareHuobaoReward(${L.lv})">📤 复制我的成就语</button>
+    </div>`;
+  void m.offsetWidth;
+  m.classList.add('show');
+  playSound('unlock');
+}
+
+function closeHbReward() {
+  const m = document.getElementById('hb-reward-modal');
+  if (m) m.classList.remove('show');
+}
+
+function shareHuobaoReward(lv) {
+  const L = HUOBAO_LEVELS.find(x => x.lv === lv);
+  if (!L) return;
+  const cur = getStreakState().current;
+  const text = `🔥 我在「英语词汇大师」连续打卡 ${cur} 天，火宝宝已成长为 Lv.${L.lv} ${L.name}（${L.title}）！${L.reward} 一起来背单词吧～`;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => showToast('📤 成就语已复制，去分享吧！')).catch(() => {});
+  } else {
+    showToast('📤 成就语已生成');
+  }
+}
+
 function renderHuobao() {
-  const card = document.getElementById('huobao-card');
-  if (!card) return;
-  const { current, longest, checkedInToday, total } = getStreakState();
+  const state = getStreakState();
+  const { current, longest, checkedInToday, total } = state;
   const lvl = getHuobaoLevel(current);
   const idx = HUOBAO_LEVELS.indexOf(lvl);
   const next = HUOBAO_LEVELS[idx + 1] || null;
@@ -2532,7 +2678,7 @@ function renderHuobao() {
   const badges = HUOBAO_LEVELS.filter(L => L.min > 0).map(L => {
     const reached = current >= L.min;
     const sub = reached ? '已解锁' : ('还需 ' + (L.min - current) + ' 天');
-    return `<div class="hb-badge ${reached ? 'reached' : ''}" style="--bc:${L.color}" title="${L.name}：${L.desc}">
+    return `<div class="hb-badge ${reached ? 'reached' : ''}" style="--bc:${L.color}" title="${L.name}：${L.desc}" onclick="showBadgeReward(${L.lv})" role="button">
       <div class="hb-badge-icon">${L.emoji}</div>
       <div class="hb-badge-name">${L.name}</div>
       <div class="hb-badge-sub">${sub}</div>
@@ -2549,21 +2695,22 @@ function renderHuobao() {
         ? `<span class="hb-hint warn">⚠️ 今天还没打卡，火苗快熄灭了，快续上！</span>`
         : `<span class="hb-hint">👋 点亮你的第一个火宝宝，从今天开始打卡吧！</span>`);
 
-  card.innerHTML = `
+  const html = `
     <div class="huobao-card" style="--huo-color:${lvl.color}">
       <div class="hb-left">
-        <div class="hb-mascot" style="transform:scale(${scale})" onclick="pokeHuobao()" role="button" aria-label="戳一戳火宝宝">
+        <div class="hb-mascot" style="transform:scale(${scale})" onclick="pokeHuobao(this)" role="button" aria-label="戳一戳火宝宝">
           <div class="hb-flame-wrap">
             ${flameSvg()}
             <div class="hb-level-tag">Lv.${lvl.lv}</div>
           </div>
-          <div class="hb-poke-tip">👆 戳我打招呼</div>
+          <div class="hb-poke-tip">👆 戳我打招呼 · 看奖励</div>
         </div>
       </div>
       <div class="hb-right">
         <div class="hb-top">
           <span class="hb-title">🔥 火宝宝</span>
           <span class="hb-lvname" style="color:${lvl.color}">${lvl.name}</span>
+          <span class="hb-title-badge">🏅 ${lvl.title}</span>
         </div>
         <div class="hb-stats">
           <div class="hb-stat"><span class="hb-num">${current}</span><span class="hb-lbl">连续天数</span></div>
@@ -2580,11 +2727,22 @@ function renderHuobao() {
           ${checkInBtn}
           ${hint}
         </div>
-        <div class="hb-badges-title">🎁 成长奖励</div>
+        <div class="hb-badges-title">🎁 成长奖励 · 点徽章看详情</div>
         <div class="hb-badges">${badges}</div>
       </div>
     </div>
   `;
+  ['huobao-card', 'huobao-card-ielts'].forEach(id => {
+    const c = document.getElementById(id);
+    if (c) c.innerHTML = html;
+  });
+  // 首次渲染把 seen / 已达成就同步到当前等级，避免之后误触发升级庆祝
+  if (localStorage.getItem('huobao_seen_level') === null) {
+    localStorage.setItem('huobao_seen_level', String(lvl.lv));
+    const reached = HUOBAO_LEVELS.filter(L => L.min > 0 && current >= L.min).map(L => L.lv);
+    localStorage.setItem('huobao_unlocked', JSON.stringify(reached));
+  }
+  renderStreakFlame();
 }
 
 function showToast(msg) {
@@ -2613,9 +2771,10 @@ const HUOBAO_GREETINGS = [
   '燃起来吧，少年！',
 ];
 
-function pokeHuobao() {
-  const mascot = document.querySelector('.hb-mascot');
+function pokeHuobao(el) {
+  const mascot = el ? el.closest('.hb-mascot') : document.querySelector('.hb-mascot');
   if (!mascot) return;
+  const wrap = mascot.querySelector('.hb-flame-wrap');
   const moves = ['wave', 'jump', 'spin', 'blink'];
   const move = moves[Math.floor(Math.random() * moves.length)];
   mascot.classList.remove('wave', 'jump', 'spin', 'blink');
@@ -2623,12 +2782,13 @@ function pokeHuobao() {
   mascot.classList.add(move);
   clearTimeout(mascot._moveTimer);
   mascot._moveTimer = setTimeout(() => mascot.classList.remove(move), 1700);
-  showHuobaoSpeech();
-  spawnHuobaoHeart();
+  showHuobaoSpeech(wrap);
+  spawnHuobaoHeart(wrap);
+  playSound('poke');
 }
 
-function showHuobaoSpeech() {
-  const wrap = document.querySelector('.hb-flame-wrap');
+function showHuobaoSpeech(wrap) {
+  if (!wrap) wrap = document.querySelector('.hb-flame-wrap');
   if (!wrap) return;
   let s = document.getElementById('hb-speech');
   if (!s) {
@@ -2644,14 +2804,35 @@ function showHuobaoSpeech() {
   s._t = setTimeout(() => s.classList.remove('show'), 2200);
 }
 
-function spawnHuobaoHeart() {
-  const wrap = document.querySelector('.hb-flame-wrap');
+function spawnHuobaoHeart(wrap) {
+  if (!wrap) wrap = document.querySelector('.hb-flame-wrap');
   if (!wrap) return;
   const h = document.createElement('div');
   h.className = 'hb-heart';
   h.textContent = Math.random() > 0.5 ? '❤️' : '🔥';
   wrap.appendChild(h);
   setTimeout(() => h.remove(), 1300);
+}
+
+// ==================== 顶栏常驻小火苗 ====================
+function renderStreakFlame() {
+  const num = document.getElementById('nav-streak-num');
+  if (!num) return;
+  const { current } = getStreakState();
+  num.textContent = current;
+}
+
+function goToHuobao() {
+  const isIelts = document.body.dataset.appMode === 'ielts';
+  if (isIelts) {
+    navigateTo('ielts');
+    const c = document.getElementById('huobao-card-ielts');
+    if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } else {
+    navigateTo('home');
+    const c = document.getElementById('huobao-card');
+    if (c) setTimeout(() => c.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+  }
 }
 
 // ==================== 自定义文字目标 ====================
