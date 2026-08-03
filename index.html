@@ -20,6 +20,7 @@
   <div class="cover-orb cover-orb-1"></div>
   <div class="cover-orb cover-orb-2"></div>
   <div class="cover-orb cover-orb-3"></div>
+  <div class="cover-orb cover-orb-4"></div>
   <div class="cover-grid"></div>
   <div class="cover-content">
     <div class="cover-logo">📚</div>
@@ -54,7 +55,7 @@
       <button class="cover-enter-btn" id="cover-enter-btn" onclick="enterApp()">🚀 进入应用</button>
       <div class="cover-loading" id="cover-loading" style="display:none">
         <div class="cover-spinner"></div>
-        <span>正在进入…</span>
+        <span class="cover-loading-text">正在进入</span>
       </div>
     </div>
     <p class="cover-foot">基于认知科学原理设计 · 让每一个单词都真正记住</p>
@@ -490,6 +491,13 @@
   <div class="page" id="page-grammar">
     <h2 style="font-size:1.4rem; margin-bottom:8px">📐 语法专题</h2>
     <p style="color:var(--text-secondary); margin-bottom:20px; font-size:0.9rem">系统学习英语语法，每个专题含讲解、例句和练习题</p>
+    <div id="grammar-tools" class="grammar-tools">
+      <div class="grammar-search-wrap">
+        <span class="grammar-search-icon">🔍</span>
+        <input id="grammar-search" class="grammar-search" type="text" placeholder="搜索语法专题（如：时态、被动、从句）" oninput="filterGrammarTopics(this.value)">
+      </div>
+      <span class="grammar-progress" id="grammar-progress"></span>
+    </div>
     <div id="grammar-topics"></div>
   </div>
 
