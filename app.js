@@ -2431,15 +2431,24 @@ function renderStudyCalendar() {
 }
 
 // ==================== 火宝宝 · 连续打卡奖励系统 ====================
+// 每个等级含两套主题：火系（首页/标准版）+ 冰系（雅思页）。其它文案（title/reward/desc）共用。
 const HUOBAO_LEVELS = [
-  { lv: 1, name: '小火苗',   min: 0,   emoji: '🔥', color: '#fb923c', desc: '刚刚点燃，每天都来喂火吧！', title: '萌新小火',  reward: '点亮火宝宝，开启你的连续打卡之旅' },
-  { lv: 2, name: '跳跳火',   min: 3,   emoji: '🔥', color: '#f97316', desc: '连续 3 天，火苗稳住了',     title: '三日萌新',  reward: '解锁「跳跳火」头像框 · 火宝宝动作更活泼' },
-  { lv: 3, name: '烈焰宝宝', min: 7,   emoji: '🔥', color: '#ef4444', desc: '坚持一周，超棒！',         title: '周更达人',  reward: '解锁火焰主题光效 · 打卡卡片专属暖色底' },
-  { lv: 4, name: '炽焰精灵', min: 14,  emoji: '🔥', color: '#ec4899', desc: '两周不间断，渐入佳境',     title: '半月骑士',  reward: '解锁「炽焰精灵」称号牌 · 成就墙点亮' },
-  { lv: 5, name: '炎龙之魂', min: 30,  emoji: '🔥', color: '#a855f7', desc: '月度学习战士',           title: '月度战神',  reward: '解锁金色流光特效 · 专属荣誉徽章' },
-  { lv: 6, name: '不灭圣火', min: 60,  emoji: '🔥', color: '#6366f1', desc: '两个月坚如磐石',         title: '两月磐石',  reward: '解锁「不灭圣火」终身勋章 · 段位永久展示' },
-  { lv: 7, name: '传说火神', min: 100, emoji: '🔥', color: '#f59e0b', desc: '百天传奇，封神！',       title: '百天传奇',  reward: '解锁传说称号 + 终身荣誉墙 · 全站最靓的仔' },
+  { lv: 1, name: '小火苗',   iceName: '小冰晶',   min: 0,   emoji: '🔥', iceEmoji: '❄️', color: '#fb923c', desc: '刚刚点燃，每天都来喂火吧！',       title: '萌新小火',  reward: '点亮火宝宝，开启你的连续打卡之旅' },
+  { lv: 2, name: '跳跳火',   iceName: '跳跳冰',   min: 3,   emoji: '🔥', iceEmoji: '❄️', color: '#f97316', desc: '连续 3 天，火苗稳住了',         title: '三日萌新',  reward: '解锁「跳跳火」头像框 · 火宝宝动作更活泼' },
+  { lv: 3, name: '烈焰宝宝', iceName: '冰晶宝宝', min: 7,   emoji: '🔥', iceEmoji: '❄️', color: '#ef4444', desc: '坚持一周，超棒！',             title: '周更达人',  reward: '解锁火焰主题光效 · 打卡卡片专属暖色底' },
+  { lv: 4, name: '炽焰精灵', iceName: '寒霜精灵', min: 14,  emoji: '🔥', iceEmoji: '❄️', color: '#ec4899', desc: '两周不间断，渐入佳境',         title: '半月骑士',  reward: '解锁「炽焰精灵」称号牌 · 成就墙点亮' },
+  { lv: 5, name: '炎龙之魂', iceName: '冰龙之魂', min: 30,  emoji: '🔥', iceEmoji: '❄️', color: '#a855f7', desc: '月度学习战士',               title: '月度战神',  reward: '解锁金色流光特效 · 专属荣誉徽章' },
+  { lv: 6, name: '不灭圣火', iceName: '不灭玄冰', min: 60,  emoji: '🔥', iceEmoji: '❄️', color: '#6366f1', desc: '两个月坚如磐石',             title: '两月磐石',  reward: '解锁「不灭圣火」终身勋章 · 段位永久展示' },
+  { lv: 7, name: '传说火神', iceName: '传说冰神', min: 100, emoji: '🔥', iceEmoji: '❄️', color: '#f59e0b', desc: '百天传奇，封神！',           title: '百天传奇',  reward: '解锁传说称号 + 终身荣誉墙 · 全站最靓的仔' },
 ];
+
+// 按 variant 取等级展示字段（火/冰）
+function pickLevelFields(L, variant) {
+  return {
+    name: variant === 'ice' ? L.iceName : L.name,
+    emoji: variant === 'ice' ? L.iceEmoji : L.emoji,
+  };
+}
 
 function getHuobaoLevel(streak) {
   let lvl = HUOBAO_LEVELS[0];
@@ -2661,7 +2670,7 @@ function showLevelUpBanner(lvl, isIce) {
   b.innerHTML = `<div class="hb-levelup-card" style="--huo-color:${lvl.color}">
       <div class="hb-levelup-emoji">${isIce ? '🧊' : '🎉'}</div>
       <div class="hb-levelup-title">${isIce ? '小冰人升级啦！' : '火宝宝升级啦！'}</div>
-      <div class="hb-levelup-lv" style="color:${lvl.color}">Lv.${lvl.lv} ${lvl.name}</div>
+      <div class="hb-levelup-lv" style="color:${lvl.color}">Lv.${lvl.lv} ${isIce ? lvl.iceName : lvl.name}</div>
       <div class="hb-levelup-title2">🏅 ${lvl.title}</div>
       <div class="hb-levelup-reward">${lvl.reward}</div>
     </div>`;
@@ -2677,6 +2686,8 @@ function showBadgeReward(lv) {
   const cur = getStreakState().current;
   const reached = cur >= L.min;
   const isIce = document.body.dataset.appMode === 'ielts';
+  const Lname = isIce ? L.iceName : L.name;
+  const Lemo  = isIce ? L.iceEmoji : L.emoji;
   let m = document.getElementById('hb-reward-modal');
   if (!m) {
     m = document.createElement('div');
@@ -2687,8 +2698,8 @@ function showBadgeReward(lv) {
   m.innerHTML = `
     <div class="hb-reward-card" style="--huo-color:${L.color}">
       <button class="hb-reward-close" onclick="closeHbReward()">✕</button>
-      <div class="hb-reward-emoji">${isIce ? '🧊' : L.emoji}</div>
-      <div class="hb-reward-lv">Lv.${L.lv} · ${L.name}</div>
+      <div class="hb-reward-emoji">${isIce ? '🧊' : Lemo}</div>
+      <div class="hb-reward-lv">Lv.${L.lv} · ${Lname}</div>
       <div class="hb-reward-title">🏅 段位称号：${L.title}</div>
       <div class="hb-reward-desc">${L.reward}</div>
       <div class="hb-reward-status ${reached ? 'got' : ''}">${reached ? '✅ 已解锁，荣誉归你！' : ('🔒 还需连续 ' + (L.min - cur) + ' 天解锁')}</div>
@@ -2710,7 +2721,8 @@ function shareHuobaoReward(lv) {
   const cur = getStreakState().current;
   const isIce = document.body.dataset.appMode === 'ielts';
   const who = isIce ? '小冰人' : '火宝宝';
-  const text = `❄️ 我在「英语词汇大师」连续打卡 ${cur} 天，${who}已成长为 Lv.${L.lv} ${L.name}（${L.title}）！${L.reward} 一起来背单词吧～`;
+  const Lname = isIce ? L.iceName : L.name;
+  const text = `${isIce ? '❄️' : '🔥'} 我在「英语词汇大师」连续打卡 ${cur} 天，${who}已成长为 Lv.${L.lv} ${Lname}（${L.title}）！${L.reward} 一起来背单词吧～`;
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(() => showToast('📤 成就语已复制，去分享吧！')).catch(() => {});
   } else {
@@ -2731,18 +2743,8 @@ function renderHuobao() {
   }
   progress = Math.max(0, Math.min(1, progress));
 
-  const badges = HUOBAO_LEVELS.filter(L => L.min > 0).map(L => {
-    const reached = current >= L.min;
-    const sub = reached ? '已解锁' : ('还需 ' + (L.min - current) + ' 天');
-    return `<div class="hb-badge ${reached ? 'reached' : ''}" style="--bc:${L.color}" title="${L.name}：${L.desc}" onclick="showBadgeReward(${L.lv})" role="button">
-      <div class="hb-badge-icon">${L.emoji}</div>
-      <div class="hb-badge-name">${L.name}</div>
-      <div class="hb-badge-sub">${sub}</div>
-    </div>`;
-  }).join('');
-
   const scale = (1 + idx * 0.07).toFixed(2);
-  const ctx = { current, longest, total, lvl, next, remain, progress, badges, scale, checkedInToday };
+  const ctx = { current, longest, total, lvl, next, remain, progress, scale, checkedInToday };
   const c1 = document.getElementById('huobao-card');
   if (c1) c1.innerHTML = buildHuobaoHtml('fire', ctx);
   const c2 = document.getElementById('huobao-card-ielts');
@@ -2759,12 +2761,14 @@ function renderHuobao() {
 // 生成火宝宝 / 小冰人卡片 HTML。variant: 'fire'（首页）| 'ice'（雅思页）。
 // 功能完全一致（同一套等级 / 打卡 / 徽章数据），仅外观与文案主题不同。
 function buildHuobaoHtml(variant, ctx) {
-  const { current, longest, total, lvl, next, remain, progress, badges, scale, checkedInToday } = ctx;
+  const { current, longest, total, lvl, next, remain, progress, scale, checkedInToday } = ctx;
   const isIce = variant === 'ice';
   const accent = isIce ? ICE_COLOR : lvl.color;
   const mascot = isIce ? iceSvg() : flameSvg();
   const title = isIce ? '❄️ 小冰人' : '🔥 火宝宝';
   const aria = isIce ? '戳一戳小冰人' : '戳一戳火宝宝';
+  const lvlName = isIce ? lvl.iceName : lvl.name;
+  const nextName = next ? (isIce ? next.iceName : next.name) : null;
   const checkInBtn = checkedInToday
     ? `<button class="hb-checkin done" disabled>✅ 今日已打卡</button>`
     : `<button class="hb-checkin" onclick="markDailyCheckIn()">${isIce ? '❄️ 今日打卡' : '🔥 今日打卡'}</button>`;
@@ -2773,6 +2777,19 @@ function buildHuobaoHtml(variant, ctx) {
     : (current > 0
         ? (isIce ? `<span class="hb-hint warn">⚠️ 今天还没打卡，小冰人要融化了，快续上！</span>` : `<span class="hb-hint warn">⚠️ 今天还没打卡，火苗快熄灭了，快续上！</span>`)
         : (isIce ? `<span class="hb-hint">👋 点亮你的第一个小冰人，从今天开始打卡吧！</span>` : `<span class="hb-hint">👋 点亮你的第一个火宝宝，从今天开始打卡吧！</span>`));
+
+  // 徽章按 variant 用火/冰名+图标
+  const badges = HUOBAO_LEVELS.filter(L => L.min > 0).map(L => {
+    const reached = current >= L.min;
+    const sub = reached ? '已解锁' : ('还需 ' + (L.min - current) + ' 天');
+    const Lname = isIce ? L.iceName : L.name;
+    const Lemo  = isIce ? L.iceEmoji : L.emoji;
+    return `<div class="hb-badge ${reached ? 'reached' : ''}" style="--bc:${L.color}" title="${Lname}：${L.desc}" onclick="showBadgeReward(${L.lv})" role="button">
+      <div class="hb-badge-icon">${Lemo}</div>
+      <div class="hb-badge-name">${Lname}</div>
+      <div class="hb-badge-sub">${sub}</div>
+    </div>`;
+  }).join('');
 
   return `
     <div class="huobao-card${isIce ? ' ice' : ''}" style="--huo-color:${accent}">
@@ -2788,7 +2805,7 @@ function buildHuobaoHtml(variant, ctx) {
       <div class="hb-right">
         <div class="hb-top">
           <span class="hb-title">${title}</span>
-          <span class="hb-lvname" style="color:${accent}">${lvl.name}</span>
+          <span class="hb-lvname" style="color:${accent}">${lvlName}</span>
           <span class="hb-title-badge">🏅 ${lvl.title}</span>
         </div>
         <div class="hb-stats">
@@ -2798,8 +2815,8 @@ function buildHuobaoHtml(variant, ctx) {
         </div>
         <div class="hb-progress-wrap">
           ${next
-            ? `<div class="hb-progress-label">距 <b style="color:${next.color}">${next.name}</b> 还需 <b>${remain}</b> 天</div>`
-            : `<div class="hb-progress-label">🏆 已达最高等级 · 传说火神</div>`}
+            ? `<div class="hb-progress-label">距 <b style="color:${next.color}">${nextName}</b> 还需 <b>${remain}</b> 天</div>`
+            : `<div class="hb-progress-label">🏆 已达最高等级 · ${lvlName}</div>`}
           <div class="hb-progress"><div class="hb-progress-fill" style="width:${Math.round(progress * 100)}%;background:${accent}"></div></div>
         </div>
         <div class="hb-actions">
