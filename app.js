@@ -2479,13 +2479,17 @@ function flameSvg() {
         <stop offset="100%" stop-color="#ff7b00"/>
       </linearGradient>
     </defs>
-    <path class="hb-flame-body" d="M50 12 C 64 40, 86 52, 79 80 C 75 102, 57 112, 50 112 C 43 112, 25 102, 21 80 C 14 52, 36 40, 50 12 Z" fill="url(#hbGrad)"/>
-    <ellipse cx="50" cy="44" rx="11" ry="20" fill="#fff3c4" opacity="0.85"/>
-    <circle cx="42" cy="82" r="4.6" fill="#3a2410"/>
-    <circle cx="58" cy="82" r="4.6" fill="#3a2410"/>
-    <circle cx="38" cy="90" r="3" fill="#ff9aa2" opacity="0.7"/>
-    <circle cx="62" cy="90" r="3" fill="#ff9aa2" opacity="0.7"/>
-    <path d="M43 92 Q50 99 57 92" stroke="#3a2410" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <g class="hb-body">
+      <path class="hb-flame-body" d="M50 12 C 64 40, 86 52, 79 80 C 75 102, 57 112, 50 112 C 43 112, 25 102, 21 80 C 14 52, 36 40, 50 12 Z" fill="url(#hbGrad)"/>
+      <ellipse cx="50" cy="44" rx="11" ry="20" fill="#fff3c4" opacity="0.85"/>
+      <circle class="hb-eye hb-eye-l" cx="42" cy="82" r="4.6" fill="#3a2410"/>
+      <circle class="hb-eye hb-eye-r" cx="58" cy="82" r="4.6" fill="#3a2410"/>
+      <circle cx="38" cy="90" r="3" fill="#ff9aa2" opacity="0.7"/>
+      <circle cx="62" cy="90" r="3" fill="#ff9aa2" opacity="0.7"/>
+      <path d="M43 92 Q50 99 57 92" stroke="#3a2410" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <circle class="hb-hand hb-hand-left" cx="16" cy="96" r="7" fill="#ff7b00" stroke="#ffd166" stroke-width="2"/>
+      <circle class="hb-hand hb-hand-right" cx="84" cy="96" r="7" fill="#ff7b00" stroke="#ffd166" stroke-width="2"/>
+    </g>
   </svg>`;
 }
 
@@ -2526,11 +2530,12 @@ function renderHuobao() {
   card.innerHTML = `
     <div class="huobao-card" style="--huo-color:${lvl.color}">
       <div class="hb-left">
-        <div class="hb-mascot" style="transform:scale(${scale})">
+        <div class="hb-mascot" style="transform:scale(${scale})" onclick="pokeHuobao()" role="button" aria-label="戳一戳火宝宝">
           <div class="hb-flame-wrap">
             ${flameSvg()}
             <div class="hb-level-tag">Lv.${lvl.lv}</div>
           </div>
+          <div class="hb-poke-tip">👆 戳我打招呼</div>
         </div>
       </div>
       <div class="hb-right">
@@ -2572,6 +2577,59 @@ function showToast(msg) {
   t.classList.add('show');
   clearTimeout(t._timer);
   t._timer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// ==================== 火宝宝互动 ====================
+const HUOBAO_GREETINGS = [
+  '嗨！我是火宝宝🔥',
+  '今天也来背单词啦？',
+  '一起加油，别让火灭啦！',
+  '戳到我的痒痒肉啦😄',
+  '打卡了吗？打卡火更旺哦',
+  '学习使我快乐🔥',
+  '你就是我的小太阳☀️',
+  '燃起来吧，少年！',
+];
+
+function pokeHuobao() {
+  const mascot = document.querySelector('.hb-mascot');
+  if (!mascot) return;
+  const moves = ['wave', 'jump', 'spin', 'blink'];
+  const move = moves[Math.floor(Math.random() * moves.length)];
+  mascot.classList.remove('wave', 'jump', 'spin', 'blink');
+  void mascot.offsetWidth; // 强制重排以重启动画
+  mascot.classList.add(move);
+  clearTimeout(mascot._moveTimer);
+  mascot._moveTimer = setTimeout(() => mascot.classList.remove(move), 1700);
+  showHuobaoSpeech();
+  spawnHuobaoHeart();
+}
+
+function showHuobaoSpeech() {
+  const wrap = document.querySelector('.hb-flame-wrap');
+  if (!wrap) return;
+  let s = document.getElementById('hb-speech');
+  if (!s) {
+    s = document.createElement('div');
+    s.id = 'hb-speech';
+    s.className = 'hb-speech';
+    wrap.appendChild(s);
+  }
+  s.textContent = HUOBAO_GREETINGS[Math.floor(Math.random() * HUOBAO_GREETINGS.length)];
+  void s.offsetWidth;
+  s.classList.add('show');
+  clearTimeout(s._t);
+  s._t = setTimeout(() => s.classList.remove('show'), 2200);
+}
+
+function spawnHuobaoHeart() {
+  const wrap = document.querySelector('.hb-flame-wrap');
+  if (!wrap) return;
+  const h = document.createElement('div');
+  h.className = 'hb-heart';
+  h.textContent = Math.random() > 0.5 ? '❤️' : '🔥';
+  wrap.appendChild(h);
+  setTimeout(() => h.remove(), 1300);
 }
 
 // ==================== 自定义文字目标 ====================
