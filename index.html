@@ -136,6 +136,9 @@
     </button>
 </div>
   <div class="navbar-actions">
+    <button class="nav-streak-flame" id="nav-streak-flame" onclick="goToHuobao()" title="连续打卡 · 点击查看火宝宝">
+      <span class="nav-icon">🔥</span><span class="nav-streak-num" id="nav-streak-num">0</span>
+    </button>
     <button class="nav-mode-switch" onclick="showModeSelect()" title="切换学习模式">
       <span class="nav-icon">🔀</span>
       <span class="nav-label">模式</span>
@@ -708,6 +711,9 @@
   <div class="page" id="page-ielts">
     <h2 style="font-size:1.4rem; margin-bottom:8px">🎓 雅思专项学习</h2>
     <p style="color:var(--text-secondary); margin-bottom:20px; font-size:0.9rem">词汇 · 口语 · 写作 · 评分标准，一站式雅思备考</p>
+
+    <!-- 火宝宝 连续打卡奖励系统（雅思页常驻） -->
+    <div id="huobao-card-ielts" class="huobao-card-ielts"></div>
 
     <!-- 子标签 -->
     <div class="ielts-tabs" id="ielts-tabs">
