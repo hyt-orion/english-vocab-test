@@ -2327,6 +2327,100 @@ body {
   color: var(--accent-light);
 }
 
+/* 语法专题工具条（搜索 + 进度） */
+.grammar-tools {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.grammar-search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 220px;
+}
+.grammar-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.9rem;
+  opacity: 0.6;
+  pointer-events: none;
+}
+.grammar-search {
+  width: 100%;
+  padding: 11px 14px 11px 38px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-family: var(--font-main);
+  transition: var(--transition);
+}
+.grammar-search:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+.grammar-progress {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.grammar-progress b { color: var(--accent-light); }
+
+/* 学习进度标记 */
+.grammar-topic-card { position: relative; }
+.grammar-topic-card.learned {
+  border-color: var(--accent);
+  background: linear-gradient(180deg, var(--accent-dim), var(--bg-card) 60%);
+}
+.grammar-topic-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.grammar-learned-badge {
+  padding: 3px 9px;
+  border-radius: var(--radius-xs);
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(99,102,241,0.4);
+}
+.grammar-learn-btn {
+  margin-top: 14px;
+  padding: 8px 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: var(--font-main);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.grammar-learn-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent-light);
+}
+.grammar-learn-btn.on {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent-light);
+}
+.empty-hint {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 40px 16px;
+  font-size: 0.92rem;
+}
+
 .grammar-detail {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -2396,6 +2490,55 @@ body {
   box-shadow: var(--shadow-card);
   outline: none;
 }
+
+/* 视频工具条：倍速 + 下载 */
+.video-wrap { position: relative; }
+.video-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  flex-wrap: wrap;
+}
+.video-speed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+.video-speed select {
+  padding: 5px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-family: var(--font-main);
+  cursor: pointer;
+}
+.video-speed select:focus { outline: none; border-color: var(--accent); }
+.video-dl {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: 999px;
+  background: var(--accent-gradient);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(99,102,241,0.35);
+  transition: var(--transition);
+}
+.video-dl:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(99,102,241,0.5); }
 
 /* ==================== 听力练习 ==================== */
 .listening-option {
@@ -2479,9 +2622,10 @@ body {
 .cover-orb {
   position: absolute;
   border-radius: 50%;
-  filter: blur(60px);
-  opacity: 0.5;
-  animation: orbFloat 14s ease-in-out infinite;
+  filter: blur(72px);
+  opacity: 0.55;
+  animation: orbFloat 16s ease-in-out infinite;
+  box-shadow: 0 0 140px 50px rgba(99, 102, 241, 0.22);
 }
 .cover-orb-1 {
   width: 420px; height: 420px;
@@ -2499,7 +2643,14 @@ body {
   background: radial-gradient(circle, #22d3ee, transparent 70%);
   top: 40%; left: 55%;
   animation-delay: -8s;
-  opacity: 0.35;
+  opacity: 0.4;
+}
+.cover-orb-4 {
+  width: 240px; height: 240px;
+  background: radial-gradient(circle, #f59e0b, transparent 70%);
+  bottom: 12%; left: 6%;
+  animation-delay: -11s;
+  opacity: 0.32;
 }
 @keyframes orbFloat {
   0%, 100% { transform: translate(0, 0) scale(1); }
@@ -2524,9 +2675,15 @@ body {
   position: relative;
   z-index: 2;
   text-align: center;
-  padding: 32px 24px;
+  padding: 40px 32px;
   max-width: 860px;
   width: 100%;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 28px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
   animation: coverRise 0.7s cubic-bezier(0.34, 1.2, 0.64, 1) both;
 }
 @keyframes coverRise {
@@ -2659,18 +2816,45 @@ body {
   letter-spacing: 0.04em;
   animation: coverFadeIn 0.45s ease both;
 }
+.cover-loading-text::after {
+  content: "";
+  animation: loadingDots 1.4s steps(4, end) infinite;
+}
+@keyframes loadingDots {
+  0% { content: ""; }
+  25% { content: "."; }
+  50% { content: ".."; }
+  75% { content: "..."; }
+}
 .cover-spinner {
-  width: 58px;
-  height: 58px;
+  position: relative;
+  width: 66px;
+  height: 66px;
   border-radius: 50%;
-  border: 4px solid rgba(255, 255, 255, 0.14);
-  border-top-color: var(--accent);
-  border-right-color: #a855f7;
-  animation: coverSpin 0.9s linear infinite;
-  box-shadow: 0 0 24px rgba(99, 102, 241, 0.45);
+  background: conic-gradient(from 0deg, #6366f1, #a855f7, #22d3ee, #6366f1);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 6px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 6px));
+  animation: coverSpin 1s linear infinite;
+  filter: drop-shadow(0 0 16px rgba(99, 102, 241, 0.55));
+}
+.cover-spinner::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 14px rgba(255, 255, 255, 0.95);
+  animation: corePulse 1.4s ease-in-out infinite;
 }
 @keyframes coverSpin {
   to { transform: rotate(360deg); }
+}
+@keyframes corePulse {
+  0%, 100% { transform: scale(0.65); opacity: 0.7; }
+  50% { transform: scale(1.15); opacity: 1; }
 }
 @keyframes coverFadeIn {
   from { opacity: 0; transform: translateY(10px); }
