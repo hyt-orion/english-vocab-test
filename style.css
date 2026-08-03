@@ -224,6 +224,24 @@ body {
   transform: scale(1.06) rotate(-4deg);
 }
 
+/* 右侧操作组（模式切换 + 主题切换），始终可见 */
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* 雅思模式：隐藏标准版导航标签，只保留雅思页自身的子导航 → 雅思成为独立页面 */
+body[data-app-mode="ielts"] #nav-tabs-standard { display: none; }
+
+/* 雅思模式下让雅思子导航吸顶，体验更像独立 App */
+body[data-app-mode="ielts"] .ielts-tabs {
+  position: sticky;
+  top: 56px;
+  z-index: 90;
+}
+
 .nav-tab .nav-label {
   letter-spacing: -0.01em;
 }
