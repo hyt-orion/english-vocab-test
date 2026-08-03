@@ -1,5 +1,5 @@
 // Service Worker - 缓存离线使用
-const CACHE_NAME = 'english-vocab-v16';
+const CACHE_NAME = 'english-vocab-v17';
 const ASSETS = [
   './',
   './index.html',
