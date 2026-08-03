@@ -4183,6 +4183,7 @@ const EVM_AVATAR_COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f59e0b'
 
 let evmSelAvatar = null;
 let evmSelColor = null;
+let evmSelAvatarImg = null;
 
 function evmGetCurrentAccount() {
   const u = window.__evmUser__;
@@ -4201,16 +4202,24 @@ function evmRefreshUserBadge() {
   if (nm) nm.textContent = name;
   if (mm) mm.textContent = name;
   if (av) {
-    if (acct && acct.avatar) {
+    if (acct && acct.avatarImg) {
+      av.textContent = '';
+      av.style.fontSize = '0';
+      av.style.backgroundImage = 'url(' + acct.avatarImg + ')';
+      av.style.backgroundSize = 'cover';
+      av.style.backgroundPosition = 'center';
+      av.style.backgroundRepeat = 'no-repeat';
+    } else if (acct && acct.avatar) {
       av.textContent = acct.avatar;
       av.style.fontSize = '0.95rem';
+      av.style.backgroundImage = 'none';
+      av.style.background = (acct.avatarColor) ? acct.avatarColor : 'linear-gradient(135deg, #6366f1, #a855f7)';
     } else {
       av.textContent = name.slice(0, 1).toUpperCase();
       av.style.fontSize = '0.8rem';
+      av.style.backgroundImage = 'none';
+      av.style.background = (acct && acct.avatarColor) ? acct.avatarColor : 'linear-gradient(135deg, #6366f1, #a855f7)';
     }
-    av.style.background = (acct && acct.avatarColor)
-      ? acct.avatarColor
-      : 'linear-gradient(135deg, #6366f1, #a855f7)';
   }
 }
 
@@ -4251,6 +4260,7 @@ function evmOpenSettings() {
 
   evmSelAvatar = (acct && acct.avatar) ? acct.avatar : null;
   evmSelColor = (acct && acct.avatarColor) ? acct.avatarColor : null;
+  evmSelAvatarImg = (acct && acct.avatarImg) ? acct.avatarImg : null;
   if (grid) grid.querySelectorAll('.settings-avatar').forEach(b => b.classList.toggle('active', b.getAttribute('data-avatar') === evmSelAvatar));
   if (crow) crow.querySelectorAll('.settings-color').forEach(b => b.classList.toggle('active', b.getAttribute('data-color') === evmSelColor));
   evmUpdateAvatarPreview();
@@ -4268,6 +4278,7 @@ function evmOpenSettings() {
 
 function evmPickAvatar(em, el) {
   evmSelAvatar = em;
+  evmSelAvatarImg = null;
   const grid = document.getElementById('settings-avatar-grid');
   if (grid) grid.querySelectorAll('.settings-avatar').forEach(b => b.classList.toggle('active', b === el));
   evmUpdateAvatarPreview();
@@ -4278,11 +4289,61 @@ function evmPickAvatarColor(c, el) {
   if (row) row.querySelectorAll('.settings-color').forEach(b => b.classList.toggle('active', b === el));
   evmUpdateAvatarPreview();
 }
+function evmClearAvatar() {
+  evmSelAvatar = null;
+  evmSelAvatarImg = null;
+  const grid = document.getElementById('settings-avatar-grid');
+  if (grid) grid.querySelectorAll('.settings-avatar').forEach(b => b.classList.remove('active'));
+  evmUpdateAvatarPreview();
+}
+function evmPickAvatarImg(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  if (file.size > 4 * 1024 * 1024) { if (typeof showToast === 'function') showToast('图片过大，请选择 4MB 以内'); input.value = ''; return; }
+  const reader = new FileReader();
+  reader.onerror = () => { if (typeof showToast === 'function') showToast('文件读取失败'); };
+  reader.onload = () => {
+    const img = new Image();
+    img.onerror = () => { if (typeof showToast === 'function') showToast('图片读取失败'); };
+    img.onload = () => {
+      const size = 160;
+      const canvas = document.createElement('canvas');
+      canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      const s = Math.min(img.width, img.height);
+      const sx = (img.width - s) / 2;
+      const sy = (img.height - s) / 2;
+      ctx.drawImage(img, sx, sy, s, s, 0, 0, size, size);
+      let dataUrl;
+      try { dataUrl = canvas.toDataURL('image/webp', 0.85); } catch (e) { dataUrl = canvas.toDataURL('image/jpeg', 0.85); }
+      evmSelAvatarImg = dataUrl;
+      evmSelAvatar = null;
+      const grid = document.getElementById('settings-avatar-grid');
+      if (grid) grid.querySelectorAll('.settings-avatar').forEach(b => b.classList.remove('active'));
+      evmUpdateAvatarPreview();
+      if (typeof showToast === 'function') showToast('已选择图片，点保存生效');
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
 function evmUpdateAvatarPreview() {
   const pv = document.getElementById('settings-avatar-preview');
   if (!pv) return;
-  pv.textContent = evmSelAvatar || (window.__evmUser__ || 'U').slice(0, 1).toUpperCase();
-  pv.style.background = evmSelColor || 'linear-gradient(135deg, #6366f1, #a855f7)';
+  if (evmSelAvatarImg) {
+    pv.textContent = '';
+    pv.style.fontSize = '0';
+    pv.style.backgroundImage = 'url(' + evmSelAvatarImg + ')';
+    pv.style.backgroundSize = 'cover';
+    pv.style.backgroundPosition = 'center';
+    pv.style.backgroundRepeat = 'no-repeat';
+  } else {
+    pv.style.backgroundImage = 'none';
+    pv.textContent = evmSelAvatar || (window.__evmUser__ || 'U').slice(0, 1).toUpperCase();
+    pv.style.fontSize = '';
+    pv.style.background = evmSelColor || 'linear-gradient(135deg, #6366f1, #a855f7)';
+  }
 }
 
 function evmSaveProfile() {
@@ -4295,6 +4356,7 @@ function evmSaveProfile() {
   accounts[u].displayName = nick || '';
   accounts[u].avatar = evmSelAvatar || null;
   accounts[u].avatarColor = evmSelColor || null;
+  accounts[u].avatarImg = evmSelAvatarImg || null;
   evmSaveAccounts(accounts);
   evmRefreshUserBadge();
   evmCloseSettings();

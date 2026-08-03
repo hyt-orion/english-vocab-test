@@ -250,6 +250,11 @@
       <div class="settings-field">
         <label class="settings-label">头像</label>
         <div class="settings-avatar-grid" id="settings-avatar-grid"></div>
+        <div class="settings-avatar-actions">
+          <button type="button" class="settings-upload-btn" onclick="document.getElementById('settings-avatar-file').click()">📷 上传图片</button>
+          <button type="button" class="settings-clear-btn" onclick="evmClearAvatar()">恢复默认</button>
+          <input type="file" id="settings-avatar-file" accept="image/*" style="display:none" onchange="evmPickAvatarImg(this)">
+        </div>
       </div>
 
       <div class="settings-field">

@@ -3768,6 +3768,15 @@ body[data-app-mode="ielts"] .ielts-tabs {
 
 .settings-err { min-height: 1.1em; font-size: 0.8rem; font-weight: 600; color: #ff7a8a; }
 
+.settings-avatar-actions { display: flex; gap: 8px; margin-top: 10px; }
+.settings-upload-btn, .settings-clear-btn {
+  flex: 1; padding: 9px 0; border-radius: 10px; cursor: pointer;
+  font-size: 0.82rem; font-weight: 700; font-family: inherit;
+  border: 1px solid var(--border); background: rgba(255, 255, 255, 0.05); color: var(--text-primary);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.settings-upload-btn:hover, .settings-clear-btn:hover { border-color: #818cf8; background: rgba(129, 140, 248, 0.12); }
+
 /* 亮色适配 */
 [data-theme="light"] .settings-modal { background: rgba(255, 255, 255, 0.94); color: #1a1d2e; }
 [data-theme="light"] .settings-label { color: rgba(26, 29, 46, 0.75); }
