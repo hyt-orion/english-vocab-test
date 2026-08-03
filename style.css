@@ -713,6 +713,14 @@ body[data-app-mode="ielts"] .ielts-tabs {
   font-weight: 600;
 }
 
+.option-btn:disabled,
+.option-btn.disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+  filter: grayscale(0.5);
+}
+
 /* ==================== 测试界面 ==================== */
 .test-header {
   display: flex;
