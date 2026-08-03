@@ -62,6 +62,36 @@
   </div>
 </div>
 
+<!-- ==================== 模式选择页（封面后） ==================== -->
+<div class="mode-select" id="mode-select" style="display:none">
+  <div class="mode-select-orb mode-select-orb-1"></div>
+  <div class="mode-select-orb mode-select-orb-2"></div>
+  <div class="mode-select-inner">
+    <div class="mode-select-kicker">英语词汇大师</div>
+    <h1 class="mode-select-title">选择你的学习模式</h1>
+    <p class="mode-select-sub">进入系统前，先选一个入口 · 随时可在右上角切换</p>
+    <div class="mode-select-grid">
+      <button class="mode-select-card" data-mode="standard" onclick="selectMode('standard')">
+        <div class="msc-icon">📘</div>
+        <div class="msc-body">
+          <div class="msc-title">标准版</div>
+          <div class="msc-desc">完整的词汇测试与学习系统：测试、试卷、听力、语法、词典、错题本、统计</div>
+        </div>
+        <div class="msc-tag">日常背词 · 考试通用</div>
+      </button>
+      <button class="mode-select-card" data-mode="ielts" onclick="selectMode('ielts')">
+        <div class="msc-icon">🎓</div>
+        <div class="msc-body">
+          <div class="msc-title">雅思版</div>
+          <div class="msc-desc">一站式雅思备考：分级词汇、口语题库、写作实战批改、评分标准</div>
+        </div>
+        <div class="msc-tag">雅思考生专属</div>
+      </button>
+    </div>
+    <button class="mode-select-back" onclick="backToCover()">← 返回封面</button>
+  </div>
+</div>
+
 <!-- ==================== 导航栏 ==================== -->
 <nav class="navbar">
   <div class="navbar-brand">
@@ -107,6 +137,11 @@
     <button class="nav-tab" data-page="stats">
       <span class="nav-icon">📊</span>
       <span class="nav-label">统计</span>
+    </button>
+    <span class="nav-divider"></span>
+    <button class="nav-mode-switch" onclick="showModeSelect()" title="切换学习模式">
+      <span class="nav-icon">🔀</span>
+      <span class="nav-label">模式</span>
     </button>
 </div>
   <button class="theme-toggle" onclick="toggleTheme()" title="切换主题">🌙</button>
