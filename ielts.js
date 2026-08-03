@@ -446,3 +446,163 @@ const IELTS_BANDS = {
     { code: 'GRA', name: 'Grammatical Range & Accuracy 语法', note: '句式多样、语法准确。' }
   ]
 };
+// ==================== 雅思分级词库（CEFR A1 → C2，最低级到最高级） ====================
+// 每级对应大致雅思分数段：A1≈4.0，A2≈4.5–5.0，B1≈5.5–6.0，B2≈6.5–7.0，C1≈7.5–8.0，C2≈8.5–9.0
+const IELTS_LEVELS = [
+  {
+    level: 'A1', name: '入门', band: '雅思 4.0',
+    desc: '最基础的生存词汇，能理解并使用极简单的日常表达。',
+    words: [
+      { word: 'family', phonetic: '/ˈfæməli/', pos: 'n.', meaning: '家庭', example: 'My family lives in the city.', exampleCn: '我家住在城市里。' },
+      { word: 'home', phonetic: '/həʊm/', pos: 'n.', meaning: '家', example: 'I feel happy at home.', exampleCn: '我在家感到快乐。' },
+      { word: 'school', phonetic: '/skuːl/', pos: 'n.', meaning: '学校', example: 'Children go to school every day.', exampleCn: '孩子们每天上学。' },
+      { word: 'teacher', phonetic: '/ˈtiːtʃə(r)/', pos: 'n.', meaning: '老师', example: 'The teacher explains the lesson clearly.', exampleCn: '老师把课讲得很清楚。' },
+      { word: 'student', phonetic: '/ˈstjuːdnt/', pos: 'n.', meaning: '学生', example: 'She is a hardworking student.', exampleCn: '她是一名勤奋的学生。' },
+      { word: 'learn', phonetic: '/lɜːn/', pos: 'v.', meaning: '学习', example: 'We learn English at school.', exampleCn: '我们在学校学英语。' },
+      { word: 'study', phonetic: '/ˈstʌdi/', pos: 'v.', meaning: '学习；研究', example: 'He studies science at university.', exampleCn: '他在大学学理科。' },
+      { word: 'work', phonetic: '/wɜːk/', pos: 'n./v.', meaning: '工作', example: 'My father goes to work by bus.', exampleCn: '我父亲坐公交上班。' },
+      { word: 'job', phonetic: '/dʒɒb/', pos: 'n.', meaning: '工作', example: 'She found a new job in a hospital.', exampleCn: '她在医院找到了新工作。' },
+      { word: 'friend', phonetic: '/frend/', pos: 'n.', meaning: '朋友', example: 'A good friend helps you in hard times.', exampleCn: '好朋友在你困难时帮忙。' },
+      { word: 'food', phonetic: '/fuːd/', pos: 'n.', meaning: '食物', example: 'Healthy food keeps us strong.', exampleCn: '健康的食物让我们强壮。' },
+      { word: 'water', phonetic: '/ˈwɔːtə(r)/', pos: 'n.', meaning: '水', example: 'We should drink clean water.', exampleCn: '我们应喝干净的水。' },
+      { word: 'city', phonetic: '/ˈsɪti/', pos: 'n.', meaning: '城市', example: 'The city is busy and noisy.', exampleCn: '这座城市繁忙又嘈杂。' },
+      { word: 'country', phonetic: '/ˈkʌntri/', pos: 'n.', meaning: '国家；乡村', example: 'My country has beautiful mountains.', exampleCn: '我的国家有美丽的山。' },
+      { word: 'people', phonetic: '/ˈpiːpl/', pos: 'n.', meaning: '人们', example: 'People need clean air to live.', exampleCn: '人们需要干净的空气。' },
+      { word: 'money', phonetic: '/ˈmʌni/', pos: 'n.', meaning: '钱', example: 'We need money to buy food.', exampleCn: '我们需要钱买食物。' },
+      { word: 'time', phonetic: '/taɪm/', pos: 'n.', meaning: '时间', example: 'I do not have much time today.', exampleCn: '今天我没多少时间。' },
+      { word: 'help', phonetic: '/help/', pos: 'v./n.', meaning: '帮助', example: 'Can you help me with my homework?', exampleCn: '你能帮我做作业吗？' },
+      { word: 'child', phonetic: '/tʃaɪld/', pos: 'n.', meaning: '孩子', example: 'The child is playing outside.', exampleCn: '那孩子在户外玩耍。' },
+      { word: 'health', phonetic: '/helθ/', pos: 'n.', meaning: '健康', example: 'Exercise is good for your health.', exampleCn: '运动有益健康。' }
+    ]
+  },
+  {
+    level: 'A2', name: '基础', band: '雅思 4.5–5.0',
+    desc: '能使用简单的描述与比较结构，谈论熟悉的话题。',
+    words: [
+      { word: 'environment', phonetic: '/ɪnˈvaɪrənmənt/', pos: 'n.', meaning: '环境', example: 'We must protect the environment.', exampleCn: '我们必须保护环境。' },
+      { word: 'education', phonetic: '/ˌedʒuˈkeɪʃn/', pos: 'n.', meaning: '教育', example: 'Education helps people get better jobs.', exampleCn: '教育帮助人们获得更好的工作。' },
+      { word: 'government', phonetic: '/ˈɡʌvənmənt/', pos: 'n.', meaning: '政府', example: 'The government should help poor people.', exampleCn: '政府应帮助穷人。' },
+      { word: 'internet', phonetic: '/ˈɪntənet/', pos: 'n.', meaning: '互联网', example: 'Many students use the internet for learning.', exampleCn: '许多学生用互联网学习。' },
+      { word: 'transport', phonetic: '/ˈtrænspɔːt/', pos: 'n.', meaning: '交通', example: 'Public transport is cheaper than taxis.', exampleCn: '公共交通比出租车便宜。' },
+      { word: 'pollution', phonetic: '/pəˈluːʃn/', pos: 'n.', meaning: '污染', example: 'Pollution is a serious problem.', exampleCn: '污染是个严重问题。' },
+      { word: 'climate', phonetic: '/ˈklaɪmət/', pos: 'n.', meaning: '气候', example: 'Climate change affects our world.', exampleCn: '气候变化影响我们的世界。' },
+      { word: 'online', phonetic: '/ˌɒnˈlaɪn/', pos: 'adj.', meaning: '在线的', example: 'Online classes are helpful.', exampleCn: '在线课程很有帮助。' },
+      { word: 'improve', phonetic: '/ɪmˈpruːv/', pos: 'v.', meaning: '改善', example: 'We need to improve our schools.', exampleCn: '我们需要改善学校。' },
+      { word: 'increase', phonetic: '/ɪnˈkriːs/', pos: 'v.', meaning: '增加', example: 'Prices increase every year.', exampleCn: '物价每年上涨。' },
+      { word: 'decrease', phonetic: '/dɪˈkriːs/', pos: 'v.', meaning: '减少', example: 'We should decrease pollution.', exampleCn: '我们应减少污染。' },
+      { word: 'cause', phonetic: '/kɔːz/', pos: 'v.', meaning: '引起', example: 'Smoking causes health problems.', exampleCn: '吸烟导致健康问题。' },
+      { word: 'effect', phonetic: '/ɪˈfekt/', pos: 'n.', meaning: '影响；效果', example: 'Pollution has bad effects.', exampleCn: '污染有坏影响。' },
+      { word: 'modern', phonetic: '/ˈmɒdn/', pos: 'adj.', meaning: '现代的', example: 'Modern life is fast and busy.', exampleCn: '现代生活节奏快而忙碌。' },
+      { word: 'traditional', phonetic: '/trəˈdɪʃənl/', pos: 'adj.', meaning: '传统的', example: 'Traditional food is often healthier.', exampleCn: '传统食物往往更健康。' },
+      { word: 'crime', phonetic: '/kraɪm/', pos: 'n.', meaning: '犯罪', example: 'Crime rates are rising in big cities.', exampleCn: '大城市犯罪率在上升。' },
+      { word: 'safety', phonetic: '/ˈseɪfti/', pos: 'n.', meaning: '安全', example: 'People want safety in their neighbourhood.', exampleCn: '人们希望社区安全。' },
+      { word: 'healthcare', phonetic: '/ˈhelθkeə(r)/', pos: 'n.', meaning: '医疗', example: 'Healthcare should be available to all.', exampleCn: '医疗应人人可得。' },
+      { word: 'economy', phonetic: '/ɪˈkɒnəmi/', pos: 'n.', meaning: '经济', example: 'The economy is growing slowly.', exampleCn: '经济缓慢增长。' },
+      { word: 'tourism', phonetic: '/ˈtʊərɪzəm/', pos: 'n.', meaning: '旅游业', example: 'Tourism creates many jobs.', exampleCn: '旅游业创造许多就业。' }
+    ]
+  },
+  {
+    level: 'B1', name: '中级', band: '雅思 5.5–6.0',
+    desc: '能展开论点、比较与描述，开始使用学术表达。',
+    words: [
+      { word: 'advantage', phonetic: '/ədˈvɑːntɪdʒ/', pos: 'n.', meaning: '优势', example: 'One advantage of online study is flexibility.', exampleCn: '在线学习的一个优势是灵活。' },
+      { word: 'disadvantage', phonetic: '/ˌdɪsədˈvɑːntɪdʒ/', pos: 'n.', meaning: '劣势', example: 'A disadvantage of city life is noise.', exampleCn: '城市生活的一个劣势是噪声。' },
+      { word: 'solution', phonetic: '/səˈluːʃn/', pos: 'n.', meaning: '解决方案', example: 'A possible solution is to build more schools.', exampleCn: '一个可行的方案是建更多学校。' },
+      { word: 'influence', phonetic: '/ˈɪnfluəns/', pos: 'n./v.', meaning: '影响', example: 'Media influences young people.', exampleCn: '媒体影响年轻人。' },
+      { word: 'responsibility', phonetic: '/rɪˌspɒnsəˈbɪləti/', pos: 'n.', meaning: '责任', example: 'It is the government responsibility to act.', exampleCn: '采取行动是政府的责任。' },
+      { word: 'necessary', phonetic: '/ˈnesəsəri/', pos: 'adj.', meaning: '必要的', example: 'It is necessary to act now.', exampleCn: '现在必须行动。' },
+      { word: 'benefit', phonetic: '/ˈbenɪfɪt/', pos: 'n.', meaning: '好处', example: 'A benefit of studying abroad is new culture.', exampleCn: '留学的好处是接触新文化。' },
+      { word: 'challenge', phonetic: '/ˈtʃælɪndʒ/', pos: 'n.', meaning: '挑战', example: 'Climate change is a global challenge.', exampleCn: '气候变化是全球挑战。' },
+      { word: 'develop', phonetic: '/dɪˈveləp/', pos: 'v.', meaning: '发展', example: 'Students need to develop skills.', exampleCn: '学生需要发展技能。' },
+      { word: 'opportunity', phonetic: '/ˌɒpəˈtjuːnəti/', pos: 'n.', meaning: '机会', example: 'Education gives more opportunities.', exampleCn: '教育带来更多机会。' },
+      { word: 'harmful', phonetic: '/ˈhɑːmfl/', pos: 'adj.', meaning: '有害的', example: 'Smoking is harmful to health.', exampleCn: '吸烟有害健康。' },
+      { word: 'helpful', phonetic: '/ˈhelpfl/', pos: 'adj.', meaning: '有帮助的', example: 'Exercise is helpful for the mind.', exampleCn: '运动有益心智。' },
+      { word: 'effective', phonetic: '/ɪˈfektɪv/', pos: 'adj.', meaning: '有效的', example: 'Online learning is an effective method.', exampleCn: '在线学习是有效的方法。' },
+      { word: 'access', phonetic: '/ˈækses/', pos: 'n.', meaning: '获取；途径', example: 'All students need access to the internet.', exampleCn: '所有学生都需要能上网。' },
+      { word: 'quality', phonetic: '/ˈkwɒləti/', pos: 'n.', meaning: '质量', example: 'We must improve the quality of education.', exampleCn: '我们必须提升教育质量。' },
+      { word: 'pressure', phonetic: '/ˈpreʃə(r)/', pos: 'n.', meaning: '压力', example: 'Students face exam pressure.', exampleCn: '学生面临考试压力。' },
+      { word: 'employment', phonetic: '/ɪmˈplɔɪmənt/', pos: 'n.', meaning: '就业', example: 'Education increases employment chances.', exampleCn: '教育增加就业几率。' },
+      { word: 'consumer', phonetic: '/kənˈsjuːmə(r)/', pos: 'n.', meaning: '消费者', example: 'Consumer habits are changing.', exampleCn: '消费习惯正在改变。' },
+      { word: 'lifestyle', phonetic: '/ˈlaɪfstaɪl/', pos: 'n.', meaning: '生活方式', example: 'A healthy lifestyle prevents disease.', exampleCn: '健康的生活方式预防疾病。' },
+      { word: 'population', phonetic: '/ˌpɒpjuˈleɪʃn/', pos: 'n.', meaning: '人口', example: 'The population is growing fast.', exampleCn: '人口快速增长。' }
+    ]
+  },
+  {
+    level: 'B2', name: '中高级', band: '雅思 6.5–7.0',
+    desc: '掌握较复杂的学术词汇，能就抽象话题展开论述。',
+    words: [
+      { word: 'infrastructure', phonetic: '/ˈɪnfrəstrʌktʃə(r)/', pos: 'n.', meaning: '基础设施', example: 'Urban areas need better infrastructure.', exampleCn: '城市需要更好的基础设施。' },
+      { word: 'sustainability', phonetic: '/səˌsteɪnəˈbɪləti/', pos: 'n.', meaning: '可持续性', example: 'Sustainability matters for the future.', exampleCn: '可持续性关乎未来。' },
+      { word: 'legislation', phonetic: '/ˌledʒɪsˈleɪʃn/', pos: 'n.', meaning: '立法', example: 'New legislation controls emissions.', exampleCn: '新立法管控排放。' },
+      { word: 'implement', phonetic: '/ˈɪmplɪment/', pos: 'v.', meaning: '实施', example: 'We should implement new policies.', exampleCn: '我们应实施新政策。' },
+      { word: 'regulate', phonetic: '/ˈreɡjuleɪt/', pos: 'v.', meaning: '监管', example: 'We must regulate social media use.', exampleCn: '我们必须监管社交媒体使用。' },
+      { word: 'innovation', phonetic: '/ˌɪnəˈveɪʃn/', pos: 'n.', meaning: '创新', example: 'Innovation drives economic growth.', exampleCn: '创新推动经济增长。' },
+      { word: 'awareness', phonetic: '/əˈweənəs/', pos: 'n.', meaning: '意识', example: 'Public awareness of recycling is rising.', exampleCn: '公众回收意识在提高。' },
+      { word: 'equitable', phonetic: '/ˈekwɪtəbl/', pos: 'adj.', meaning: '公平的', example: 'Healthcare should be equitable.', exampleCn: '医疗应公平。' },
+      { word: 'prioritise', phonetic: '/praɪˈɒrətaɪz/', pos: 'v.', meaning: '优先考虑', example: 'We must prioritise education.', exampleCn: '我们必须优先教育。' },
+      { word: 'urbanisation', phonetic: '/ˌɜːbənaɪˈzeɪʃn/', pos: 'n.', meaning: '城市化', example: 'Urbanisation leads to housing issues.', exampleCn: '城市化导致住房问题。' },
+      { word: 'automation', phonetic: '/ˌɔːtəˈmeɪʃn/', pos: 'n.', meaning: '自动化', example: 'Automation reduces manual work.', exampleCn: '自动化减少人工。' },
+      { word: 'inequality', phonetic: '/ˌɪnɪˈkwɒləti/', pos: 'n.', meaning: '不平等', example: 'Economic inequality is a concern.', exampleCn: '经济不平等令人担忧。' },
+      { word: 'globalisation', phonetic: '/ˌɡləʊbəlaɪˈzeɪʃn/', pos: 'n.', meaning: '全球化', example: 'Globalisation affects job markets.', exampleCn: '全球化影响就业市场。' },
+      { word: 'incentive', phonetic: '/ɪnˈsentɪv/', pos: 'n.', meaning: '激励', example: 'Tax incentives boost clean energy.', exampleCn: '税收激励促进清洁能源。' },
+      { word: 'allocate', phonetic: '/ˈæləkeɪt/', pos: 'v.', meaning: '分配', example: 'Funds should be allocated to health.', exampleCn: '资金应分配给卫生。' },
+      { word: 'viable', phonetic: '/ˈvaɪəbl/', pos: 'adj.', meaning: '可行的', example: 'A viable solution is needed.', exampleCn: '需要一个可行的方案。' },
+      { word: 'justify', phonetic: '/ˈdʒʌstɪfaɪ/', pos: 'v.', meaning: '证明……合理', example: 'It is hard to justify the cost.', exampleCn: '很难证明这笔花费合理。' },
+      { word: 'consequence', phonetic: '/ˈkɒnsɪkwəns/', pos: 'n.', meaning: '后果', example: 'One consequence of pollution is poor health.', exampleCn: '污染的一个后果是健康恶化。' },
+      { word: 'emphasise', phonetic: '/ˈemfəsaɪz/', pos: 'v.', meaning: '强调', example: 'We must emphasise education.', exampleCn: '我们必须强调教育。' },
+      { word: 'correlation', phonetic: '/ˌkɒrəˈleɪʃn/', pos: 'n.', meaning: '相关性', example: 'There is a correlation between education and jobs.', exampleCn: '教育与就业之间有相关性。' }
+    ]
+  },
+  {
+    level: 'C1', name: '高级', band: '雅思 7.5–8.0',
+    desc: '表达精准、用词正式，能驾驭学术写作与复杂句式。',
+    words: [
+      { word: 'accelerate', phonetic: '/əkˈseləreɪt/', pos: 'v.', meaning: '加速', example: 'Technology accelerates social change.', exampleCn: '技术加速社会变革。' },
+      { word: 'ambiguous', phonetic: '/æmˈbɪɡjuəs/', pos: 'adj.', meaning: '含糊的', example: 'The instructions were ambiguous.', exampleCn: '说明含糊不清。' },
+      { word: 'coherent', phonetic: '/kəʊˈhɪərənt/', pos: 'adj.', meaning: '连贯的', example: 'She gave a coherent argument.', exampleCn: '她给出了连贯的论证。' },
+      { word: 'compensate', phonetic: '/ˈkɒmpenseɪt/', pos: 'v.', meaning: '补偿', example: 'Nothing can compensate for lost time.', exampleCn: '什么也无法补偿失去的时间。' },
+      { word: 'controversial', phonetic: '/ˌkɒntrəˈvɜːʃl/', pos: 'adj.', meaning: '有争议的', example: 'The new plan is controversial.', exampleCn: '新计划有争议。' },
+      { word: 'diminish', phonetic: '/dɪˈmɪnɪʃ/', pos: 'v.', meaning: '减少；削弱', example: 'His influence began to diminish.', exampleCn: '他的影响力开始减弱。' },
+      { word: 'elaborate', phonetic: '/ɪˈlæbərət/', pos: 'adj./v.', meaning: '详尽的；阐述', example: 'Please elaborate on your point.', exampleCn: '请详细阐述你的观点。' },
+      { word: 'fluctuate', phonetic: '/ˈflʌktʃueɪt/', pos: 'v.', meaning: '波动', example: 'Prices fluctuate with demand.', exampleCn: '价格随需求波动。' },
+      { word: 'inherent', phonetic: '/ɪnˈhɪərənt/', pos: 'adj.', meaning: '固有的', example: 'Risk is inherent in investment.', exampleCn: '风险是投资固有的。' },
+      { word: 'integral', phonetic: '/ˈɪntɪɡrəl/', pos: 'adj.', meaning: '不可或缺的', example: 'Trust is integral to teamwork.', exampleCn: '信任对团队合作不可或缺。' },
+      { word: 'manipulate', phonetic: '/məˈnɪpjuleɪt/', pos: 'v.', meaning: '操纵', example: 'He tried to manipulate the data.', exampleCn: '他试图操纵数据。' },
+      { word: 'negligible', phonetic: '/ˈneɡlɪdʒəbl/', pos: 'adj.', meaning: '可忽略的', example: 'The environmental effect was negligible.', exampleCn: '环境影响微乎其微。' },
+      { word: 'predominant', phonetic: '/prɪˈdɒmɪnənt/', pos: 'adj.', meaning: '主导的', example: 'The predominant view is optimistic.', exampleCn: '主流观点是乐观的。' },
+      { word: 'profound', phonetic: '/prəˈfaʊnd/', pos: 'adj.', meaning: '深远的', example: 'The book had a profound impact.', exampleCn: '这本书影响深远。' },
+      { word: 'rigorous', phonetic: '/ˈrɪɡərəs/', pos: 'adj.', meaning: '严格的', example: 'The study used rigorous methods.', exampleCn: '该研究用了严谨的方法。' },
+      { word: 'simultaneous', phonetic: '/ˌsɪmlˈteɪniəs/', pos: 'adj.', meaning: '同时的', example: 'The events were simultaneous.', exampleCn: '这些事件同时发生。' },
+      { word: 'submit', phonetic: '/səbˈmɪt/', pos: 'v.', meaning: '提交；屈服', example: 'Please submit your essay by Friday.', exampleCn: '请于周五前提交论文。' },
+      { word: 'theoretical', phonetic: '/ˌθɪəˈretɪkl/', pos: 'adj.', meaning: '理论的', example: 'This is a theoretical model.', exampleCn: '这是一个理论模型。' },
+      { word: 'undergo', phonetic: '/ˌʌndəˈɡəʊ/', pos: 'v.', meaning: '经历', example: 'The city underwent major changes.', exampleCn: '这座城市经历了巨变。' },
+      { word: 'validate', phonetic: '/ˈvælɪdeɪt/', pos: 'v.', meaning: '验证', example: 'The results validate the theory.', exampleCn: '结果验证了该理论。' }
+    ]
+  },
+  {
+    level: 'C2', name: '精通', band: '雅思 8.5–9.0',
+    desc: '接近母语者的地道表达，学术写作与口语的顶级词汇。',
+    words: [
+      { word: 'abstruse', phonetic: '/əbˈstruːs/', pos: 'adj.', meaning: '深奥的', example: 'His lecture was abstruse and hard to follow.', exampleCn: '他的讲座深奥难懂。' },
+      { word: 'bolster', phonetic: '/ˈbəʊlstə(r)/', pos: 'v.', meaning: '支持；加强', example: 'New evidence bolstered her claim.', exampleCn: '新证据加强了她的论点。' },
+      { word: 'circumspect', phonetic: '/ˈsɜːkəmspekt/', pos: 'adj.', meaning: '谨慎的', example: 'She was circumspect about the deal.', exampleCn: '她对这笔交易很谨慎。' },
+      { word: 'eschew', phonetic: '/ɪsˈtʃuː/', pos: 'v.', meaning: '回避；避免', example: 'He eschewed processed food.', exampleCn: '他避开加工食品。' },
+      { word: 'obdurate', phonetic: '/ˈɒbdjərət/', pos: 'adj.', meaning: '固执的', example: 'He remained obdurate despite the pleas.', exampleCn: '尽管恳求，他依然固执。' },
+      { word: 'penchant', phonetic: '/ˈpɒ̃ʃɒ̃/', pos: 'n.', meaning: '偏好', example: 'She has a penchant for classical music.', exampleCn: '她对古典音乐有偏好。' },
+      { word: 'alacrity', phonetic: '/əˈlækrəti/', pos: 'n.', meaning: '欣然；敏捷', example: 'She accepted the invitation with alacrity.', exampleCn: '她欣然接受了邀请。' },
+      { word: 'assiduous', phonetic: '/əˈsɪdjuəs/', pos: 'adj.', meaning: '勤勉的', example: 'He was assiduous in his research.', exampleCn: '他做研究很勤勉。' },
+      { word: 'capitulate', phonetic: '/kəˈpɪtʃuleɪt/', pos: 'v.', meaning: '屈服', example: 'They finally capitulated after long talks.', exampleCn: '长时间谈判后他们最终屈服。' },
+      { word: 'convivial', phonetic: '/kənˈvɪviəl/', pos: 'adj.', meaning: '欢乐的', example: 'The party had a convivial atmosphere.', exampleCn: '聚会气氛欢乐。' },
+      { word: 'obfuscate', phonetic: '/ˈɒbfʌskeɪt/', pos: 'v.', meaning: '混淆；使模糊', example: 'The statement obfuscated the facts.', exampleCn: '该声明混淆了事实。' },
+      { word: 'recalcitrant', phonetic: '/rɪˈkælsɪtrənt/', pos: 'adj.', meaning: '倔强的', example: 'The recalcitrant student refused to obey.', exampleCn: '那名倔强的学生拒绝服从。' },
+      { word: 'munificent', phonetic: '/mjuːˈnɪfɪsnt/', pos: 'adj.', meaning: '慷慨的', example: 'A munificent donation was made to the school.', exampleCn: '一笔慷慨的捐款捐给了学校。' },
+      { word: 'capricious', phonetic: '/kəˈprɪʃəs/', pos: 'adj.', meaning: '反复无常的', example: 'The weather this spring is capricious.', exampleCn: '今年春天的天气反复无常。' },
+      { word: 'ebullient', phonetic: '/ɪˈbʌliənt/', pos: 'adj.', meaning: '热情洋溢的', example: 'Her ebullient mood was contagious.', exampleCn: '她热情洋溢的情绪很有感染力。' },
+      { word: 'ephemeral', phonetic: '/ɪˈfemərəl/', pos: 'adj.', meaning: '短暂的', example: 'Fame can be ephemeral.', exampleCn: '名声可能转瞬即逝。' },
+      { word: 'esoteric', phonetic: '/ˌesəˈterɪk/', pos: 'adj.', meaning: '深奥难懂的', example: 'The topic is too esoteric for beginners.', exampleCn: '这个话题对初学者太深奥。' },
+      { word: 'anomaly', phonetic: '/əˈnɒməli/', pos: 'n.', meaning: '异常', example: 'The result was a statistical anomaly.', exampleCn: '这个结果是个统计异常。' },
+      { word: 'austere', phonetic: '/ɔːˈstɪə(r)/', pos: 'adj.', meaning: '朴素的；严厉的', example: 'The room was clean but austere.', exampleCn: '房间干净但很朴素。' },
+      { word: 'cogent', phonetic: '/ˈkəʊdʒənt/', pos: 'adj.', meaning: '有说服力的', example: 'She made a cogent argument for change.', exampleCn: '她就变革提出了有说服力的论点。' }
+    ]
+  }
+];
