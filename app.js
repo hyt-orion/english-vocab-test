@@ -2933,25 +2933,68 @@ with 和、用；for 为了；by 被、乘；from 从`, examples: [
 
 let currentGrammarTopic = null;
 
+let grammarSearchQuery = '';
+
+function getGrammarProgress() {
+  try { return JSON.parse(localStorage.getItem('grammarProgress') || '{}'); } catch (e) { return {}; }
+}
+
 function renderGrammarTopics() {
   const container = document.getElementById('grammar-topics');
+  const toolsEl = document.getElementById('grammar-tools');
   if (currentGrammarTopic) {
+    if (toolsEl) toolsEl.style.display = 'none';
     // 显示专题详情
     renderGrammarDetail(currentGrammarTopic);
     return;
   }
+  if (toolsEl) toolsEl.style.display = '';
 
-  container.innerHTML = GRAMMAR_TOPICS.map(t => `
-    <div class="grammar-topic-card" onclick="openGrammarTopic('${t.id}')">
-      <div class="grammar-topic-header">
-        <div>
-          <div class="grammar-topic-title">${t.icon} ${t.title}</div>
-          <div class="grammar-topic-desc">${t.desc}</div>
-        </div>
-        <span class="grammar-topic-badge">${t.diff}</span>
-      </div>
-    </div>
-  `).join('');
+  const q = (grammarSearchQuery || '').trim().toLowerCase();
+  const prog = getGrammarProgress();
+  let list = GRAMMAR_TOPICS;
+  if (q) {
+    list = list.filter(t => {
+      const hay = (t.title + ' ' + t.desc + ' ' + (t.sections || []).map(s => s.title + ' ' + s.content).join(' ')).toLowerCase();
+      return hay.indexOf(q) !== -1;
+    });
+  }
+  const total = GRAMMAR_TOPICS.length;
+  const learnedCount = GRAMMAR_TOPICS.filter(t => prog[t.id]).length;
+  const progEl = document.getElementById('grammar-progress');
+  if (progEl) progEl.innerHTML = '已学 <b>' + learnedCount + '</b> / ' + total + (learnedCount === total && total ? ' 🎉' : '');
+
+  if (!list.length) {
+    container.innerHTML = '<div class="empty-hint">🔍 未找到与“' + (grammarSearchQuery || '').replace(/</g, '&lt;') + '”匹配的语法专题</div>';
+    return;
+  }
+
+  container.innerHTML = list.map(t => {
+    const learned = !!prog[t.id];
+    return '<div class="grammar-topic-card' + (learned ? ' learned' : '') + '" onclick="openGrammarTopic(\'' + t.id + '\')">'
+      + '<div class="grammar-topic-header"><div>'
+      + '<div class="grammar-topic-title">' + t.icon + ' ' + t.title + '</div>'
+      + '<div class="grammar-topic-desc">' + t.desc + '</div>'
+      + '</div><div class="grammar-topic-meta">'
+      + (learned ? '<span class="grammar-learned-badge">✓ 已学</span>' : '')
+      + '<span class="grammar-topic-badge">' + t.diff + '</span>'
+      + '</div></div>'
+      + '<button class="grammar-learn-btn' + (learned ? ' on' : '') + '" onclick="event.stopPropagation();toggleGrammarLearned(\'' + t.id + '\')">'
+      + (learned ? '↺ 取消已学' : '✓ 标记已学') + '</button>'
+      + '</div>';
+  }).join('');
+}
+
+function toggleGrammarLearned(id) {
+  const prog = getGrammarProgress();
+  if (prog[id]) delete prog[id]; else prog[id] = true;
+  localStorage.setItem('grammarProgress', JSON.stringify(prog));
+  renderGrammarTopics();
+}
+
+function filterGrammarTopics(q) {
+  grammarSearchQuery = q;
+  if (!currentGrammarTopic) renderGrammarTopics();
 }
 
 function openGrammarTopic(id) {
@@ -2972,9 +3015,22 @@ function renderGrammarDetail(topic) {
     const items = topic.videos.map(v => {
       const t = v.replace(/^\d+--\d+/, '').replace(/\.mp4$/i, '');
       const src = (VIDEO_BASE_URL || 'videos/') + encodeURI(v);
+      const vttSrc = (VIDEO_BASE_URL || 'videos/') + encodeURI(v.replace(/\.mp4$/i, '.vtt'));
       return '<div class="grammar-video-item">'
         + '<div class="grammar-video-title">&#9654; ' + t + '</div>'
-        + '<video class="grammar-video" controls preload="none" src="' + src + '"></video>'
+        + '<div class="video-wrap">'
+        + '<video class="grammar-video" controls preload="none" src="' + src + '">'
+        + '<track kind="subtitles" srclang="zh" label="中文字幕" src="' + vttSrc + '">'
+        + '</video>'
+        + '<div class="video-toolbar">'
+        + '<label class="video-speed">倍速'
+        + '<select onchange="this.closest(\'.video-wrap\').querySelector(\'video\').playbackRate=parseFloat(this.value)">'
+        + '<option value="0.5">0.5x</option><option value="0.75">0.75x</option>'
+        + '<option value="1" selected>1.0x</option><option value="1.25">1.25x</option>'
+        + '<option value="1.5">1.5x</option><option value="2">2.0x</option>'
+        + '</select></label>'
+        + '<a class="video-dl" href="' + src + '" download target="_blank" rel="noopener">⬇ 下载视频</a>'
+        + '</div>'
         + '</div>';
     }).join('');
     return '<div class="grammar-video-section">'
