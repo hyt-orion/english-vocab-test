@@ -10,7 +10,8 @@
 (function () {
   const GLOBAL_KEYS = new Set([
     'theme', 'appMode', 'coverVisited',
-    'evm_accounts', 'evm_current_user', 'evm_last_user'
+    'evm_accounts', 'evm_current_user', 'evm_last_user',
+    'textbookVersion'
   ]);
   const ls = window.localStorage;
   const _get = ls.getItem.bind(ls);
@@ -37,6 +38,7 @@ const App = {
     level: 0,               // 0=all, 1=小学, 2=初中, 3=高中
     count: 20,              // 每轮题数
     selectMode: 'random',   // random | custom
+    textbookVersion: 'pep', // pep=人教版, renai=仁爱版
   },
   customSelectedIds: new Set(), // 自选模式中选中的单词ID
   wordPickerPage: 1, // 词汇选择器当前页码
@@ -122,7 +124,7 @@ function updateWordMastery(wordId, isCorrect) {
  * 智能选题：70%概率优先选低掌握度词，30%随机
  */
 function selectWords(count, level) {
-  let pool = WORD_BANK.filter(w => level === 0 || w.level === level);
+  let pool = getWordBank().filter(w => level === 0 || w.level === level);
 
   // 按掌握度分组
   const newWords = [];      // mastery 0
@@ -163,7 +165,7 @@ function selectWords(count, level) {
  * 生成选择题干扰项
  */
 function generateChoices(correctWord, direction) {
-  let pool = WORD_BANK.filter(w => w.id !== correctWord.id);
+  let pool = getWordBank().filter(w => w.id !== correctWord.id);
 
   // 同级别优先
   const sameLevel = pool.filter(w => w.level === correctWord.level);
@@ -251,7 +253,7 @@ function renderDashboard() {
     totalReviews += stats[id].correct + stats[id].wrong;
   });
 
-  const totalWords = WORD_BANK.length;
+  const totalWords = getWordBank().length;
   const masteryRate = totalWords > 0 ? Math.round((mastered / totalWords) * 100) : 0;
   const avgAccuracy = totalReviews > 0
     ? Math.round((Object.values(stats).reduce((s, v) => s + v.correct, 0) / totalReviews) * 100)
@@ -265,8 +267,14 @@ function renderDashboard() {
 }
 
 // ==================== 测试配置页 ====================
-function setupTestConfig() {
-  // 重置配置界面选中状态
+// 启动时恢复教材版本偏好（全局共享，不随账号隔离）
+try {
+  const _tv = (localStorage.getItem('textbookVersion') || '').trim();
+  if (_tv === 'pep' || _tv === 'renai') App.testConfig.textbookVersion = _tv;
+} catch (e) {}
+
+// 刷新所有配置按钮的选中态
+function applyTestConfigUI() {
   document.querySelectorAll('[data-config]').forEach(btn => {
     const group = btn.dataset.config;
     const value = btn.dataset.value;
@@ -275,7 +283,45 @@ function setupTestConfig() {
   });
 }
 
+function setupTestConfig() {
+  applyTestConfigUI();
+  updateVersionUI();
+}
+
+// 按教材版本返回对应词库（人教版 WORD_BANK / 仁爱版 RENAI_WORD_BANK）
+function getWordBank() {
+  return (App.testConfig.textbookVersion === 'renai')
+    ? (window.RENAI_WORD_BANK || [])
+    : (window.WORD_BANK || []);
+}
+
+// 仁爱版目前仅有初中词库：切换到仁爱版时禁用小学/高中级别选项
+function updateVersionUI() {
+  const isRenai = App.testConfig.textbookVersion === 'renai';
+  document.querySelectorAll('[data-config="level"]').forEach(btn => {
+    const lv = btn.dataset.value;
+    const disabled = isRenai && (lv === '1' || lv === '3');
+    btn.disabled = disabled;
+    btn.classList.toggle('disabled', disabled);
+  });
+}
+
 function setConfig(group, value) {
+  if (group === 'textbookVersion') {
+    App.testConfig.textbookVersion = value;
+    try { localStorage.setItem('textbookVersion', value); } catch (e) {}
+    if (value === 'renai') {
+      App._pepLevel = App.testConfig.level;   // 记住人教版下的学段
+      App.testConfig.level = 2;               // 仁爱版目前仅有初中词库
+    } else {
+      App.testConfig.level = (App._pepLevel != null) ? App._pepLevel : 0;
+    }
+    App.customSelectedIds.clear();            // 不同版本词库 id 体系不同
+    applyTestConfigUI();
+    updateVersionUI();
+    if (App.testConfig.selectMode === 'custom') renderWordPicker();
+    return;
+  }
   App.testConfig[group] = isNaN(Number(value)) ? value : Number(value);
   // 更新UI
   document.querySelectorAll(`[data-config="${group}"]`).forEach(btn => {
@@ -313,7 +359,7 @@ function renderWordPicker() {
   const filterLevel = parseInt(document.getElementById('word-picker-filter')?.value || '0');
 
   // 筛选
-  let filtered = WORD_BANK.filter(w => {
+  let filtered = getWordBank().filter(w => {
     if (filterLevel > 0 && w.level !== filterLevel) return false;
     if (searchTerm) {
       return w.word.toLowerCase().includes(searchTerm) ||
@@ -474,7 +520,7 @@ function selectAllWords(selectAll) {
   const searchTerm = (document.getElementById('word-picker-search')?.value || '').toLowerCase().trim();
   const filterLevel = parseInt(document.getElementById('word-picker-filter')?.value || '0');
 
-  let filtered = WORD_BANK.filter(w => {
+  let filtered = getWordBank().filter(w => {
     if (filterLevel > 0 && w.level !== filterLevel) return false;
     if (searchTerm) {
       return w.word.toLowerCase().includes(searchTerm) ||
@@ -495,7 +541,7 @@ function invertWordSelection() {
   const searchTerm = (document.getElementById('word-picker-search')?.value || '').toLowerCase().trim();
   const filterLevel = parseInt(document.getElementById('word-picker-filter')?.value || '0');
 
-  let filtered = WORD_BANK.filter(w => {
+  let filtered = getWordBank().filter(w => {
     if (filterLevel > 0 && w.level !== filterLevel) return false;
     if (searchTerm) {
       return w.word.toLowerCase().includes(searchTerm) ||
@@ -527,7 +573,7 @@ function updateWordPickerCount() {
 }
 
 function getCustomSelectedWords() {
-  return WORD_BANK.filter(w => App.customSelectedIds.has(w.id));
+  return getWordBank().filter(w => App.customSelectedIds.has(w.id));
 }
 
 // ==================== 测试引擎 ====================
@@ -648,7 +694,7 @@ function handleChoice(selectedId, correctId, btnEl) {
   App.testState.answered = true;
 
   const isCorrect = selectedId === correctId;
-  const correctWord = WORD_BANK.find(w => String(w.id) === correctId);
+  const correctWord = getWordBank().find(w => String(w.id) === correctId);
 
   // 标记选项
   const allBtns = document.querySelectorAll('.choice-btn');
@@ -883,7 +929,7 @@ function searchDictionary(keyword) {
   resultDiv.innerHTML = '<div class="dict-loading">🔍 搜索中...</div>';
 
   // 先搜本地词库
-  const localMatch = WORD_BANK.find(w => w.word.toLowerCase() === keyword);
+  const localMatch = getWordBank().find(w => w.word.toLowerCase() === keyword);
 
   if (localMatch) {
     renderDictResult(localMatch, null);
@@ -891,7 +937,7 @@ function searchDictionary(keyword) {
     fetchOnlineDict(keyword, localMatch);
   } else {
     // 模糊匹配本地词库
-    const fuzzy = WORD_BANK.filter(w =>
+    const fuzzy = getWordBank().filter(w =>
       w.word.toLowerCase().includes(keyword) ||
       w.meaning.includes(keyword)
     ).slice(0, 8);
@@ -1052,7 +1098,7 @@ function renderDictSuggestionsHTML(matches) {
 function renderQuickWords() {
   const container = document.getElementById('quick-words-grid');
   // 随机显示20个词 (用副本避免修改原数组)
-  const random = [...WORD_BANK].sort(() => Math.random() - 0.5).slice(0, 20);
+  const random = [...getWordBank()].sort(() => Math.random() - 0.5).slice(0, 20);
   container.innerHTML = random.map(w =>
     `<span class="quick-word-chip" onclick="searchDictionary('${w.word}')">${w.word}</span>`
   ).join('');
@@ -1063,7 +1109,7 @@ function renderStats() {
   const stats = App.record.wordStats;
   const wordIds = Object.keys(stats);
 
-  let mastered = 0, learning = 0, newWords = WORD_BANK.length - wordIds.length;
+  let mastered = 0, learning = 0, newWords = getWordBank().length - wordIds.length;
   let totalCorrect = 0, totalWrong = 0;
 
   wordIds.forEach(id => {
@@ -1076,7 +1122,7 @@ function renderStats() {
 
   const totalReviews = totalCorrect + totalWrong;
   const accuracy = totalReviews > 0 ? Math.round((totalCorrect / totalReviews) * 100) : 0;
-  const totalWords = WORD_BANK.length;
+  const totalWords = getWordBank().length;
   const masteryRate = totalWords > 0 ? Math.round((mastered / totalWords) * 100) : 0;
 
   // 概览
@@ -1101,7 +1147,7 @@ function renderStats() {
 
   // 按级别统计
   const levelStats = { 1: { mastered: 0, learning: 0, total: 0 }, 2: { mastered: 0, learning: 0, total: 0 }, 3: { mastered: 0, learning: 0, total: 0 } };
-  WORD_BANK.forEach(w => {
+  getWordBank().forEach(w => {
     const s = stats[w.id];
     levelStats[w.level].total++;
     if (s) {
@@ -3607,7 +3653,7 @@ function renderListeningBest() {
 }
 
 function startListening() {
-  const pool = WORD_BANK.filter(w => w.level === listeningState.level && w.word && w.meaning);
+  const pool = getWordBank().filter(w => w.level === listeningState.level && w.word && w.meaning);
   if (pool.length < 4) {
     alert('该级别词汇不足，请选择其他级别');
     return;
@@ -3698,7 +3744,7 @@ function renderListeningQuestion() {
       </div>`;
     setTimeout(() => { const i = document.getElementById('listening-spell-input'); if (i) i.focus(); }, 120);
   } else {
-    const pool = WORD_BANK.filter(w => w.level === listeningState.level && w.meaning && w.word !== q.word);
+    const pool = getWordBank().filter(w => w.level === listeningState.level && w.meaning && w.word !== q.word);
     const distractors = [...pool].sort(() => Math.random() - 0.5).slice(0, 3);
     const options = [...distractors, q].sort(() => Math.random() - 0.5);
     dyn.innerHTML = options.map((opt, i) =>
