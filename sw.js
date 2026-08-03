@@ -1,11 +1,12 @@
 // Service Worker - 缓存离线使用
-const CACHE_NAME = 'english-vocab-v42';
+const CACHE_NAME = 'english-vocab-v43';
 const ASSETS = [
   './',
   './index.html',
   './style.css',
   './app.js',
   './words.js',
+  './words_renai.js',
   './exams.js',
   './manifest.json',
   './assets/qilin/qilin-1.png',
