@@ -3691,6 +3691,9 @@ function renderIeltsStudy() {
   if (ieltsStudy.mode === 'study') {
     const w = words[ieltsStudy.idx];
     const isKnown = !!prog[ieltsProgKey(ieltsStudy.ns, ieltsStudy.id, w.word)];
+    const exHtml = w.example
+      ? `<div class="ielts-flash-ex">${w.example}</div><div class="ielts-flash-excn">${w.exampleCn}</div><button class="ielts-speak-btn ielts-speak-btn-sm" onclick="event.stopPropagation();ieltsSpeak('${w.example.replace(/'/g, "\\'")}',0.9)">🔊 朗读例句</button>`
+      : '';
     document.getElementById('ielts-vocab-study').innerHTML = head + `
       <div class="ielts-flashcard ${ieltsStudy.flipped ? 'flipped' : ''}" onclick="flipIeltsCard()">
         <div class="ielts-flash-front">
@@ -3702,9 +3705,7 @@ function renderIeltsStudy() {
         <div class="ielts-flash-back">
           <div class="ielts-flash-pos">${w.pos}</div>
           <div class="ielts-flash-meaning">${w.meaning}</div>
-          <div class="ielts-flash-ex">${w.example}</div>
-          <div class="ielts-flash-excn">${w.exampleCn}</div>
-          <button class="ielts-speak-btn ielts-speak-btn-sm" onclick="event.stopPropagation();ieltsSpeak('${w.example}',0.9)">🔊 朗读例句</button>
+          ${exHtml}
         </div>
       </div>
       <div class="ielts-flash-actions">
