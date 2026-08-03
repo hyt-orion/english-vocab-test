@@ -3449,10 +3449,14 @@ function unbindListeningKeys() {
 function initCover() {
   const cover = document.getElementById('app-cover');
   if (!cover) return;
-  // 同一会话内已手动进入过 → 直接隐藏，不重复弹
+  // 同一会话内已手动进入过 → 直接隐藏，并按上次模式进入对应页
   if (sessionStorage.getItem('coverEntered') === '1') {
     cover.classList.add('hide');
     cover.style.display = 'none';
+    const savedMode = localStorage.getItem('appMode');
+    if (savedMode === 'ielts') enterMode('ielts');
+    else if (savedMode === 'standard') enterMode('standard');
+    else navigateTo('home');
     return;
   }
   const btn = document.getElementById('cover-enter-btn');
@@ -3470,6 +3474,45 @@ function initCover() {
   }
 }
 
+// 显示「模式选择页」（封面后 / 随时切换）
+function showModeSelect() {
+  const ms = document.getElementById('mode-select');
+  if (ms) ms.style.display = 'flex';
+}
+
+// 选定模式：记录并进入对应界面
+function selectMode(mode) {
+  if (mode !== 'standard' && mode !== 'ielts') return;
+  localStorage.setItem('appMode', mode);
+  const ms = document.getElementById('mode-select');
+  if (ms) {
+    ms.classList.add('hide');
+    setTimeout(() => { ms.style.display = 'none'; ms.classList.remove('hide'); }, 400);
+  }
+  enterMode(mode);
+}
+
+// 进入指定模式对应的页面
+function enterMode(mode) {
+  if (mode === 'ielts') {
+    navigateTo('ielts');
+  } else {
+    navigateTo('home');
+  }
+}
+
+// 从模式选择页返回封面
+function backToCover() {
+  const ms = document.getElementById('mode-select');
+  if (ms) { ms.style.display = 'none'; ms.classList.remove('hide'); }
+  const cover = document.getElementById('app-cover');
+  if (cover) {
+    cover.classList.remove('hide');
+    cover.style.display = 'flex';
+  }
+  window.scrollTo(0, 0);
+}
+
 function enterApp() {
   const cover = document.getElementById('app-cover');
   if (!cover) return;
@@ -3478,6 +3521,13 @@ function enterApp() {
   localStorage.setItem('coverVisited', '1');
   setTimeout(() => { cover.style.display = 'none'; }, 560);
   window.scrollTo(0, 0);
+  // 进入系统后：已选过模式则直接进入，否则显示模式选择页
+  const savedMode = localStorage.getItem('appMode');
+  if (savedMode === 'standard' || savedMode === 'ielts') {
+    enterMode(savedMode);
+  } else {
+    showModeSelect();
+  }
 }
 
 function init() {
