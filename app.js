@@ -4175,6 +4175,177 @@ function evmTogglePw(inputId, btn) {
   }
 }
 
+// ==================== 设置面板（头像 / 昵称 / 改密） ====================
+const EVM_AVATARS = ['🦊', '🐼', '🐱', '🐶', '🦁', '🐯', '🐸', '🦄', '🐧', '🐙',
+  '🦉', '🐲', '🚀', '🌟', '🌈', '🔥', '❄️', '🍎', '🎯', '🌸'];
+const EVM_AVATAR_COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f59e0b',
+  '#10b981', '#06b6d4', '#3b82f6', '#a855f7', '#ef4444'];
+
+let evmSelAvatar = null;
+let evmSelColor = null;
+
+function evmGetCurrentAccount() {
+  const u = window.__evmUser__;
+  if (!u) return null;
+  const accounts = evmGetAccounts();
+  return accounts[u] || null;
+}
+
+// 根据当前账号资料刷新右上角头像 / 昵称（init 与保存后共用）
+function evmRefreshUserBadge() {
+  const acct = evmGetCurrentAccount();
+  const name = (acct && acct.displayName) ? acct.displayName : (window.__evmUser__ || '用户');
+  const nm = document.getElementById('nav-user-name');
+  const mm = document.getElementById('nav-user-menu-name');
+  const av = document.getElementById('nav-user-avatar');
+  if (nm) nm.textContent = name;
+  if (mm) mm.textContent = name;
+  if (av) {
+    if (acct && acct.avatar) {
+      av.textContent = acct.avatar;
+      av.style.fontSize = '0.95rem';
+    } else {
+      av.textContent = name.slice(0, 1).toUpperCase();
+      av.style.fontSize = '0.8rem';
+    }
+    av.style.background = (acct && acct.avatarColor)
+      ? acct.avatarColor
+      : 'linear-gradient(135deg, #6366f1, #a855f7)';
+  }
+}
+
+function evmOpenSettings() {
+  if (!window.__evmUser__) { if (typeof showToast === 'function') showToast('请先登录'); return; }
+  const acct = evmGetCurrentAccount();
+
+  // 昵称
+  const nick = document.getElementById('settings-nickname');
+  if (nick) nick.value = (acct && acct.displayName) ? acct.displayName : '';
+
+  // 头像网格（只构建一次）
+  const grid = document.getElementById('settings-avatar-grid');
+  if (grid && grid.childElementCount === 0) {
+    EVM_AVATARS.forEach(em => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'settings-avatar';
+      b.textContent = em;
+      b.setAttribute('data-avatar', em);
+      b.onclick = () => evmPickAvatar(em, b);
+      grid.appendChild(b);
+    });
+  }
+  // 颜色行（只构建一次）
+  const crow = document.getElementById('settings-color-row');
+  if (crow && crow.childElementCount === 0) {
+    EVM_AVATAR_COLORS.forEach(c => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'settings-color';
+      b.style.background = c;
+      b.setAttribute('data-color', c);
+      b.onclick = () => evmPickAvatarColor(c, b);
+      crow.appendChild(b);
+    });
+  }
+
+  evmSelAvatar = (acct && acct.avatar) ? acct.avatar : null;
+  evmSelColor = (acct && acct.avatarColor) ? acct.avatarColor : null;
+  if (grid) grid.querySelectorAll('.settings-avatar').forEach(b => b.classList.toggle('active', b.getAttribute('data-avatar') === evmSelAvatar));
+  if (crow) crow.querySelectorAll('.settings-color').forEach(b => b.classList.toggle('active', b.getAttribute('data-color') === evmSelColor));
+  evmUpdateAvatarPreview();
+
+  // 重置密码标签字段
+  ['settings-old-pw', 'settings-new-pw', 'settings-new-pw2'].forEach(id => {
+    const e = document.getElementById(id); if (e) e.value = '';
+  });
+  evmClearSettingsErr();
+  evmSwitchSettingsTab('profile');
+
+  const ov = document.getElementById('settings-overlay');
+  if (ov) ov.style.display = 'flex';
+}
+
+function evmPickAvatar(em, el) {
+  evmSelAvatar = em;
+  const grid = document.getElementById('settings-avatar-grid');
+  if (grid) grid.querySelectorAll('.settings-avatar').forEach(b => b.classList.toggle('active', b === el));
+  evmUpdateAvatarPreview();
+}
+function evmPickAvatarColor(c, el) {
+  evmSelColor = c;
+  const row = document.getElementById('settings-color-row');
+  if (row) row.querySelectorAll('.settings-color').forEach(b => b.classList.toggle('active', b === el));
+  evmUpdateAvatarPreview();
+}
+function evmUpdateAvatarPreview() {
+  const pv = document.getElementById('settings-avatar-preview');
+  if (!pv) return;
+  pv.textContent = evmSelAvatar || (window.__evmUser__ || 'U').slice(0, 1).toUpperCase();
+  pv.style.background = evmSelColor || 'linear-gradient(135deg, #6366f1, #a855f7)';
+}
+
+function evmSaveProfile() {
+  if (!window.__evmUser__) return;
+  const nick = (document.getElementById('settings-nickname').value || '').trim();
+  if (nick.length > 20) { if (typeof showToast === 'function') showToast('昵称过长'); return; }
+  const accounts = evmGetAccounts();
+  const u = window.__evmUser__;
+  if (!accounts[u]) return;
+  accounts[u].displayName = nick || '';
+  accounts[u].avatar = evmSelAvatar || null;
+  accounts[u].avatarColor = evmSelColor || null;
+  evmSaveAccounts(accounts);
+  evmRefreshUserBadge();
+  evmCloseSettings();
+  if (typeof showToast === 'function') showToast('资料已保存 ✓');
+}
+
+function evmSettingsErr(msg) {
+  const el = document.getElementById('settings-pw-err');
+  if (el) el.textContent = msg;
+  const m = document.getElementById('settings-panel-security');
+  if (m && msg) { m.classList.remove('login-shake'); void m.offsetWidth; m.classList.add('login-shake'); }
+}
+function evmClearSettingsErr() { const e = document.getElementById('settings-pw-err'); if (e) e.textContent = ''; }
+
+async function evmChangePassword() {
+  if (!window.__evmUser__) return;
+  evmClearSettingsErr();
+  const oldP = document.getElementById('settings-old-pw').value || '';
+  const newP = document.getElementById('settings-new-pw').value || '';
+  const newP2 = document.getElementById('settings-new-pw2').value || '';
+  if (!oldP) { evmSettingsErr('请输入当前密码'); return; }
+  if (newP.length < 6) { evmSettingsErr('新密码至少 6 位'); return; }
+  if (newP !== newP2) { evmSettingsErr('两次新密码不一致'); return; }
+  const accounts = evmGetAccounts();
+  const u = window.__evmUser__;
+  const acct = accounts[u];
+  if (!acct) return;
+  let oldHash;
+  try { oldHash = (await evmHashPassword(oldP, acct.salt)).hash; }
+  catch (e) { evmSettingsErr('校验失败：当前浏览器不支持加密'); return; }
+  if (oldHash !== acct.hash) { evmSettingsErr('当前密码错误'); return; }
+  let salt, hash;
+  try { const r = await evmHashPassword(newP); salt = r.salt; hash = r.hash; }
+  catch (e) { evmSettingsErr('更新失败：当前浏览器不支持加密'); return; }
+  acct.salt = salt; acct.hash = hash;
+  evmSaveAccounts(accounts);
+  ['settings-old-pw', 'settings-new-pw', 'settings-new-pw2'].forEach(id => { const e = document.getElementById(id); if (e) e.value = ''; });
+  evmCloseSettings();
+  if (typeof showToast === 'function') showToast('密码已更新 ✓');
+}
+
+function evmCloseSettings() { const ov = document.getElementById('settings-overlay'); if (ov) ov.style.display = 'none'; }
+function evmCloseSettingsOnOverlay(e) { if (e.target && e.target.id === 'settings-overlay') evmCloseSettings(); }
+function evmSwitchSettingsTab(tab) {
+  document.querySelectorAll('.settings-tab').forEach(t => t.classList.toggle('active', t.getAttribute('data-stab') === tab));
+  const p = document.getElementById('settings-panel-profile');
+  const s = document.getElementById('settings-panel-security');
+  if (p) p.style.display = (tab === 'profile') ? '' : 'none';
+  if (s) s.style.display = (tab === 'security') ? '' : 'none';
+}
+
 function init() {
   initTheme();
   initCover();
@@ -4249,14 +4420,10 @@ function init() {
     // 已登录：显示右上角用户入口，隐藏登录页
     if (navUser) {
       navUser.style.display = '';
-      const name = window.__evmUser__;
-      const nm = document.getElementById('nav-user-name');
-      const mm = document.getElementById('nav-user-menu-name');
-      const av = document.getElementById('nav-user-avatar');
-      if (nm) nm.textContent = name;
-      if (mm) mm.textContent = name;
-      if (av) av.textContent = name.slice(0, 1).toUpperCase();
+      evmRefreshUserBadge();
     }
+    const settingsBtn = document.getElementById('nav-settings-btn');
+    if (settingsBtn) settingsBtn.style.display = '';
     const screen = document.getElementById('login-screen');
     if (screen) screen.style.display = 'none';
   } else {

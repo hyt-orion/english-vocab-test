@@ -216,6 +216,7 @@
       <span class="nav-label">模式</span>
     </button>
     <button class="theme-toggle" onclick="toggleTheme()" title="切换主题">🌙</button>
+    <button class="nav-settings-btn" id="nav-settings-btn" style="display:none" onclick="evmOpenSettings()" title="设置">⚙️</button>
     <div class="nav-user" id="nav-user" style="display:none" onclick="evmToggleUserMenu(event)">
       <span class="nav-user-avatar" id="nav-user-avatar">U</span>
       <span class="nav-user-name" id="nav-user-name">用户</span>
@@ -228,6 +229,71 @@
     </div>
   </div>
 </nav>
+
+<!-- ==================== 设置弹窗 ==================== -->
+<div class="settings-overlay" id="settings-overlay" onclick="evmCloseSettingsOnOverlay(event)">
+  <div class="settings-modal" onclick="event.stopPropagation()">
+    <div class="settings-header">
+      <h2>⚙️ 设置</h2>
+      <button type="button" class="settings-close" onclick="evmCloseSettings()" title="关闭">✕</button>
+    </div>
+
+    <div class="settings-tabs">
+      <button type="button" class="settings-tab active" data-stab="profile" onclick="evmSwitchSettingsTab('profile')">账号资料</button>
+      <button type="button" class="settings-tab" data-stab="security" onclick="evmSwitchSettingsTab('security')">安全</button>
+    </div>
+
+    <!-- 账号资料 -->
+    <div class="settings-panel" id="settings-panel-profile">
+      <div class="settings-avatar-preview" id="settings-avatar-preview">U</div>
+
+      <div class="settings-field">
+        <label class="settings-label">头像</label>
+        <div class="settings-avatar-grid" id="settings-avatar-grid"></div>
+      </div>
+
+      <div class="settings-field">
+        <label class="settings-label">头像颜色</label>
+        <div class="settings-color-row" id="settings-color-row"></div>
+      </div>
+
+      <div class="settings-field">
+        <label class="settings-label">昵称（显示名）</label>
+        <input class="settings-input" id="settings-nickname" type="text" maxlength="20" placeholder="给自己起个昵称">
+        <p class="settings-hint">登录账号名不可更改，仅修改此处显示名称</p>
+      </div>
+
+      <button type="button" class="settings-save" onclick="evmSaveProfile()">保存资料</button>
+    </div>
+
+    <!-- 安全 -->
+    <div class="settings-panel" id="settings-panel-security" style="display:none">
+      <div class="settings-field">
+        <label class="settings-label">当前密码</label>
+        <div class="settings-input-wrap">
+          <input class="settings-input" id="settings-old-pw" type="password" placeholder="请输入当前密码" maxlength="64">
+          <button type="button" class="settings-eye" onclick="evmTogglePw('settings-old-pw', this)">👁️</button>
+        </div>
+      </div>
+      <div class="settings-field">
+        <label class="settings-label">新密码</label>
+        <div class="settings-input-wrap">
+          <input class="settings-input" id="settings-new-pw" type="password" placeholder="至少 6 位" maxlength="64">
+          <button type="button" class="settings-eye" onclick="evmTogglePw('settings-new-pw', this)">👁️</button>
+        </div>
+      </div>
+      <div class="settings-field">
+        <label class="settings-label">确认新密码</label>
+        <div class="settings-input-wrap">
+          <input class="settings-input" id="settings-new-pw2" type="password" placeholder="再次输入新密码" maxlength="64">
+          <button type="button" class="settings-eye" onclick="evmTogglePw('settings-new-pw2', this)">👁️</button>
+        </div>
+      </div>
+      <div class="settings-err" id="settings-pw-err"></div>
+      <button type="button" class="settings-save" onclick="evmChangePassword()">更新密码</button>
+    </div>
+  </div>
+</div>
 
 <!-- ==================== 主容器 ==================== -->
 <div class="container">
