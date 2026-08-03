@@ -15,6 +15,66 @@
 </head>
 <body>
 
+<!-- ==================== 登录 / 注册页（首屏，替代封面） ==================== -->
+<div class="login-screen" id="login-screen">
+  <div class="login-orb login-orb-1"></div>
+  <div class="login-orb login-orb-2"></div>
+  <div class="login-orb login-orb-3"></div>
+  <div class="login-orb login-orb-4"></div>
+  <div class="login-grid"></div>
+  <div class="login-card">
+    <div class="login-logo">📚</div>
+    <h1 class="login-title">英语词汇大师</h1>
+    <p class="login-sub">登录以同步你的专属学习进度</p>
+
+    <div class="login-tabs">
+      <button type="button" class="login-tab active" id="tab-login" onclick="evmSwitchTab('login')">登录</button>
+      <button type="button" class="login-tab" id="tab-register" onclick="evmSwitchTab('register')">注册</button>
+    </div>
+
+    <form class="login-form" id="login-form" onsubmit="return evmSubmitLogin(event)">
+      <label class="login-field">
+        <span class="login-label">用户名</span>
+        <input class="login-input" id="login-username" type="text" autocomplete="username" placeholder="请输入用户名" maxlength="20">
+      </label>
+      <label class="login-field">
+        <span class="login-label">密码</span>
+        <div class="login-input-wrap">
+          <input class="login-input" id="login-password" type="password" autocomplete="current-password" placeholder="请输入密码" maxlength="64">
+          <button type="button" class="login-eye" onclick="evmTogglePw('login-password', this)">👁️</button>
+        </div>
+      </label>
+      <div class="login-err" id="login-form-err"></div>
+      <button type="submit" class="login-submit">登 录</button>
+    </form>
+
+    <form class="login-form" id="register-form" style="display:none" onsubmit="return evmSubmitRegister(event)">
+      <label class="login-field">
+        <span class="login-label">用户名</span>
+        <input class="login-input" id="register-username" type="text" autocomplete="username" placeholder="2 位以上，中英文/数字/下划线" maxlength="20">
+      </label>
+      <label class="login-field">
+        <span class="login-label">密码</span>
+        <div class="login-input-wrap">
+          <input class="login-input" id="register-password" type="password" autocomplete="new-password" placeholder="至少 6 位" maxlength="64">
+          <button type="button" class="login-eye" onclick="evmTogglePw('register-password', this)">👁️</button>
+        </div>
+      </label>
+      <label class="login-field">
+        <span class="login-label">确认密码</span>
+        <div class="login-input-wrap">
+          <input class="login-input" id="register-confirm" type="password" autocomplete="new-password" placeholder="再次输入密码" maxlength="64">
+          <button type="button" class="login-eye" onclick="evmTogglePw('register-confirm', this)">👁️</button>
+        </div>
+      </label>
+      <div class="login-err" id="register-form-err"></div>
+      <button type="submit" class="login-submit">注 册 并 登 录</button>
+    </form>
+
+    <p class="login-foot">同一设备多账号 · 进度互不干扰 · 数据仅存于本机浏览器</p>
+  </div>
+</div>
+
 <!-- ==================== 软件封面 / 启动页 ==================== -->
 <div class="app-cover" id="app-cover">
   <div class="cover-orb cover-orb-1"></div>
@@ -144,6 +204,16 @@
       <span class="nav-label">模式</span>
     </button>
     <button class="theme-toggle" onclick="toggleTheme()" title="切换主题">🌙</button>
+    <div class="nav-user" id="nav-user" style="display:none" onclick="evmToggleUserMenu(event)">
+      <span class="nav-user-avatar" id="nav-user-avatar">U</span>
+      <span class="nav-user-name" id="nav-user-name">用户</span>
+      <span class="nav-user-caret">▾</span>
+      <div class="nav-user-menu" id="nav-user-menu" onclick="event.stopPropagation()">
+        <div class="nav-user-menu-name" id="nav-user-menu-name">用户</div>
+        <div class="nav-user-menu-hint">进度已保存在本账号</div>
+        <button type="button" class="nav-user-menu-item" onclick="evmLogout()">🚪 退出登录</button>
+      </div>
+    </div>
   </div>
 </nav>
 

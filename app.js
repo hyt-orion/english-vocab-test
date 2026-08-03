@@ -3,6 +3,30 @@
  * 测试方法论：主动回忆 + 间隔重复 + 双向测试 + 即时反馈
  */
 
+// ==================== 多账号 · localStorage 命名空间隔离 ====================
+// 拦截 localStorage 读写，自动给「进度类」key 加 `u:<用户名>:` 前缀，实现不同账号进度隔离；
+// 白名单内的全局 key（主题/模式/封面记录/账户表/当前会话）不加前缀，全浏览器共享。
+// 必须在任何 localStorage 读取之前安装（此处位于文件最顶部，init 在 DOMContentLoaded 才触发）。
+(function () {
+  const GLOBAL_KEYS = new Set([
+    'theme', 'appMode', 'coverVisited',
+    'evm_accounts', 'evm_current_user', 'evm_last_user'
+  ]);
+  const ls = window.localStorage;
+  const _get = ls.getItem.bind(ls);
+  const _set = ls.setItem.bind(ls);
+  const _remove = ls.removeItem.bind(ls);
+  const nsKey = (k) => (GLOBAL_KEYS.has(k) ? k : ('u:' + (window.__evmUser__ || '') + ':' + k));
+  ls.getItem = (k) => _get(nsKey(k));
+  ls.setItem = (k, v) => _set(nsKey(k), v);
+  ls.removeItem = (k) => _remove(nsKey(k));
+  try {
+    window.__evmUser__ = (localStorage.getItem('evm_current_user') || '').trim();
+  } catch (e) {
+    window.__evmUser__ = '';
+  }
+})();
+
 // ==================== 应用状态 ====================
 const App = {
   currentPage: 'home',
@@ -3991,6 +4015,150 @@ function enterApp() {
   }
 }
 
+// ==================== 账户系统（纯前端本地多账号） ====================
+// 账号密码存储在浏览器 localStorage，使用 PBKDF2 + 随机 salt 哈希，不保存明文密码。
+// 注意：纯前端方案无法做到真正的服务器级安全，仅用于「同一设备多用户进度隔离」。
+const EVM_ACCOUNTS_KEY = 'evm_accounts';
+
+function evmGetAccounts() {
+  try { return JSON.parse(localStorage.getItem(EVM_ACCOUNTS_KEY) || '{}'); }
+  catch (e) { return {}; }
+}
+function evmSaveAccounts(a) {
+  localStorage.setItem(EVM_ACCOUNTS_KEY, JSON.stringify(a));
+}
+
+// PBKDF2(SHA-256, 10万次) 密码哈希；saltB64 提供时为校验模式，否则生成新 salt
+async function evmHashPassword(password, saltB64) {
+  const enc = new TextEncoder();
+  let salt;
+  if (saltB64) {
+    const bin = atob(saltB64);
+    salt = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) salt[i] = bin.charCodeAt(i);
+  } else {
+    salt = crypto.getRandomValues(new Uint8Array(16));
+  }
+  const keyMat = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' }, keyMat, 256);
+  const bytes = new Uint8Array(bits);
+  let hashBin = '', saltBin = '';
+  for (let i = 0; i < bytes.length; i++) hashBin += String.fromCharCode(bytes[i]);
+  if (!saltB64) for (let i = 0; i < salt.length; i++) saltBin += String.fromCharCode(salt[i]);
+  return { salt: saltB64 || btoa(saltBin), hash: btoa(hashBin) };
+}
+
+function evmSwitchTab(tab) {
+  const loginForm = document.getElementById('login-form');
+  const regForm = document.getElementById('register-form');
+  const tLogin = document.getElementById('tab-login');
+  const tReg = document.getElementById('tab-register');
+  if (tab === 'login') {
+    if (loginForm) loginForm.style.display = '';
+    if (regForm) regForm.style.display = 'none';
+    if (tLogin) tLogin.classList.add('active');
+    if (tReg) tReg.classList.remove('active');
+  } else {
+    if (loginForm) loginForm.style.display = 'none';
+    if (regForm) regForm.style.display = '';
+    if (tReg) tReg.classList.add('active');
+    if (tLogin) tLogin.classList.remove('active');
+  }
+  evmClearErr();
+}
+
+function evmErr(formId, msg) {
+  const el = document.getElementById(formId + '-err');
+  if (el) el.textContent = msg;
+}
+function evmClearErr() {
+  ['login-form-err', 'register-form-err'].forEach(id => {
+    const e = document.getElementById(id);
+    if (e) e.textContent = '';
+  });
+}
+
+async function evmSubmitLogin(e) {
+  e.preventDefault();
+  evmClearErr();
+  const u = (document.getElementById('login-username').value || '').trim();
+  const p = document.getElementById('login-password').value || '';
+  if (!u || !p) { evmErr('login-form', '请输入用户名和密码'); return; }
+  const accounts = evmGetAccounts();
+  const acct = accounts[u];
+  if (!acct) { evmErr('login-form', '用户名不存在，请先注册'); return; }
+  let hash;
+  try { hash = (await evmHashPassword(p, acct.salt)).hash; }
+  catch (err) { evmErr('login-form', '登录失败：当前浏览器不支持加密'); return; }
+  if (hash !== acct.hash) { evmErr('login-form', '密码错误，请重试'); return; }
+  evmLoginSuccess(u);
+}
+
+async function evmSubmitRegister(e) {
+  e.preventDefault();
+  evmClearErr();
+  const u = (document.getElementById('register-username').value || '').trim();
+  const p = document.getElementById('register-password').value || '';
+  const p2 = document.getElementById('register-confirm').value || '';
+  if (u.length < 2) { evmErr('register-form', '用户名至少 2 个字符'); return; }
+  if (!/^[\w一-龥]+$/.test(u)) { evmErr('register-form', '用户名仅限中英文、数字、下划线'); return; }
+  if (p.length < 6) { evmErr('register-form', '密码至少 6 位'); return; }
+  if (p !== p2) { evmErr('register-form', '两次输入的密码不一致'); return; }
+  const accounts = evmGetAccounts();
+  if (accounts[u]) { evmErr('register-form', '该用户名已被注册'); return; }
+  let salt, hash;
+  try { const r = await evmHashPassword(p); salt = r.salt; hash = r.hash; }
+  catch (err) { evmErr('register-form', '注册失败：当前浏览器不支持加密'); return; }
+  accounts[u] = { salt, hash, createdAt: Date.now() };
+  evmSaveAccounts(accounts);
+  evmLoginSuccess(u);
+}
+
+function evmLoginSuccess(username) {
+  window.__evmUser__ = username;
+  localStorage.setItem('evm_current_user', username);
+  localStorage.setItem('evm_last_user', username);
+  const screen = document.getElementById('login-screen');
+  if (screen) screen.style.display = 'none';
+  if (typeof showToast === 'function') showToast('登录成功，欢迎 ' + username + '！');
+  // 重新加载以加载该账号的隔离进度（拦截层已生效，reload 后用正确前缀读取）
+  setTimeout(() => location.reload(), 350);
+}
+
+function evmLogout() {
+  if (typeof confirm === 'function' && !confirm('确定要退出登录吗？当前进度已保存在本账号下。')) return;
+  localStorage.removeItem('evm_current_user');
+  window.__evmUser__ = '';
+  location.reload();
+}
+
+function evmToggleUserMenu(e) {
+  if (e) e.stopPropagation();
+  const menu = document.getElementById('nav-user-menu');
+  if (!menu) return;
+  menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+}
+
+// 点击页面其它位置关闭用户菜单
+document.addEventListener('click', () => {
+  const menu = document.getElementById('nav-user-menu');
+  if (menu) menu.style.display = 'none';
+});
+
+// 登录/注册表单里的密码显示切换
+function evmTogglePw(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  if (!inp) return;
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    if (btn) btn.textContent = '🙈';
+  } else {
+    inp.type = 'password';
+    if (btn) btn.textContent = '👁️';
+  }
+}
+
 function init() {
   initTheme();
   initCover();
@@ -4056,6 +4224,29 @@ function init() {
   // 预加载语音引擎
   if ('speechSynthesis' in window) {
     speechSynthesis.getVoices();
+  }
+
+  // ==================== 登录态控制 ====================
+  const navUser = document.getElementById('nav-user');
+  if (window.__evmUser__) {
+    // 已登录：显示右上角用户入口，隐藏登录页
+    if (navUser) {
+      navUser.style.display = '';
+      const name = window.__evmUser__;
+      const nm = document.getElementById('nav-user-name');
+      const mm = document.getElementById('nav-user-menu-name');
+      const av = document.getElementById('nav-user-avatar');
+      if (nm) nm.textContent = name;
+      if (mm) mm.textContent = name;
+      if (av) av.textContent = name.slice(0, 1).toUpperCase();
+    }
+    const screen = document.getElementById('login-screen');
+    if (screen) screen.style.display = 'none';
+  } else {
+    // 未登录：显示登录页（覆盖全屏），隐藏用户入口
+    if (navUser) navUser.style.display = 'none';
+    const screen = document.getElementById('login-screen');
+    if (screen) screen.style.display = 'flex';
   }
 }
 
