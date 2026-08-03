@@ -289,10 +289,12 @@ function setupTestConfig() {
 }
 
 // 按教材版本返回对应词库（人教版 WORD_BANK / 仁爱版 RENAI_WORD_BANK）
+// 注意：词库文件顶层用 const 声明，不会挂到 window，必须用裸全局引用
 function getWordBank() {
-  return (App.testConfig.textbookVersion === 'renai')
-    ? (window.RENAI_WORD_BANK || [])
-    : (window.WORD_BANK || []);
+  if (App.testConfig.textbookVersion === 'renai') {
+    return (typeof RENAI_WORD_BANK !== 'undefined' && RENAI_WORD_BANK.length) ? RENAI_WORD_BANK : [];
+  }
+  return (typeof WORD_BANK !== 'undefined' && WORD_BANK.length) ? WORD_BANK : [];
 }
 
 // 仁爱版目前仅有初中词库：切换到仁爱版时禁用小学/高中级别选项
