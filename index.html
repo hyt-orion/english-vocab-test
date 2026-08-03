@@ -409,6 +409,15 @@
           </div>
         </div>
 
+        <!-- 教材版本 -->
+        <div class="config-group" id="config-textbook">
+          <div class="config-label">教材版本</div>
+          <div class="option-row">
+            <button class="option-btn" data-config="textbookVersion" data-value="pep">📘 人教版 (PEP)</button>
+            <button class="option-btn" data-config="textbookVersion" data-value="renai">📗 仁爱版 (初中)</button>
+          </div>
+        </div>
+
         <!-- 难度（仅随机模式显示） -->
         <div class="config-group" id="config-level">
           <div class="config-label">难度级别</div>
@@ -921,8 +930,9 @@
 <!-- 雅思单词卡打印区（导出 PDF 用，默认隐藏） -->
 <div id="ielts-print-area" style="display:none"></div>
 
-<script src="words.js"></script>
-<script src="exams.js"></script>
+  <script src="words.js"></script>
+  <script src="words_renai.js"></script>
+  <script src="exams.js"></script>
 <script src="ielts.js"></script>
 <script src="app.js"></script>
 </body>
