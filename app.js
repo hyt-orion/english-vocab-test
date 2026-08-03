@@ -2456,6 +2456,7 @@ function getStreakState() {
 }
 
 function markDailyCheckIn() {
+  const isIce = document.body.dataset.appMode === 'ielts';
   const today = new Date().toISOString().slice(0, 10);
   const log = getStudyLog();
   if (!log[today]) log[today] = { words: 0, tests: 0, exams: 0, total: 0 };
@@ -2478,16 +2479,18 @@ function markDailyCheckIn() {
   if (lvl.lv > seen) {
     localStorage.setItem('huobao_seen_level', String(lvl.lv));
     spawnConfetti(130);
-    showLevelUpBanner(lvl);
+    showLevelUpBanner(lvl, isIce);
     playSound('levelup');
   } else if (newUnlocked.length) {
     const L = HUOBAO_LEVELS.find(x => x.lv === newUnlocked[newUnlocked.length - 1]);
     spawnConfetti(80);
-    showLevelUpBanner(L);
+    showLevelUpBanner(L, isIce);
     playSound('unlock');
   } else {
     playSound('checkin');
-    showToast(`🔥 打卡成功！火宝宝已连续燃烧 ${current} 天 · ${lvl.name}`);
+    showToast(isIce
+      ? `❄️ 打卡成功！小冰人已连续冻结 ${current} 天 · ${lvl.name}`
+      : `🔥 打卡成功！火宝宝已连续燃烧 ${current} 天 · ${lvl.name}`);
   }
 }
 
@@ -2535,6 +2538,55 @@ function flameSvg() {
     </g>
   </svg>`;
 }
+
+// 雅思页专用「小冰人」——外观是冰晶精灵，结构（hb-body / hb-eye / hb-hand）与火宝宝一致，
+// 因此戳一戳的 wave / jump / spin / blink 动画与互动逻辑可完全复用。
+function iceSvg() {
+  return `<svg class="hb-ice" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs>
+      <linearGradient id="iceGrad" x1="0" y1="1" x2="0" y2="0">
+        <stop offset="0%" stop-color="#e0f7ff"/>
+        <stop offset="55%" stop-color="#7dd3fc"/>
+        <stop offset="100%" stop-color="#38bdf8"/>
+      </linearGradient>
+      <radialGradient id="iceShine" cx="38%" cy="28%" r="62%">
+        <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+        <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <g class="hb-body">
+      <!-- 冰晶圆润身体 -->
+      <path class="hb-ice-body" d="M50 18 C 70 40, 86 58, 80 84 C 76 106, 59 116, 50 116 C 41 116, 24 106, 20 84 C 14 58, 30 40, 50 18 Z" fill="url(#iceGrad)"/>
+      <!-- 顶部小冰晶 -->
+      <path d="M50 4 L55 13 L50 18 L45 13 Z" fill="#bae6fd"/>
+      <!-- 光泽 -->
+      <ellipse cx="40" cy="48" rx="21" ry="29" fill="url(#iceShine)"/>
+      <!-- 左眼（眼白+瞳+高光） -->
+      <g class="hb-eye hb-eye-l">
+        <circle cx="38" cy="74" r="9.2" fill="#fff"/>
+        <circle cx="40" cy="76" r="5.2" fill="#0c4a6e"/>
+        <circle cx="37.4" cy="73.4" r="2.3" fill="#fff"/>
+      </g>
+      <!-- 右眼 -->
+      <g class="hb-eye hb-eye-r">
+        <circle cx="62" cy="74" r="9.2" fill="#fff"/>
+        <circle cx="60" cy="76" r="5.2" fill="#0c4a6e"/>
+        <circle cx="59.4" cy="73.4" r="2.3" fill="#fff"/>
+      </g>
+      <!-- 冰蓝腮红 -->
+      <ellipse cx="27" cy="89" rx="5.6" ry="3.4" fill="#7dd3fc" opacity="0.55"/>
+      <ellipse cx="73" cy="89" rx="5.6" ry="3.4" fill="#7dd3fc" opacity="0.55"/>
+      <!-- 张嘴笑 + 冰蓝舌头 -->
+      <path d="M42 90 Q50 101 58 90 Z" fill="#075985"/>
+      <path d="M45 94 Q50 99 55 94 Z" fill="#67e8f9"/>
+      <!-- 双手（小冰球） -->
+      <circle class="hb-hand hb-hand-left" cx="15" cy="94" r="7.6" fill="#7dd3fc" stroke="#e0f7ff" stroke-width="2"/>
+      <circle class="hb-hand hb-hand-right" cx="85" cy="94" r="7.6" fill="#7dd3fc" stroke="#e0f7ff" stroke-width="2"/>
+    </g>
+  </svg>`;
+}
+
+const ICE_COLOR = '#38bdf8'; // 雅思页小冰人主题色（冰蓝）
 
 // ==================== 火宝宝音效（Web Audio，无需外部文件） ====================
 let _hbAudioCtx = null;
@@ -2597,7 +2649,8 @@ function spawnConfetti(count = 90) {
   }
 }
 
-function showLevelUpBanner(lvl) {
+function showLevelUpBanner(lvl, isIce) {
+  isIce = isIce !== undefined ? isIce : (document.body.dataset.appMode === 'ielts');
   let b = document.getElementById('hb-levelup');
   if (!b) {
     b = document.createElement('div');
@@ -2606,8 +2659,8 @@ function showLevelUpBanner(lvl) {
     document.body.appendChild(b);
   }
   b.innerHTML = `<div class="hb-levelup-card" style="--huo-color:${lvl.color}">
-      <div class="hb-levelup-emoji">🎉</div>
-      <div class="hb-levelup-title">火宝宝升级啦！</div>
+      <div class="hb-levelup-emoji">${isIce ? '🧊' : '🎉'}</div>
+      <div class="hb-levelup-title">${isIce ? '小冰人升级啦！' : '火宝宝升级啦！'}</div>
       <div class="hb-levelup-lv" style="color:${lvl.color}">Lv.${lvl.lv} ${lvl.name}</div>
       <div class="hb-levelup-title2">🏅 ${lvl.title}</div>
       <div class="hb-levelup-reward">${lvl.reward}</div>
@@ -2623,6 +2676,7 @@ function showBadgeReward(lv) {
   if (!L) return;
   const cur = getStreakState().current;
   const reached = cur >= L.min;
+  const isIce = document.body.dataset.appMode === 'ielts';
   let m = document.getElementById('hb-reward-modal');
   if (!m) {
     m = document.createElement('div');
@@ -2633,7 +2687,7 @@ function showBadgeReward(lv) {
   m.innerHTML = `
     <div class="hb-reward-card" style="--huo-color:${L.color}">
       <button class="hb-reward-close" onclick="closeHbReward()">✕</button>
-      <div class="hb-reward-emoji">${L.emoji}</div>
+      <div class="hb-reward-emoji">${isIce ? '🧊' : L.emoji}</div>
       <div class="hb-reward-lv">Lv.${L.lv} · ${L.name}</div>
       <div class="hb-reward-title">🏅 段位称号：${L.title}</div>
       <div class="hb-reward-desc">${L.reward}</div>
@@ -2654,7 +2708,9 @@ function shareHuobaoReward(lv) {
   const L = HUOBAO_LEVELS.find(x => x.lv === lv);
   if (!L) return;
   const cur = getStreakState().current;
-  const text = `🔥 我在「英语词汇大师」连续打卡 ${cur} 天，火宝宝已成长为 Lv.${L.lv} ${L.name}（${L.title}）！${L.reward} 一起来背单词吧～`;
+  const isIce = document.body.dataset.appMode === 'ielts';
+  const who = isIce ? '小冰人' : '火宝宝';
+  const text = `❄️ 我在「英语词汇大师」连续打卡 ${cur} 天，${who}已成长为 Lv.${L.lv} ${L.name}（${L.title}）！${L.reward} 一起来背单词吧～`;
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(() => showToast('📤 成就语已复制，去分享吧！')).catch(() => {});
   } else {
@@ -2686,21 +2742,44 @@ function renderHuobao() {
   }).join('');
 
   const scale = (1 + idx * 0.07).toFixed(2);
+  const ctx = { current, longest, total, lvl, next, remain, progress, badges, scale, checkedInToday };
+  const c1 = document.getElementById('huobao-card');
+  if (c1) c1.innerHTML = buildHuobaoHtml('fire', ctx);
+  const c2 = document.getElementById('huobao-card-ielts');
+  if (c2) c2.innerHTML = buildHuobaoHtml('ice', ctx);
+  // 首次渲染把 seen / 已达成就同步到当前等级，避免之后误触发升级庆祝
+  if (localStorage.getItem('huobao_seen_level') === null) {
+    localStorage.setItem('huobao_seen_level', String(lvl.lv));
+    const reached = HUOBAO_LEVELS.filter(L => L.min > 0 && current >= L.min).map(L => L.lv);
+    localStorage.setItem('huobao_unlocked', JSON.stringify(reached));
+  }
+  renderStreakFlame();
+}
+
+// 生成火宝宝 / 小冰人卡片 HTML。variant: 'fire'（首页）| 'ice'（雅思页）。
+// 功能完全一致（同一套等级 / 打卡 / 徽章数据），仅外观与文案主题不同。
+function buildHuobaoHtml(variant, ctx) {
+  const { current, longest, total, lvl, next, remain, progress, badges, scale, checkedInToday } = ctx;
+  const isIce = variant === 'ice';
+  const accent = isIce ? ICE_COLOR : lvl.color;
+  const mascot = isIce ? iceSvg() : flameSvg();
+  const title = isIce ? '❄️ 小冰人' : '🔥 火宝宝';
+  const aria = isIce ? '戳一戳小冰人' : '戳一戳火宝宝';
   const checkInBtn = checkedInToday
     ? `<button class="hb-checkin done" disabled>✅ 今日已打卡</button>`
-    : `<button class="hb-checkin" onclick="markDailyCheckIn()">🔥 今日打卡</button>`;
+    : `<button class="hb-checkin" onclick="markDailyCheckIn()">${isIce ? '❄️ 今日打卡' : '🔥 今日打卡'}</button>`;
   const hint = checkedInToday
-    ? `<span class="hb-hint ok">火苗旺盛中，明天记得再来续火 💪</span>`
+    ? (isIce ? `<span class="hb-hint ok">冰晶稳固中，明天记得再来续冰 💪</span>` : `<span class="hb-hint ok">火苗旺盛中，明天记得再来续火 💪</span>`)
     : (current > 0
-        ? `<span class="hb-hint warn">⚠️ 今天还没打卡，火苗快熄灭了，快续上！</span>`
-        : `<span class="hb-hint">👋 点亮你的第一个火宝宝，从今天开始打卡吧！</span>`);
+        ? (isIce ? `<span class="hb-hint warn">⚠️ 今天还没打卡，小冰人要融化了，快续上！</span>` : `<span class="hb-hint warn">⚠️ 今天还没打卡，火苗快熄灭了，快续上！</span>`)
+        : (isIce ? `<span class="hb-hint">👋 点亮你的第一个小冰人，从今天开始打卡吧！</span>` : `<span class="hb-hint">👋 点亮你的第一个火宝宝，从今天开始打卡吧！</span>`));
 
-  const html = `
-    <div class="huobao-card" style="--huo-color:${lvl.color}">
+  return `
+    <div class="huobao-card${isIce ? ' ice' : ''}" style="--huo-color:${accent}">
       <div class="hb-left">
-        <div class="hb-mascot" style="transform:scale(${scale})" onclick="pokeHuobao(this)" role="button" aria-label="戳一戳火宝宝">
+        <div class="hb-mascot" style="transform:scale(${scale})" onclick="pokeHuobao(this)" role="button" aria-label="${aria}">
           <div class="hb-flame-wrap">
-            ${flameSvg()}
+            ${mascot}
             <div class="hb-level-tag">Lv.${lvl.lv}</div>
           </div>
           <div class="hb-poke-tip">👆 戳我打招呼 · 看奖励</div>
@@ -2708,8 +2787,8 @@ function renderHuobao() {
       </div>
       <div class="hb-right">
         <div class="hb-top">
-          <span class="hb-title">🔥 火宝宝</span>
-          <span class="hb-lvname" style="color:${lvl.color}">${lvl.name}</span>
+          <span class="hb-title">${title}</span>
+          <span class="hb-lvname" style="color:${accent}">${lvl.name}</span>
           <span class="hb-title-badge">🏅 ${lvl.title}</span>
         </div>
         <div class="hb-stats">
@@ -2721,7 +2800,7 @@ function renderHuobao() {
           ${next
             ? `<div class="hb-progress-label">距 <b style="color:${next.color}">${next.name}</b> 还需 <b>${remain}</b> 天</div>`
             : `<div class="hb-progress-label">🏆 已达最高等级 · 传说火神</div>`}
-          <div class="hb-progress"><div class="hb-progress-fill" style="width:${Math.round(progress * 100)}%;background:${lvl.color}"></div></div>
+          <div class="hb-progress"><div class="hb-progress-fill" style="width:${Math.round(progress * 100)}%;background:${accent}"></div></div>
         </div>
         <div class="hb-actions">
           ${checkInBtn}
@@ -2732,17 +2811,6 @@ function renderHuobao() {
       </div>
     </div>
   `;
-  ['huobao-card', 'huobao-card-ielts'].forEach(id => {
-    const c = document.getElementById(id);
-    if (c) c.innerHTML = html;
-  });
-  // 首次渲染把 seen / 已达成就同步到当前等级，避免之后误触发升级庆祝
-  if (localStorage.getItem('huobao_seen_level') === null) {
-    localStorage.setItem('huobao_seen_level', String(lvl.lv));
-    const reached = HUOBAO_LEVELS.filter(L => L.min > 0 && current >= L.min).map(L => L.lv);
-    localStorage.setItem('huobao_unlocked', JSON.stringify(reached));
-  }
-  renderStreakFlame();
 }
 
 function showToast(msg) {
@@ -2771,9 +2839,21 @@ const HUOBAO_GREETINGS = [
   '燃起来吧，少年！',
 ];
 
+const ICE_GREETINGS = [
+  '嗨！我是小冰人❄️',
+  '今天也来背单词啦？',
+  '一起加油，别让冰化啦！',
+  '戳到我的痒痒肉啦😄',
+  '打卡了吗？冰更结实哦',
+  '冷静下来，一起冲！',
+  '你就是我的小暖阳☀️',
+  '冻住烦恼，专注学习❄️',
+];
+
 function pokeHuobao(el) {
   const mascot = el ? el.closest('.hb-mascot') : document.querySelector('.hb-mascot');
   if (!mascot) return;
+  const isIce = !!(el && el.closest('#huobao-card-ielts'));
   const wrap = mascot.querySelector('.hb-flame-wrap');
   const moves = ['wave', 'jump', 'spin', 'blink'];
   const move = moves[Math.floor(Math.random() * moves.length)];
@@ -2782,12 +2862,12 @@ function pokeHuobao(el) {
   mascot.classList.add(move);
   clearTimeout(mascot._moveTimer);
   mascot._moveTimer = setTimeout(() => mascot.classList.remove(move), 1700);
-  showHuobaoSpeech(wrap);
-  spawnHuobaoHeart(wrap);
+  showHuobaoSpeech(wrap, isIce);
+  spawnHuobaoHeart(wrap, isIce);
   playSound('poke');
 }
 
-function showHuobaoSpeech(wrap) {
+function showHuobaoSpeech(wrap, isIce) {
   if (!wrap) wrap = document.querySelector('.hb-flame-wrap');
   if (!wrap) return;
   let s = document.getElementById('hb-speech');
@@ -2797,19 +2877,20 @@ function showHuobaoSpeech(wrap) {
     s.className = 'hb-speech';
     wrap.appendChild(s);
   }
-  s.textContent = HUOBAO_GREETINGS[Math.floor(Math.random() * HUOBAO_GREETINGS.length)];
+  const src = isIce ? ICE_GREETINGS : HUOBAO_GREETINGS;
+  s.textContent = src[Math.floor(Math.random() * src.length)];
   void s.offsetWidth;
   s.classList.add('show');
   clearTimeout(s._t);
   s._t = setTimeout(() => s.classList.remove('show'), 2200);
 }
 
-function spawnHuobaoHeart(wrap) {
+function spawnHuobaoHeart(wrap, isIce) {
   if (!wrap) wrap = document.querySelector('.hb-flame-wrap');
   if (!wrap) return;
   const h = document.createElement('div');
   h.className = 'hb-heart';
-  h.textContent = Math.random() > 0.5 ? '❤️' : '🔥';
+  h.textContent = isIce ? (Math.random() > 0.5 ? '❄️' : '💧') : (Math.random() > 0.5 ? '❤️' : '🔥');
   wrap.appendChild(h);
   setTimeout(() => h.remove(), 1300);
 }
