@@ -3050,6 +3050,87 @@ body[data-app-mode="ielts"] .ielts-tabs {
 }
 .listening-best b { color: var(--accent-light); }
 
+/* ==================== 火宝宝 · 连续打卡奖励 ==================== */
+#huobao-card { margin-bottom: 22px; }
+.huobao-card {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  padding: 22px 26px;
+  background: linear-gradient(135deg, rgba(255, 154, 60, 0.08), rgba(255, 94, 58, 0.03));
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+[data-theme="light"] .huobao-card {
+  background: linear-gradient(135deg, #fff7ed, #ffffff);
+  border-color: #ffe2c2;
+}
+.hb-left { flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.hb-mascot { transition: transform .35s ease; animation: hbFloat 3s ease-in-out infinite; }
+@keyframes hbFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+.hb-flame-wrap { position: relative; width: 112px; height: 132px; }
+.hb-flame { width: 100%; height: 100%; filter: drop-shadow(0 0 14px var(--huo-color)); animation: hbFlicker 1.6s ease-in-out infinite; }
+.hb-flame .stop-mid { stop-color: var(--huo-color); }
+@keyframes hbFlicker { 0%, 100% { transform: scaleY(1) scaleX(1); } 50% { transform: scaleY(1.05) scaleX(0.97); } }
+.hb-level-tag {
+  position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%);
+  background: var(--huo-color); color: #fff; font-size: 0.72rem; font-weight: 800;
+  padding: 2px 11px; border-radius: 999px; white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+}
+.hb-right { flex: 1; min-width: 0; }
+.hb-top { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+.hb-title { font-size: 1.15rem; font-weight: 800; color: var(--text-primary); }
+.hb-lvname { font-size: 0.95rem; font-weight: 700; }
+.hb-stats { display: flex; gap: 24px; margin-bottom: 14px; }
+.hb-stat { display: flex; flex-direction: column; }
+.hb-num { font-size: 1.5rem; font-weight: 800; color: var(--text-primary); line-height: 1; }
+.hb-lbl { font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; }
+.hb-progress-wrap { margin-bottom: 14px; }
+.hb-progress-label { font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 6px; }
+.hb-progress { height: 9px; background: var(--bg-secondary); border-radius: 999px; overflow: hidden; }
+.hb-progress-fill { height: 100%; border-radius: 999px; transition: width .5s ease; }
+.hb-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.hb-checkin {
+  border: none; cursor: pointer; padding: 10px 22px; border-radius: 999px;
+  background: linear-gradient(135deg, #ff9a3c, #ff5e3a); color: #fff;
+  font-weight: 800; font-size: 0.95rem; font-family: var(--font-main);
+  box-shadow: 0 4px 14px rgba(255, 94, 58, 0.4); transition: var(--transition-fast);
+}
+.hb-checkin:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(255, 94, 58, 0.5); }
+.hb-checkin:active { transform: translateY(0) scale(.97); }
+.hb-checkin.done { background: var(--bg-secondary); color: var(--text-muted); box-shadow: none; cursor: default; }
+.hb-hint { font-size: 0.8rem; color: var(--text-muted); }
+.hb-hint.warn { color: #f59e0b; font-weight: 700; }
+.hb-hint.ok { color: var(--accent-light); font-weight: 600; }
+.hb-badges-title { font-size: 0.82rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 8px; }
+.hb-badges { display: flex; gap: 10px; flex-wrap: wrap; }
+.hb-badge {
+  width: 80px; padding: 10px 6px; border-radius: 12px; text-align: center;
+  background: var(--bg-secondary); border: 1px solid var(--border); opacity: 0.5;
+  transition: var(--transition-fast);
+}
+.hb-badge.reached { opacity: 1; border-color: var(--bc); box-shadow: 0 0 12px -2px var(--bc); }
+.hb-badge-icon { font-size: 1.4rem; }
+.hb-badge-name { font-size: 0.72rem; font-weight: 700; color: var(--text-primary); margin-top: 3px; }
+.hb-badge-sub { font-size: 0.62rem; color: var(--text-muted); margin-top: 2px; }
+.hb-toast {
+  position: fixed; left: 50%; bottom: 34px; transform: translateX(-50%) translateY(20px);
+  background: rgba(20, 20, 28, 0.92); color: #fff; padding: 12px 20px; border-radius: 12px;
+  font-size: 0.9rem; font-weight: 600; z-index: 9999; opacity: 0; pointer-events: none;
+  transition: all .3s ease; border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px); max-width: 90vw; text-align: center;
+}
+.hb-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+@media (max-width: 768px) {
+  .huobao-card { flex-direction: column; text-align: center; gap: 14px; }
+  .hb-top, .hb-stats, .hb-actions, .hb-badges { justify-content: center; }
+}
+
 /* ==================== 响应式 ==================== */
 @media (max-width: 768px) {
   .navbar { padding: 0 12px; height: auto; min-height: 56px; }
