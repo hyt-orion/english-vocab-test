@@ -3064,16 +3064,22 @@ function renderGrammarDetail(topic) {
 
 // ==================== 听力练习 ====================
 const listeningState = {
-  level: 1, speed: 0.9, count: 10,
+  level: 1, speed: 0.9, count: 10, type: 'word',
   queue: [], currentIdx: 0, correct: 0, wrong: 0,
-  currentWord: null, answered: false,
+  currentWord: null, currentExample: '', answered: false,
+  _advT: null, _vizT: null, _keyBound: false,
 };
+
+function escAttr(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/'/g, '&#39;')
+    .replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
 
 function setupListening() {
   document.getElementById('listening-setup').style.display = 'block';
   document.getElementById('listening-running').style.display = 'none';
 
-  // 绑定选项按钮
+  // 难度
   document.querySelectorAll('#listening-level-options .option-btn').forEach(btn => {
     btn.onclick = () => {
       document.querySelectorAll('#listening-level-options .option-btn').forEach(b => b.classList.remove('active'));
@@ -3081,6 +3087,7 @@ function setupListening() {
       listeningState.level = parseInt(btn.dataset.level);
     };
   });
+  // 语速
   document.querySelectorAll('#listening-speed-options .option-btn').forEach(btn => {
     btn.onclick = () => {
       document.querySelectorAll('#listening-speed-options .option-btn').forEach(b => b.classList.remove('active'));
@@ -3088,6 +3095,7 @@ function setupListening() {
       listeningState.speed = parseFloat(btn.dataset.speed);
     };
   });
+  // 题数
   document.querySelectorAll('#listening-count-options .option-btn').forEach(btn => {
     btn.onclick = () => {
       document.querySelectorAll('#listening-count-options .option-btn').forEach(b => b.classList.remove('active'));
@@ -3095,10 +3103,32 @@ function setupListening() {
       listeningState.count = parseInt(btn.dataset.count);
     };
   });
+  // 题型
+  document.querySelectorAll('#listening-type-options .option-btn').forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll('#listening-type-options .option-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      listeningState.type = btn.dataset.type;
+    };
+  });
+
+  // 历史最佳
+  renderListeningBest();
+}
+
+function renderListeningBest() {
+  const el = document.getElementById('listening-best');
+  if (!el) return;
+  let st = { total: 0, correct: 0, best: 0 };
+  try { st = JSON.parse(localStorage.getItem('listeningStats')) || st; } catch (e) {}
+  if (st.total > 0) {
+    el.innerHTML = `📊 历史：已练 <b>${st.total}</b> 题，累计正确率 <b>${Math.round(st.correct / st.total * 100)}%</b>，单轮最佳 <b>${st.best}%</b>`;
+  } else {
+    el.innerHTML = `📊 还没有练习记录，开始第一轮吧！`;
+  }
 }
 
 function startListening() {
-  // 从词库选题
   const pool = WORD_BANK.filter(w => w.level === listeningState.level && w.word && w.meaning);
   if (pool.length < 4) {
     alert('该级别词汇不足，请选择其他级别');
@@ -3114,116 +3144,13 @@ function startListening() {
   document.getElementById('listening-setup').style.display = 'none';
   document.getElementById('listening-running').style.display = 'block';
 
+  buildListeningShell();
+  bindListeningKeys();
   renderListeningQuestion();
 }
 
-function renderListeningQuestion() {
-  const q = listeningState.queue[listeningState.currentIdx];
-  listeningState.currentWord = q;
-  listeningState.answered = false;
-
-  const total = listeningState.queue.length;
-  const pct = (listeningState.currentIdx / total) * 100;
-  document.getElementById('listening-progress-fill').style.width = pct + '%';
-  document.getElementById('listening-progress-text').textContent = `${listeningState.currentIdx + 1} / ${total}`;
-  document.getElementById('listening-correct').textContent = listeningState.correct;
-  document.getElementById('listening-wrong').textContent = listeningState.wrong;
-
-  // 生成4个选项（中文释义）
-  const pool = WORD_BANK.filter(w => w.level === listeningState.level && w.meaning && w.word !== q.word);
-  const distractors = [...pool].sort(() => Math.random() - 0.5).slice(0, 3);
-  const options = [...distractors, q].sort(() => Math.random() - 0.5);
-
-  const container = document.getElementById('listening-options');
-  container.innerHTML = options.map((opt, i) => `
-    <div class="listening-option" onclick="selectListeningAnswer('${opt.meaning}', this)">
-      <span class="listening-option-label">${String.fromCharCode(65 + i)}</span>
-      <span>${opt.meaning}</span>
-    </div>
-  `).join('');
-
-  // 自动播放
-  setTimeout(() => playListeningAudio(), 300);
-}
-
-function playListeningAudio() {
-  if (!listeningState.currentWord) return;
-  const utterance = new SpeechSynthesisUtterance(listeningState.currentWord.word);
-  utterance.lang = 'en-US';
-  utterance.rate = listeningState.speed;
-  speechSynthesis.cancel();
-  speechSynthesis.speak(utterance);
-}
-
-function selectListeningAnswer(answer, element) {
-  if (listeningState.answered) return;
-  listeningState.answered = true;
-
-  const correct = listeningState.currentWord.meaning;
-  const isCorrect = answer === correct;
-
-  if (isCorrect) {
-    listeningState.correct++;
-    element.classList.add('correct');
-  } else {
-    listeningState.wrong++;
-    element.classList.add('wrong');
-    // 标出正确答案
-    document.querySelectorAll('.listening-option').forEach(opt => {
-      if (opt.textContent.includes(correct)) opt.classList.add('correct');
-    });
-  }
-
-  // 记录错题和每日目标
-  if (!isCorrect) {
-    addWrongQuestion(
-      { id: listeningState.currentWord.id, question: `🎧 听力：听到的单词`, options: [], answer: `${listeningState.currentWord.word} (${correct})`, explanation: `听到的单词是 '${listeningState.currentWord.word}'，意思是「${correct}」。`, knowledgePoints: ['听力'], skill: 'listening', difficulty: listeningState.level },
-      answer, 'listening', '听力练习'
-    );
-  }
-
-  // 下一题
-  setTimeout(() => {
-    listeningState.currentIdx++;
-    if (listeningState.currentIdx >= listeningState.queue.length) {
-      finishListening();
-    } else {
-      renderListeningQuestion();
-    }
-  }, 1800);
-}
-
-function finishListening() {
-  const total = listeningState.queue.length;
-  const correct = listeningState.correct;
-  const pct = Math.round((correct / total) * 100);
-
-  recordDailyActivity('test');
-  recordDailyActivity('word', correct);
-
-  let emoji, msg;
-  if (pct >= 90) { emoji = '🏆'; msg = '听力很棒！'; }
-  else if (pct >= 70) { emoji = '🎉'; msg = '不错，继续练！'; }
-  else if (pct >= 60) { emoji = '💪'; msg = '及格了，多听多练'; }
-  else { emoji = '🎧'; msg = '需要多听多练'; }
-
-  document.getElementById('listening-running').innerHTML = `
-    <div class="card result-card">
-      <div style="font-size:3rem;margin-bottom:8px;">${emoji}</div>
-      <div class="result-score ${pct >= 80 ? 'excellent' : pct >= 60 ? 'good' : 'needs-work'}">${correct}/${total}</div>
-      <div class="result-msg">${msg}</div>
-      <div class="result-actions">
-        <button class="btn btn-ghost" onclick="exitListening()">← 返回</button>
-        <button class="btn btn-primary" onclick="startListening()">🔄 再练一轮</button>
-      </div>
-    </div>
-  `;
-  window.scrollTo(0, 0);
-}
-
-function exitListening() {
-  document.getElementById('listening-setup').style.display = 'block';
-  document.getElementById('listening-running').style.display = 'none';
+function buildListeningShell() {
+  const speedActive = { 0.6: '', 0.9: 'active', 1.2: '' }[listeningState.speed] || 'active';
   document.getElementById('listening-running').innerHTML = `
     <div class="test-header">
       <div class="test-progress">
@@ -3235,17 +3162,285 @@ function exitListening() {
         <div class="score-item"><div class="score-num wrong" id="listening-wrong">0</div><div class="score-label">错误</div></div>
       </div>
     </div>
-    <div class="question-card">
-      <span class="question-tag">🎧 听力题</span>
-      <div style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:16px;">点击下方按钮播放音频，然后选择你听到的内容</div>
-      <button class="btn btn-primary btn-lg" id="play-audio-btn" onclick="playListeningAudio()" style="font-size:1.5rem;padding:16px 40px;">🔊 播放</button>
-      <div style="font-size:0.78rem;color:var(--text-muted);margin-top:12px;">提示：可以多次点击播放</div>
-    </div>
-    <div id="listening-options"></div>
-    <div class="text-center mt-20">
-      <button class="btn btn-ghost" onclick="exitListening()">← 退出</button>
+    <div class="question-card listening-card">
+      <div class="listening-viz" id="listening-viz"><span></span><span></span><span></span><span></span><span></span></div>
+      <span class="question-tag">🎧 听力 · <span id="listening-mode-name"></span></span>
+      <div class="listening-hint" id="listening-word-hint"></div>
+      <div class="listening-play-row">
+        <button class="btn btn-primary btn-lg" id="play-audio-btn" onclick="playListeningAudio()">🔊 播放</button>
+        <div class="listening-speed-inline" id="listening-speed-inline">
+          <span class="lsi-label">语速</span>
+          <button class="option-btn ${listeningState.speed === 0.6 ? 'active' : ''}" onclick="setListeningRate(0.6,this)">🐢 慢</button>
+          <button class="option-btn ${listeningState.speed === 0.9 ? 'active' : ''}" onclick="setListeningRate(0.9,this)">✅ 常</button>
+          <button class="option-btn ${listeningState.speed === 1.2 ? 'active' : ''}" onclick="setListeningRate(1.2,this)">🐇 快</button>
+        </div>
+        <button class="btn btn-ghost" onclick="replayListening()">↻ 重听</button>
+      </div>
+      <div id="listening-dynamic"></div>
+      <div id="listening-reveal"></div>
+      <div class="listening-foot">
+        <button class="btn btn-ghost" onclick="exitListening()">← 退出</button>
+        <button class="btn btn-primary" id="listening-next" style="display:none" onclick="nextListening()">下一题 →</button>
+      </div>
     </div>
   `;
+}
+
+function renderListeningQuestion() {
+  const q = listeningState.queue[listeningState.currentIdx];
+  listeningState.currentWord = q;
+  listeningState.currentExample = q.example || '';
+  listeningState.answered = false;
+
+  const total = listeningState.queue.length;
+  document.getElementById('listening-progress-fill').style.width = (listeningState.currentIdx / total * 100) + '%';
+  document.getElementById('listening-progress-text').textContent = (listeningState.currentIdx + 1) + ' / ' + total;
+  document.getElementById('listening-correct').textContent = listeningState.correct;
+  document.getElementById('listening-wrong').textContent = listeningState.wrong;
+
+  const modeNames = { word: '听词选义', sentence: '听句选义', spell: '听音拼写' };
+  document.getElementById('listening-mode-name').textContent = modeNames[listeningState.type];
+  const hints = {
+    word: '听音频，选出你听到的单词释义',
+    sentence: '听句子，选出句中加粗词的意思',
+    spell: '听音频，拼写出你听到的单词'
+  };
+  document.getElementById('listening-word-hint').textContent = hints[listeningState.type];
+
+  document.getElementById('listening-reveal').innerHTML = '';
+  document.getElementById('listening-next').style.display = 'none';
+
+  const dyn = document.getElementById('listening-dynamic');
+  if (listeningState.type === 'spell') {
+    dyn.innerHTML = `
+      <div class="spell-box">
+        <input id="listening-spell-input" class="spell-input" placeholder="输入你听到的单词…" autocomplete="off"
+          onkeydown="if(event.key==='Enter')submitListeningSpell()">
+        <button class="btn btn-primary" onclick="submitListeningSpell()">✓ 提交</button>
+      </div>`;
+    setTimeout(() => { const i = document.getElementById('listening-spell-input'); if (i) i.focus(); }, 120);
+  } else {
+    const pool = WORD_BANK.filter(w => w.level === listeningState.level && w.meaning && w.word !== q.word);
+    const distractors = [...pool].sort(() => Math.random() - 0.5).slice(0, 3);
+    const options = [...distractors, q].sort(() => Math.random() - 0.5);
+    dyn.innerHTML = options.map((opt, i) =>
+      `<div class="listening-option" data-answer="${escAttr(opt.meaning)}" onclick="selectListeningAnswer('${escAttr(opt.meaning)}', this)">
+        <span class="listening-option-label">${String.fromCharCode(65 + i)}</span>
+        <span>${escAttr(opt.meaning)}</span>
+      </div>`).join('');
+  }
+
+  // 自动播放
+  setTimeout(() => playListeningAudio(), 350);
+}
+
+function listeningViz(on) {
+  const v = document.getElementById('listening-viz');
+  if (v) v.classList.toggle('playing', on);
+}
+
+function speakListening(text, rate) {
+  if (!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'en-US';
+  u.rate = rate || listeningState.speed;
+  u.onstart = () => listeningViz(true);
+  u.onend = () => listeningViz(false);
+  u.onerror = () => listeningViz(false);
+  speechSynthesis.speak(u);
+  clearTimeout(listeningState._vizT);
+  listeningState._vizT = setTimeout(() => listeningViz(false), Math.max(4000, text.length * 110 / (rate || 0.9) + 800));
+}
+
+function playListeningAudio() {
+  if (!listeningState.currentWord) return;
+  const w = listeningState.currentWord;
+  if (listeningState.type === 'sentence' && w.example) {
+    speakListening(w.example, listeningState.speed);
+  } else {
+    speakListening(w.word, listeningState.speed);
+  }
+}
+
+function replayListening() { playListeningAudio(); }
+
+function speakCurrentExample() {
+  if (listeningState.currentExample) speak(listeningState.currentExample);
+}
+
+function setListeningRate(r, btn) {
+  listeningState.speed = r;
+  document.querySelectorAll('#listening-speed-inline .option-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  playListeningAudio();
+}
+
+function revealListening(isCorrect) {
+  const w = listeningState.currentWord;
+  const rev = document.getElementById('listening-reveal');
+  let ex = '';
+  if (w.example) {
+    const exCn = w.exampleCn || '';
+    let exHtml = w.example;
+    try {
+      const re = new RegExp('\\b' + w.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'ig');
+      exHtml = exHtml.replace(re, '<b>' + w.word + '</b>');
+    } catch (e) {}
+    ex = `<div class="reveal-ex">📖 ${exHtml}</div>` + (exCn ? `<div class="reveal-excn">${exCn}</div>` : '') +
+      `<button class="btn btn-ghost btn-sm" onclick="speakCurrentExample()">🔊 朗读例句</button>`;
+  }
+  rev.innerHTML = `
+    <div class="reveal-card ${isCorrect ? 'ok' : 'no'}">
+      <div class="reveal-word">${w.word} ${w.phonetic ? `<span class="rp">${w.phonetic}</span>` : ''} ${w.pos ? `<span class="pos">${w.pos}</span>` : ''}</div>
+      ${ex}
+      <div class="reveal-result">${isCorrect ? '✅ 答对了！' : '❌ 正确答案：' + w.word + '（' + w.meaning + '）'}</div>
+    </div>`;
+}
+
+function showListeningNext() {
+  const b = document.getElementById('listening-next');
+  if (b) b.style.display = 'inline-flex';
+}
+
+function autoAdvance() {
+  clearTimeout(listeningState._advT);
+  listeningState._advT = setTimeout(() => nextListening(), 2800);
+}
+
+function selectListeningAnswer(answer, element) {
+  if (listeningState.answered) return;
+  listeningState.answered = true;
+
+  const w = listeningState.currentWord;
+  const isCorrect = answer === w.meaning;
+  if (isCorrect) listeningState.correct++; else listeningState.wrong++;
+
+  if (element) {
+    element.classList.add(isCorrect ? 'correct' : 'wrong');
+    if (!isCorrect) {
+      document.querySelectorAll('#listening-dynamic .listening-option').forEach(o => {
+        if (o.dataset.answer === w.meaning) o.classList.add('correct');
+      });
+    }
+  }
+  if (!isCorrect) {
+    addWrongQuestion(
+      { id: w.id, question: `🎧 听力：听到的单词`, options: [], answer: `${w.word} (${w.meaning})`, explanation: `听到的单词是 '${w.word}'，意思是「${w.meaning}」。`, knowledgePoints: ['听力'], skill: 'listening', difficulty: listeningState.level },
+      answer, 'listening', '听力练习'
+    );
+  }
+  revealListening(isCorrect);
+  showListeningNext();
+  autoAdvance();
+}
+
+function submitListeningSpell() {
+  if (listeningState.answered) return;
+  const i = document.getElementById('listening-spell-input');
+  if (!i) return;
+  const val = i.value.trim().toLowerCase();
+  if (!val) { i.focus(); return; }
+  listeningState.answered = true;
+  const w = listeningState.currentWord;
+  const isCorrect = val === w.word.toLowerCase();
+  if (isCorrect) listeningState.correct++; else listeningState.wrong++;
+  i.disabled = true;
+  if (!isCorrect) {
+    addWrongQuestion(
+      { id: w.id, question: `🎧 听力拼写：听到的单词`, options: [], answer: w.word, explanation: `听到的单词是 '${w.word}'，意思是「${w.meaning}」。`, knowledgePoints: ['听力'], skill: 'listening', difficulty: listeningState.level },
+      val, 'listening', '听力练习'
+    );
+  }
+  revealListening(isCorrect);
+  showListeningNext();
+  autoAdvance();
+}
+
+function nextListening() {
+  clearTimeout(listeningState._advT);
+  listeningState.currentIdx++;
+  if (listeningState.currentIdx >= listeningState.queue.length) {
+    finishListening();
+  } else {
+    renderListeningQuestion();
+  }
+}
+
+function finishListening() {
+  const total = listeningState.queue.length;
+  const correct = listeningState.correct;
+  const pct = Math.round((correct / total) * 100);
+
+  // 持久化成绩
+  let st = { total: 0, correct: 0, best: 0 };
+  try { st = JSON.parse(localStorage.getItem('listeningStats')) || st; } catch (e) {}
+  st.total += total; st.correct += correct;
+  if (pct > st.best) st.best = pct;
+  try { localStorage.setItem('listeningStats', JSON.stringify(st)); } catch (e) {}
+
+  recordDailyActivity('test');
+  recordDailyActivity('word', correct);
+
+  let emoji, msg;
+  if (pct >= 90) { emoji = '🏆'; msg = '听力很棒！'; }
+  else if (pct >= 70) { emoji = '🎉'; msg = '不错，继续练！'; }
+  else if (pct >= 60) { emoji = '💪'; msg = '及格了，多听多练'; }
+  else { emoji = '🎧'; msg = '需要多听多练'; }
+
+  // 题型小结
+  const typeNames = { word: '听词选义', sentence: '听句选义', spell: '听音拼写' };
+  const typeLine = `本轮题型：<b>${typeNames[listeningState.type]}</b>`;
+
+  document.getElementById('listening-running').innerHTML = `
+    <div class="card result-card">
+      <div style="font-size:3rem;margin-bottom:8px;">${emoji}</div>
+      <div class="result-score ${pct >= 80 ? 'excellent' : pct >= 60 ? 'good' : 'needs-work'}">${correct}/${total}</div>
+      <div class="result-msg">${msg}</div>
+      <div class="result-sub">正确率 <b>${pct}%</b> · ${typeLine} · 历史最佳 <b>${st.best}%</b></div>
+      <div class="result-actions">
+        <button class="btn btn-ghost" onclick="exitListening()">← 返回</button>
+        <button class="btn btn-primary" onclick="startListening()">🔄 再练一轮</button>
+      </div>
+    </div>
+  `;
+  unbindListeningKeys();
+  window.scrollTo(0, 0);
+}
+
+function exitListening() {
+  unbindListeningKeys();
+  document.getElementById('listening-setup').style.display = 'block';
+  document.getElementById('listening-running').style.display = 'none';
+  renderListeningBest();
+}
+
+function listeningKeyHandler(e) {
+  if (App.currentPage !== 'listening') return;
+  const setup = document.getElementById('listening-setup');
+  if (setup && setup.style.display !== 'none') return;
+  if (e.key === ' ') { e.preventDefault(); replayListening(); return; }
+  if (listeningState.answered) {
+    if (e.key === 'Enter') { e.preventDefault(); nextListening(); }
+    return;
+  }
+  const k = e.key.toLowerCase();
+  if (['a', 'b', 'c', 'd'].includes(k)) {
+    const opts = document.querySelectorAll('#listening-dynamic .listening-option');
+    const idx = k.charCodeAt(0) - 97;
+    if (opts[idx]) opts[idx].click();
+  }
+}
+
+function bindListeningKeys() {
+  if (listeningState._keyBound) return;
+  document.addEventListener('keydown', listeningKeyHandler);
+  listeningState._keyBound = true;
+}
+function unbindListeningKeys() {
+  if (!listeningState._keyBound) return;
+  document.removeEventListener('keydown', listeningKeyHandler);
+  listeningState._keyBound = false;
 }
 
 // ==================== 初始化 ====================
