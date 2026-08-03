@@ -4066,11 +4066,27 @@ function evmSwitchTab(tab) {
     if (tLogin) tLogin.classList.remove('active');
   }
   evmClearErr();
+  evmPositionTabInd();
+}
+function evmPositionTabInd() {
+  const ind = document.getElementById('login-tab-ind');
+  const active = document.querySelector('.login-tab.active');
+  if (!ind || !active) return;
+  ind.style.top = active.offsetTop + 'px';
+  ind.style.left = active.offsetLeft + 'px';
+  ind.style.width = active.offsetWidth + 'px';
+  ind.style.height = active.offsetHeight + 'px';
 }
 
 function evmErr(formId, msg) {
   const el = document.getElementById(formId + '-err');
   if (el) el.textContent = msg;
+  const form = document.getElementById(formId);
+  if (form && msg) {
+    form.classList.remove('login-shake');
+    void form.offsetWidth;
+    form.classList.add('login-shake');
+  }
 }
 function evmClearErr() {
   ['login-form-err', 'register-form-err'].forEach(id => {
@@ -4173,6 +4189,7 @@ function init() {
 
   // 全局拖拽结束监听（鼠标松开时结束拖拽选择）
   document.addEventListener('mouseup', dragSelectEnd);
+  window.addEventListener('resize', evmPositionTabInd);
 
   // 导航事件
   document.querySelectorAll('.nav-tab').forEach(tab => {
@@ -4247,6 +4264,7 @@ function init() {
     if (navUser) navUser.style.display = 'none';
     const screen = document.getElementById('login-screen');
     if (screen) screen.style.display = 'flex';
+    evmPositionTabInd();
   }
 }
 

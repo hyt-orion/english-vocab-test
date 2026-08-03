@@ -23,11 +23,14 @@
   <div class="login-orb login-orb-4"></div>
   <div class="login-grid"></div>
   <div class="login-card">
-    <div class="login-logo">📚</div>
-    <h1 class="login-title">英语词汇大师</h1>
-    <p class="login-sub">登录以同步你的专属学习进度</p>
+    <div class="login-brand">
+      <div class="login-logo">📚</div>
+      <h1 class="login-title">英语词汇大师</h1>
+      <p class="login-sub">登录以同步你的专属学习进度</p>
+    </div>
 
     <div class="login-tabs">
+      <span class="login-tab-ind" id="login-tab-ind"></span>
       <button type="button" class="login-tab active" id="tab-login" onclick="evmSwitchTab('login')">登录</button>
       <button type="button" class="login-tab" id="tab-register" onclick="evmSwitchTab('register')">注册</button>
     </div>
@@ -35,27 +38,35 @@
     <form class="login-form" id="login-form" onsubmit="return evmSubmitLogin(event)">
       <label class="login-field">
         <span class="login-label">用户名</span>
-        <input class="login-input" id="login-username" type="text" autocomplete="username" placeholder="请输入用户名" maxlength="20">
+        <div class="login-input-wrap">
+          <span class="login-ico">👤</span>
+          <input class="login-input" id="login-username" type="text" autocomplete="username" placeholder="请输入用户名" maxlength="20">
+        </div>
       </label>
       <label class="login-field">
         <span class="login-label">密码</span>
         <div class="login-input-wrap">
+          <span class="login-ico">🔒</span>
           <input class="login-input" id="login-password" type="password" autocomplete="current-password" placeholder="请输入密码" maxlength="64">
           <button type="button" class="login-eye" onclick="evmTogglePw('login-password', this)">👁️</button>
         </div>
       </label>
       <div class="login-err" id="login-form-err"></div>
-      <button type="submit" class="login-submit">登 录</button>
+      <button type="submit" class="login-submit"><span>登 录</span></button>
     </form>
 
     <form class="login-form" id="register-form" style="display:none" onsubmit="return evmSubmitRegister(event)">
       <label class="login-field">
         <span class="login-label">用户名</span>
-        <input class="login-input" id="register-username" type="text" autocomplete="username" placeholder="2 位以上，中英文/数字/下划线" maxlength="20">
+        <div class="login-input-wrap">
+          <span class="login-ico">👤</span>
+          <input class="login-input" id="register-username" type="text" autocomplete="username" placeholder="2 位以上，中英文/数字/下划线" maxlength="20">
+        </div>
       </label>
       <label class="login-field">
         <span class="login-label">密码</span>
         <div class="login-input-wrap">
+          <span class="login-ico">🔒</span>
           <input class="login-input" id="register-password" type="password" autocomplete="new-password" placeholder="至少 6 位" maxlength="64">
           <button type="button" class="login-eye" onclick="evmTogglePw('register-password', this)">👁️</button>
         </div>
@@ -63,15 +74,16 @@
       <label class="login-field">
         <span class="login-label">确认密码</span>
         <div class="login-input-wrap">
+          <span class="login-ico">🔒</span>
           <input class="login-input" id="register-confirm" type="password" autocomplete="new-password" placeholder="再次输入密码" maxlength="64">
           <button type="button" class="login-eye" onclick="evmTogglePw('register-confirm', this)">👁️</button>
         </div>
       </label>
       <div class="login-err" id="register-form-err"></div>
-      <button type="submit" class="login-submit">注 册 并 登 录</button>
+      <button type="submit" class="login-submit"><span>注 册 并 登 录</span></button>
     </form>
 
-    <p class="login-foot">同一设备多账号 · 进度互不干扰 · 数据仅存于本机浏览器</p>
+    <p class="login-foot"><span class="login-foot-ico">🔒</span> 同一设备多账号 · 进度互不干扰 · 数据仅存于本机</p>
   </div>
 </div>
 

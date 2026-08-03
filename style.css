@@ -3427,17 +3427,40 @@ body[data-app-mode="ielts"] .ielts-tabs {
   animation: loginCardIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 @keyframes loginCardIn { from { opacity: 0; transform: translateY(18px) scale(0.97); } to { opacity: 1; transform: none; } }
-.login-logo {
-  font-size: 2.6rem;
-  text-align: center;
-  filter: drop-shadow(0 6px 18px rgba(99, 102, 241, 0.5));
+.login-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(129,140,248,0.75), rgba(168,85,247,0.2) 45%, rgba(56,189,248,0.55));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
 }
+.login-brand { display: flex; flex-direction: column; align-items: center; margin-bottom: 4px; }
+.login-logo {
+  width: 74px; height: 74px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.2rem;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  box-shadow: 0 14px 32px rgba(99,102,241,0.5), inset 0 1px 2px rgba(255,255,255,0.45);
+  animation: loginLogoBob 4s ease-in-out infinite;
+}
+@keyframes loginLogoBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 .login-title {
-  margin: 8px 0 4px;
+  margin: 12px 0 4px;
   text-align: center;
-  font-size: 1.5rem;
+  font-size: 1.62rem;
   font-weight: 800;
   letter-spacing: 0.5px;
+  background: linear-gradient(120deg, #c7d2fe, #a78bfa, #67e8f9);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 2px 10px rgba(129,140,248,0.4));
 }
 .login-sub {
   margin: 0 0 22px;
@@ -3446,6 +3469,8 @@ body[data-app-mode="ielts"] .ielts-tabs {
   color: rgba(238, 240, 246, 0.62);
 }
 .login-tabs {
+  position: relative;
+  z-index: 1;
   display: flex;
   gap: 6px;
   padding: 5px;
@@ -3455,6 +3480,8 @@ body[data-app-mode="ielts"] .ielts-tabs {
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 .login-tab {
+  position: relative;
+  z-index: 1;
   flex: 1;
   padding: 10px 0;
   border: none;
@@ -3469,8 +3496,18 @@ body[data-app-mode="ielts"] .ielts-tabs {
 }
 .login-tab.active {
   color: #fff;
+}
+.login-tab-ind {
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  left: 5px;
+  width: calc(50% - 8px);
+  border-radius: 10px;
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
   box-shadow: 0 4px 14px rgba(99, 102, 241, 0.45);
+  transition: transform 0.28s cubic-bezier(0.34, 1.3, 0.64, 1), left 0.28s cubic-bezier(0.34, 1.3, 0.64, 1), width 0.28s cubic-bezier(0.34, 1.3, 0.64, 1), height 0.28s cubic-bezier(0.34, 1.3, 0.64, 1);
+  z-index: 0;
 }
 .login-form { display: flex; flex-direction: column; gap: 14px; }
 .login-field { display: flex; flex-direction: column; gap: 6px; }
@@ -3493,7 +3530,16 @@ body[data-app-mode="ielts"] .ielts-tabs {
   border-color: #818cf8;
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
 }
-.login-input-wrap .login-input { padding-right: 44px; }
+.login-input-wrap .login-input { padding-left: 42px; padding-right: 44px; }
+.login-ico {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1rem;
+  opacity: 0.55;
+  pointer-events: none;
+}
 .login-eye {
   position: absolute;
   right: 8px;
@@ -3511,7 +3557,11 @@ body[data-app-mode="ielts"] .ielts-tabs {
   font-weight: 600;
   color: #ff7a8a;
 }
+.login-form.login-shake { animation: loginShake 0.4s ease; }
+@keyframes loginShake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-7px); } 40% { transform: translateX(7px); } 60% { transform: translateX(-5px); } 80% { transform: translateX(5px); } }
 .login-submit {
+  position: relative;
+  overflow: hidden;
   margin-top: 4px;
   padding: 13px 0;
   border: none;
@@ -3526,6 +3576,19 @@ body[data-app-mode="ielts"] .ielts-tabs {
   box-shadow: 0 8px 22px rgba(99, 102, 241, 0.45);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
+.login-submit > span { position: relative; z-index: 1; }
+.login-submit::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,0.5), transparent);
+  transform: skewX(-20deg);
+  animation: loginShine 3.4s ease-in-out infinite;
+}
+@keyframes loginShine { 0% { left: -60%; } 55%,100% { left: 130%; } }
 .login-submit:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(99, 102, 241, 0.55); }
 .login-submit:active { transform: translateY(0) scale(0.98); }
 .login-foot {
@@ -3595,11 +3658,14 @@ body[data-app-mode="ielts"] .ielts-tabs {
   transition: background 0.15s ease;
 }
 .nav-user-menu-item:hover { background: rgba(255, 122, 138, 0.12); }
-[data-theme="light"] .login-card { color: #1a1d2e; background: rgba(255,255,255,0.7); }
+[data-theme="light"] .login-card { color: #1a1d2e; background: rgba(255,255,255,0.72); }
 [data-theme="light"] .login-sub { color: rgba(26, 29, 46, 0.6); }
+[data-theme="light"] .login-title { background: linear-gradient(120deg, #4338ca, #7c3aed, #0891b2); -webkit-background-clip: text; background-clip: text; color: transparent; filter: none; }
 [data-theme="light"] .login-tab { color: rgba(26, 29, 46, 0.6); }
+[data-theme="light"] .login-tab.active { color: #fff; }
 [data-theme="light"] .login-label { color: rgba(26, 29, 46, 0.75); }
-[data-theme="light"] .login-input { background: rgba(255,255,255,0.8); color: #1a1d2e; border-color: rgba(0,0,0,0.15); }
+[data-theme="light"] .login-ico { opacity: 0.5; }
+[data-theme="light"] .login-input { background: rgba(255,255,255,0.85); color: #1a1d2e; border-color: rgba(0,0,0,0.15); }
 [data-theme="light"] .login-input::placeholder { color: rgba(26,29,46,0.4); }
 
 /* 背景光球 */
