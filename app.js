@@ -4109,6 +4109,13 @@ async function evmSubmitLogin(e) {
   catch (err) { evmErr('login-form', '登录失败：当前浏览器不支持加密'); return; }
     if (hash !== acct.hash) { evmErr('login-form', '密码错误，请重试'); return; }
   const remember = document.getElementById('login-remember') ? document.getElementById('login-remember').checked : true;
+  // 记住我：存/清加密密码，供登录页预填
+  if (remember) {
+    accounts[u].savedPw = evmEncryptPw(p);
+  } else {
+    delete accounts[u].savedPw;
+  }
+  evmSaveAccounts(accounts);
   evmLoginSuccess(u, remember);
 }
 
@@ -4127,7 +4134,7 @@ async function evmSubmitRegister(e) {
   let salt, hash;
   try { const r = await evmHashPassword(p); salt = r.salt; hash = r.hash; }
   catch (err) { evmErr('register-form', '注册失败：当前浏览器不支持加密'); return; }
-  accounts[u] = { salt, hash, createdAt: Date.now() };
+  accounts[u] = { salt, hash, createdAt: Date.now(), savedPw: evmEncryptPw(p) };
   evmSaveAccounts(accounts);
   evmLoginSuccess(u);
 }
@@ -4156,6 +4163,32 @@ function evmLogout() {
   try { sessionStorage.removeItem('evm_current_user'); } catch (e) {}
   window.__evmUser__ = '';
   location.reload();
+}
+
+// 记住密码：可逆轻加密存储（纯前端本地方案，同设备他人可读，用户已接受此取舍）
+// 注意：这不是强加密，仅做混淆，目的是让密码框能直接预填已存密码。
+function evmEncryptPw(pw) {
+  try {
+    const key = 'evm_pw_xor_2026';
+    let out = '';
+    for (let i = 0; i < pw.length; i++) {
+      out += String.fromCharCode(pw.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+    }
+    return 'e1:' + btoa(unescape(encodeURIComponent(out)));
+  } catch (e) { return ''; }
+}
+function evmDecryptPw(store) {
+  try {
+    if (!store || store.indexOf('e1:') !== 0) return '';
+    const raw = atob(store.slice(3));
+    const decoded = decodeURIComponent(escape(raw));
+    const key = 'evm_pw_xor_2026';
+    let out = '';
+    for (let i = 0; i < decoded.length; i++) {
+      out += String.fromCharCode(decoded.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+    }
+    return out;
+  } catch (e) { return ''; }
 }
 
 function evmToggleUserMenu(e) {
@@ -4502,12 +4535,21 @@ function init() {
     if (navUser) navUser.style.display = 'none';
     const screen = document.getElementById('login-screen');
     if (screen) screen.style.display = 'flex';
-    // 预填上次用户名 + 默认勾选「记住我」
+    // 预填上次用户名 + 已存密码 + 默认勾选「记住我」
     try {
       const lu = document.getElementById('login-username');
-      if (lu) lu.value = (localStorage.getItem('evm_last_user') || '');
+      const lp = document.getElementById('login-password');
       const rp = document.getElementById('login-remember');
-      if (rp) rp.checked = true;
+      const lastUser = (localStorage.getItem('evm_last_user') || '');
+      if (lu) lu.value = lastUser;
+      let saved = '';
+      if (lastUser) {
+        const accts = evmGetAccounts();
+        const a = accts[lastUser];
+        saved = (a && a.savedPw) ? evmDecryptPw(a.savedPw) : '';
+      }
+      if (lp) lp.value = saved;
+      if (rp) rp.checked = !!saved;
     } catch (e) {}
     evmPositionTabInd();
   }
