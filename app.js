@@ -3494,9 +3494,17 @@ function selectMode(mode) {
 
 // 进入指定模式对应的页面
 function enterMode(mode) {
+  const logoEl = document.getElementById('brand-logo');
+  const textEl = document.getElementById('brand-text');
   if (mode === 'ielts') {
+    document.body.dataset.appMode = 'ielts';
+    if (logoEl) logoEl.textContent = '🎓';
+    if (textEl) textEl.textContent = '雅思备考';
     navigateTo('ielts');
   } else {
+    document.body.dataset.appMode = 'standard';
+    if (logoEl) logoEl.textContent = '📚';
+    if (textEl) textEl.textContent = '英语词汇大师';
     navigateTo('home');
   }
 }
