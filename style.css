@@ -3038,3 +3038,134 @@ body {
   .cover-logo { font-size: 3.2rem; }
   .cover-methods { grid-template-columns: 1fr 1fr; }
 }
+
+/* ==================== 雅思专项模块 ==================== */
+.ielts-panel { display: none; }
+.ielts-tabs {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px;
+  background: var(--bg-secondary); padding: 6px; border-radius: var(--radius); border: 1px solid var(--border);
+}
+.ielts-tab {
+  flex: 1; min-width: 90px; padding: 10px 14px; border: none; border-radius: var(--radius-sm);
+  background: transparent; color: var(--text-secondary); font-size: 0.92rem; font-weight: 600; cursor: pointer; transition: var(--transition-fast);
+}
+.ielts-tab:hover { color: var(--text-primary); background: var(--bg-hover); }
+.ielts-tab.active { background: var(--accent-gradient); color: #fff; box-shadow: var(--shadow-glow); }
+.ielts-subtabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.ielts-subtab {
+  padding: 8px 16px; border: 1px solid var(--border); border-radius: 999px;
+  background: var(--bg-card); color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: var(--transition-fast);
+}
+.ielts-subtab:hover { color: var(--text-primary); border-color: var(--border-strong); }
+.ielts-subtab.active { background: var(--accent-dim); color: var(--accent-light); border-color: var(--accent); }
+
+/* 词汇首页 */
+.ielts-vocab-tools { margin-bottom: 16px; }
+.ielts-vocab-hint { font-size: 0.82rem; color: var(--text-secondary); }
+.ielts-topic-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+.ielts-topic-card {
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px;
+  cursor: pointer; transition: var(--transition); position: relative; overflow: hidden;
+}
+.ielts-topic-card:hover { transform: translateY(-4px); border-color: var(--accent); box-shadow: var(--shadow-glow); }
+.ielts-topic-icon { font-size: 1.8rem; margin-bottom: 8px; }
+.ielts-topic-name { font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+.ielts-topic-count { font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 10px; }
+.ielts-topic-bar { height: 6px; border-radius: 999px; background: var(--bg-hover); overflow: hidden; }
+.ielts-topic-fill { height: 100%; border-radius: 999px; background: var(--accent-gradient); transition: width 0.4s ease; }
+
+/* 学习模式 */
+.ielts-study-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
+.ielts-study-title { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
+.ielts-mode-switch { margin-left: auto; display: flex; gap: 6px; background: var(--bg-secondary); padding: 4px; border-radius: 999px; }
+.ielts-mode-btn { padding: 6px 14px; border: none; border-radius: 999px; background: transparent; color: var(--text-secondary); font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: var(--transition-fast); }
+.ielts-mode-btn.active { background: var(--accent-gradient); color: #fff; }
+.ielts-study-progress { font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 16px; }
+
+/* 闪卡 */
+.ielts-flashcard {
+  position: relative; perspective: 1200px; min-height: 280px; cursor: pointer; margin-bottom: 16px;
+}
+.ielts-flash-front, .ielts-flash-back {
+  position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  border-radius: var(--radius); border: 1px solid var(--border); padding: 28px 24px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+  transition: transform 0.55s cubic-bezier(0.4, 0.2, 0.2, 1);
+}
+.ielts-flash-front { background: var(--accent-gradient-soft); border-color: var(--accent); }
+.ielts-flash-back { background: var(--bg-card); transform: rotateY(180deg); }
+.ielts-flashcard.flipped .ielts-flash-front { transform: rotateY(180deg); }
+.ielts-flashcard.flipped .ielts-flash-back { transform: rotateY(0); }
+.ielts-flash-word { font-size: 2.2rem; font-weight: 800; color: var(--text-primary); letter-spacing: 0.5px; }
+.ielts-flash-phon { font-size: 1rem; color: var(--text-secondary); margin-top: 8px; font-family: var(--font-mono); }
+.ielts-flash-hint { font-size: 0.78rem; color: var(--text-muted); margin-top: 16px; }
+.ielts-flash-pos { font-size: 0.85rem; color: var(--accent-light); font-weight: 700; margin-bottom: 8px; }
+.ielts-flash-meaning { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); }
+.ielts-flash-ex { font-size: 0.95rem; color: var(--text-secondary); margin-top: 14px; font-style: italic; line-height: 1.5; }
+.ielts-flash-excn { font-size: 0.9rem; color: var(--text-muted); margin-top: 6px; }
+.ielts-speak-btn {
+  position: absolute; top: 14px; right: 14px; width: 40px; height: 40px; border-radius: 50%;
+  border: 1px solid var(--border-strong); background: var(--bg-card-elevated); color: var(--accent-light);
+  font-size: 1.1rem; cursor: pointer; transition: var(--transition-fast);
+}
+.ielts-speak-btn:hover { background: var(--accent); color: #fff; transform: scale(1.08); }
+.ielts-speak-btn-sm { position: static; width: auto; height: auto; border-radius: 999px; padding: 8px 16px; margin-top: 14px; font-size: 0.85rem; }
+.ielts-flash-actions { display: flex; gap: 12px; }
+.ielts-flash-actions .btn { flex: 1; }
+
+/* 口语 */
+.ielts-speak-timer-bar {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px;
+  background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 16px;
+  font-size: 0.85rem; color: var(--text-secondary);
+}
+.ielts-timer-text { font-family: var(--font-mono); font-weight: 700; color: var(--accent-light); }
+.ielts-timer-text.prep { color: var(--warning); }
+.ielts-timer-text.speak { color: var(--success); }
+.ielts-speak-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 12px; }
+.ielts-speak-q { font-size: 1rem; font-weight: 600; color: var(--text-primary); line-height: 1.5; margin-bottom: 10px; }
+.ielts-speak-part { display: inline-block; font-size: 0.7rem; font-weight: 800; color: #fff; background: var(--accent); border-radius: 4px; padding: 2px 8px; margin-right: 8px; letter-spacing: 0.04em; }
+.ielts-speak-toggle { background: none; border: none; color: var(--accent-light); font-size: 0.85rem; cursor: pointer; padding: 0; font-weight: 600; }
+.ielts-speak-toggle:hover { text-decoration: underline; }
+.ielts-speak-detail { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border-strong); }
+.ielts-speak-sample { font-size: 0.92rem; color: var(--text-primary); line-height: 1.6; margin-bottom: 10px; }
+.ielts-speak-tips { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; }
+
+/* 写作 */
+.ielts-write-guide h3 { font-size: 1.15rem; color: var(--text-primary); margin-bottom: 8px; }
+.ielts-write-intro { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.6; }
+.ielts-write-block { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px 18px; margin-bottom: 14px; }
+.ielts-write-block h4 { font-size: 0.92rem; color: var(--accent-light); margin-bottom: 10px; }
+.ielts-write-block ul { margin: 0; padding-left: 18px; color: var(--text-secondary); font-size: 0.88rem; line-height: 1.8; }
+.ielts-chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.ielts-chip { font-size: 0.82rem; padding: 5px 12px; border-radius: 999px; background: var(--accent-dim); color: var(--accent-light); border: 1px solid transparent; }
+.ielts-frame { font-size: 0.88rem; color: var(--text-primary); background: var(--bg-secondary); border-left: 3px solid var(--accent); padding: 8px 12px; border-radius: 0 var(--radius-xs) var(--radius-xs) 0; margin-bottom: 8px; font-family: var(--font-mono); }
+.ielts-phrase-list { display: grid; gap: 10px; }
+.ielts-phrase { display: flex; gap: 12px; align-items: baseline; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 16px; }
+.ielts-phrase-en { font-weight: 700; color: var(--accent-light); font-family: var(--font-mono); flex-shrink: 0; }
+.ielts-phrase-cn { color: var(--text-secondary); font-size: 0.9rem; }
+.ielts-write-practice { margin-top: 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
+.ielts-write-practice-head { display: flex; align-items: center; gap: 12px; font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 10px; }
+.ielts-write-practice-head .ielts-timer-text { margin-left: auto; }
+.ielts-write-box { width: 100%; min-height: 180px; resize: vertical; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-primary); font-size: 0.95rem; line-height: 1.7; padding: 14px; font-family: var(--font-main); }
+.ielts-write-box:focus { outline: none; border-color: var(--accent); }
+.ielts-write-foot { display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--text-secondary); margin-top: 8px; }
+.ielts-write-count.ok { color: var(--success); font-weight: 700; }
+
+/* 评分标准 */
+.ielts-band-section { margin-bottom: 22px; }
+.ielts-band-section h3 { font-size: 1.1rem; color: var(--text-primary); margin-bottom: 12px; }
+.ielts-band-table { width: 100%; border-collapse: collapse; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
+.ielts-band-table th { background: var(--bg-secondary); color: var(--text-secondary); font-size: 0.82rem; text-align: left; padding: 10px 14px; }
+.ielts-band-table td { padding: 10px 14px; font-size: 0.88rem; color: var(--text-secondary); border-top: 1px solid var(--border); }
+.ielts-band-table td b { color: var(--accent-light); }
+.ielts-band-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 22px; }
+.ielts-band-col h3 { font-size: 1.05rem; color: var(--text-primary); margin-bottom: 12px; }
+.ielts-crit-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.ielts-crit { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px; }
+.ielts-crit-code { display: inline-block; font-weight: 800; color: #fff; background: var(--accent-gradient); border-radius: 6px; padding: 3px 10px; font-size: 0.85rem; margin-bottom: 8px; }
+.ielts-crit-name { font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; }
+.ielts-crit-note { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; }
+@media (max-width: 680px) {
+  .ielts-band-grid { grid-template-columns: 1fr; }
+}
