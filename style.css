@@ -3192,8 +3192,10 @@ body[data-app-mode="ielts"] .ielts-tabs {
 }
 [data-theme="light"] .nav-streak-flame { background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
 .nav-streak-flame:hover { border-color: #ff8a00; transform: translateY(-1px); box-shadow: 0 0 12px -2px #ff8a00; }
-.nav-streak-flame .nav-icon { font-size: 1rem; filter: drop-shadow(0 0 4px #ff8a00); }
 .nav-streak-num { color: #ff6a00; min-width: 14px; text-align: center; }
+.nav-flame-mini { width: 19px; height: 23px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.nav-flame-mini-svg { width: 100%; height: 100%; filter: drop-shadow(0 0 5px var(--huo-color, #ff8a00)); animation: hbFlicker 1.4s ease-in-out infinite; }
+.nav-streak-flame:hover .nav-flame-mini-svg { filter: drop-shadow(0 0 8px var(--huo-color, #ff8a00)); }
 .huobao-card-ielts { margin-bottom: 22px; }
 
 /* ---------- 庆祝彩带 ---------- */
