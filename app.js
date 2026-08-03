@@ -165,23 +165,27 @@ function selectWords(count, level) {
  * 生成选择题干扰项
  */
 function generateChoices(correctWord, direction) {
-  let pool = getWordBank().filter(w => w.id !== correctWord.id);
+  const all = getWordBank().filter(w => w.id !== correctWord.id);
+  const shuffled = all.sort(() => Math.random() - 0.5);
 
   // 同级别优先
-  const sameLevel = pool.filter(w => w.level === correctWord.level);
-  const otherLevel = pool.filter(w => w.level !== correctWord.level);
+  const sameLevel = shuffled.filter(w => w.level === correctWord.level);
+  const otherLevel = shuffled.filter(w => w.level !== correctWord.level);
 
   const distractors = [];
-  // 取2个同级别 + 1个其他级别
-  if (sameLevel.length >= 2) {
-    distractors.push(...sameLevel.sort(() => Math.random() - 0.5).slice(0, 2));
-  } else {
-    distractors.push(...sameLevel);
+  // 先取最多2个同级别
+  distractors.push(...sameLevel.slice(0, 2));
+  // 再从其他级别补，直到满3个
+  let i = 0;
+  while (distractors.length < 3 && i < otherLevel.length) {
+    distractors.push(otherLevel[i]);
+    i++;
   }
-  while (distractors.length < 3) {
-    const idx = Math.floor(Math.random() * otherLevel.length);
-    const w = otherLevel[idx];
-    if (!distractors.includes(w)) distractors.push(w);
+  // 若其他级别不足（如全部词同属一个级别），从同级别继续补，保证总有3个有效干扰项
+  let j = 2;
+  while (distractors.length < 3 && j < sameLevel.length) {
+    distractors.push(sameLevel[j]);
+    j++;
   }
 
   const allOptions = [correctWord, ...distractors.slice(0, 3)].sort(() => Math.random() - 0.5);
