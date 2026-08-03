@@ -3062,14 +3062,14 @@ body[data-app-mode="ielts"] .ielts-tabs {
   border-radius: 18px;
   box-shadow: var(--shadow-sm);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 [data-theme="light"] .huobao-card {
   background: linear-gradient(135deg, #fff7ed, #ffffff);
   border-color: #ffe2c2;
 }
 .hb-left { flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-.hb-mascot { transition: transform .35s ease; animation: hbFloat 3s ease-in-out infinite; }
+.hb-mascot { transition: transform .35s ease; animation: hbFloat 3s ease-in-out infinite; cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
 @keyframes hbFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
 .hb-flame-wrap { position: relative; width: 112px; height: 132px; }
 .hb-flame { width: 100%; height: 100%; filter: drop-shadow(0 0 14px var(--huo-color)); animation: hbFlicker 1.6s ease-in-out infinite; }
@@ -3125,6 +3125,51 @@ body[data-app-mode="ielts"] .ielts-tabs {
   backdrop-filter: blur(8px); max-width: 90vw; text-align: center;
 }
 .hb-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ---------- 火宝宝互动 ---------- */
+.hb-body { transform-box: fill-box; transform-origin: 50% 100%; }
+.hb-eye { transform-box: fill-box; transform-origin: center; }
+.hb-hand { transform-box: fill-box; }
+.hb-hand-left { transform-origin: 100% 50%; }
+.hb-hand-right { transform-origin: 0% 50%; }
+
+.hb-mascot.wave .hb-hand-left { animation: hbWaveL .42s ease 3; }
+.hb-mascot.wave .hb-hand-right { animation: hbWaveR .42s ease 3; }
+.hb-mascot.jump .hb-body { animation: hbJump .5s ease 2; }
+.hb-mascot.spin .hb-body { animation: hbSpin .7s ease 1; }
+.hb-mascot.blink .hb-eye { animation: hbBlink .45s ease 2; }
+
+@keyframes hbWaveL { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(-28deg) translateY(-3px); } }
+@keyframes hbWaveR { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(28deg) translateY(-3px); } }
+@keyframes hbJump { 0%, 100% { transform: translateY(0); } 25% { transform: translateY(-20px); } 50% { transform: translateY(0); } 75% { transform: translateY(-10px); } }
+@keyframes hbSpin { 0% { transform: rotate(0); } 100% { transform: rotate(360deg); } }
+@keyframes hbBlink { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(.1); } }
+
+.hb-poke-tip { text-align: center; font-size: .72rem; color: var(--text-muted); margin-top: 10px; }
+
+.hb-speech {
+  position: absolute; top: 4px; left: 50%;
+  transform: translateX(-50%) translateY(-100%) scale(.8);
+  background: #fff; color: #ff5e3a; font-weight: 800; font-size: .82rem;
+  padding: 7px 13px; border-radius: 14px; white-space: nowrap;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .16); opacity: 0; pointer-events: none;
+  border: 2px solid var(--huo-color); z-index: 6;
+  transition: opacity .25s ease, transform .25s cubic-bezier(.34, 1.56, .64, 1);
+}
+.hb-speech.show { opacity: 1; transform: translateX(-50%) translateY(-135%) scale(1); }
+.hb-speech::after {
+  content: ''; position: absolute; bottom: -9px; left: 50%; transform: translateX(-50%);
+  border: 9px solid transparent; border-top-color: #fff;
+}
+.hb-heart {
+  position: absolute; left: 50%; top: 14px; font-size: 1.15rem; pointer-events: none; z-index: 5;
+  animation: hbHeartUp 1.25s ease-out forwards;
+}
+@keyframes hbHeartUp {
+  0% { opacity: 0; transform: translate(-50%, 0) scale(.5); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -64px) scale(1.25); }
+}
 
 @media (max-width: 768px) {
   .huobao-card { flex-direction: column; text-align: center; gap: 14px; }
