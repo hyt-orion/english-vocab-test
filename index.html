@@ -12,6 +12,26 @@
   <meta name="theme-color" content="#6c8eef">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="英语大师">
+  <!-- 独立 SW 注册（脱离 app.js）：确保代码更新始终能自动生效，避免崩溃版本阻断 SW 更新自检 -->
+  <script>
+  (function () {
+    if (!('serviceWorker' in navigator)) return;
+    var reloaded = false;
+    function safeReload() { if (reloaded) return; reloaded = true; location.reload(); }
+    navigator.serviceWorker.addEventListener('controllerchange', safeReload);
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').then(function (reg) {
+        reg.addEventListener('updatefound', function () {
+          var w = reg.installing;
+          if (!w) return;
+          w.addEventListener('statechange', function () {
+            if (w.state === 'installed' && navigator.serviceWorker.controller) safeReload();
+          });
+        });
+      }).catch(function () {});
+    });
+  })();
+  </script>
 </head>
 <body>
 
