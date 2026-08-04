@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>语法记忆卡 · 我的收藏</title>
+  <link rel="stylesheet" href="grammar-common.css">
+  <style>
+    .gm-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; margin-top: 18px; }
+    .gm-card-item {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px;
+      padding: 16px 18px; position: relative; transition: var(--transition-fast);
+    }
+    .gm-card-item:hover { border-color: var(--huo-color); transform: translateY(-3px); box-shadow: 0 10px 26px -12px var(--huo-2); }
+    .gm-card-chap { font-size: 0.72rem; font-weight: 800; color: var(--huo-color); letter-spacing: .3px; }
+    .gm-card-sec { font-size: 1.02rem; font-weight: 800; margin: 4px 0 10px; }
+    .gm-card-mnem {
+      background: rgba(255,255,255,.04); border-left: 3px solid var(--huo-color);
+      border-radius: 10px; padding: 10px 12px; font-size: 0.9rem; line-height: 1.6; color: var(--text-primary);
+    }
+    .gm-card-tag { display: inline-block; font-size: 0.7rem; font-weight: 800; color: var(--huo-color); margin-right: 6px; }
+    .gm-card-concept { margin-top: 10px; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.65; }
+    .gm-card-actions { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+    .gm-card-go { color: var(--huo-color); font-weight: 800; text-decoration: none; font-size: 0.85rem; }
+    .gm-card-go:hover { text-decoration: underline; }
+    .gm-card-del {
+      margin-left: auto; background: transparent; border: 1px solid var(--border); color: var(--text-muted);
+      border-radius: 999px; padding: 5px 12px; font-size: 0.78rem; cursor: pointer; transition: var(--transition-fast);
+    }
+    .gm-card-del:hover { color: var(--bad); border-color: var(--bad); }
+    .gm-empty {
+      margin-top: 40px; text-align: center; color: var(--text-muted); font-size: 0.95rem; line-height: 1.9;
+      background: var(--bg-card); border: 1px dashed var(--border); border-radius: 16px; padding: 40px 20px;
+    }
+    .gm-home-link { display: inline-block; margin-top: 22px; color: var(--huo-color); font-weight: 700; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="gm-wrap">
+    <div class="gm-topbar">
+      <h1>📌 我的语法记忆卡</h1>
+      <span class="gm-badge">口诀 & 易错点</span>
+    </div>
+    <p style="color:var(--text-muted); font-size:.9rem; margin:0;">火宝宝帮你收藏的口诀都在这里，随时回看复习～ 在任意一章 STEP 1 点「收藏记忆卡」就能存进来。</p>
+    <div class="gm-cards" id="gm-cards"></div>
+    <a class="gm-home-link" href="index.html">← 返回全部语法</a>
+  </div>
+  <script src="grammar-data.js"></script>
+  <script>
+    (function () {
+      var MOD = window.GRAMMAR_MODULES || {};
+      var raw = [];
+      try { raw = JSON.parse(localStorage.getItem('gm2_cards') || '[]'); } catch (e) {}
+      // 兼容旧格式（仅小节 id）+ 去重，规整成「章::节」
+      var seen = {}, norm = [];
+      raw.forEach(function (r) {
+        var key = r;
+        if (typeof r === 'string' && r.indexOf('::') < 0) {
+          var found = null;
+          Object.keys(MOD).forEach(function (mid) {
+            if (found) return;
+            (MOD[mid].sections || []).forEach(function (sec) { if (sec.id === r) found = mid + '::' + r; });
+          });
+          if (found) key = found; else return; // 孤儿条目跳过
+        }
+        if (seen[key]) return;
+        seen[key] = true; norm.push(key);
+      });
+      try { localStorage.setItem('gm2_cards', JSON.stringify(norm)); } catch (e) {}
+
+      var c = document.getElementById('gm-cards');
+      if (!norm.length) {
+        c.innerHTML = '<div class="gm-empty">还没有收藏任何记忆卡～<br>去任意一章 STEP 1 点「📌 收藏记忆卡」就能存进来，<br>火宝宝帮你把口诀都收好。</div>';
+        return;
+      }
+      var html = '';
+      norm.forEach(function (key) {
+        var p = key.split('::'); var mid = p[0], sid = p[1];
+        var m = MOD[mid]; if (!m) return;
+        var sec = null;
+        (m.sections || []).forEach(function (s) { if (s.id === sid) sec = s; });
+        if (!sec) return;
+        var mnem = (sec.intro && sec.intro.mnemonic) ? sec.intro.mnemonic : '';
+        var concept = (sec.intro && sec.intro.concept) ? sec.intro.concept : '';
+        html += '<div class="gm-card-item" data-key="' + key + '">'
+          + '<div class="gm-card-chap">' + (m.icon || '🔥') + ' ' + m.title + '</div>'
+          + '<div class="gm-card-sec">' + sec.title + '</div>'
+          + (mnem ? '<div class="gm-card-mnem"><span class="gm-card-tag">📌 口诀</span>' + mnem + '</div>' : '')
+          + (concept ? '<div class="gm-card-concept">' + concept + '</div>' : '')
+          + '<div class="gm-card-actions">'
+          + '<a class="gm-card-go" href="grammar.html?id=' + mid + '">去复习 →</a>'
+          + '<button class="gm-card-del" data-key="' + key + '">🗑️ 删除</button>'
+          + '</div></div>';
+      });
+      c.innerHTML = html;
+
+      c.querySelectorAll('.gm-card-del').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var k = btn.getAttribute('data-key');
+          var arr = [];
+          try { arr = JSON.parse(localStorage.getItem('gm2_cards') || '[]'); } catch (e) {}
+          arr = arr.filter(function (x) { return x !== k; });
+          try { localStorage.setItem('gm2_cards', JSON.stringify(arr)); } catch (e) {}
+          var item = c.querySelector('.gm-card-item[data-key="' + k + '"]');
+          if (item) item.remove();
+          if (!arr.length) location.reload();
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
