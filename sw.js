@@ -1,5 +1,5 @@
 // Service Worker - 缓存离线使用
-const CACHE_NAME = 'english-vocab-v51';
+const CACHE_NAME = 'english-vocab-v52';
 const ASSETS = [
   './',
   './index.html',
@@ -16,6 +16,11 @@ const ASSETS = [
   './assets/qilin/qilin-5.png',
   './assets/qilin/qilin-6.png',
   './assets/qilin/qilin-7.png',
+  './grammar/grammar.html',
+  './grammar/index.html',
+  './grammar/grammar-common.js',
+  './grammar/grammar-common.css',
+  './grammar/grammar-data.js',
 ];
 
 self.addEventListener('install', (e) => {
