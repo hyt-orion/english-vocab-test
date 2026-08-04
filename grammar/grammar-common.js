@@ -330,6 +330,7 @@
       var retry = (q.type === 'fill' || q.type === 'correct' || q.type === 'transform');
       fb.innerHTML = (retry ? '❌ 不对，再想想。' : '❌ 不对哦。') + ' <span class="gm2-exp">' + q.explain + '</span>';
       addWrong(s, qi);
+      recordGrammarWrong(curMod(), s, qi, user);
       gentle();
     }
     updateStreakBanner();
@@ -406,7 +407,7 @@
         if (type === 'mcq') { var p = qEl.querySelector('.gm2-opt.pick'); if (!p) { fb.className = 'gm2-fb bad'; fb.textContent = '先选一个'; return; } user = p.getAttribute('data-val'); }
         else { user = (qEl.querySelector('.gm2-input').value || '').trim(); if (!user) { fb.className = 'gm2-fb bad'; fb.textContent = '先写'; return; } }
         if (normalize(user) === normalize(q.answer)) { qEl.classList.add('solved'); fb.className = 'gm2-fb ok'; fb.innerHTML = '✅ 这回对了！ ' + q.explain; removeWrong(s, qi); }
-        else { fb.className = 'gm2-fb bad'; fb.innerHTML = '❌ 还是不对，看解析：' + q.explain; }
+        else { fb.className = 'gm2-fb bad'; fb.innerHTML = '❌ 还是不对，看解析：' + q.explain; recordGrammarWrong(curMod(), s, qi, user); }
       });
     });
   }
@@ -437,9 +438,39 @@
   function pin(id, s) {
     try {
       var cards = JSON.parse(localStorage.getItem('gm2_cards') || '[]');
-      if (cards.indexOf(id) < 0) { cards.push(id); localStorage.setItem('gm2_cards', JSON.stringify(cards)); }
+      var key = getId() + '::' + id; // 章::节，避免不同章同名小节 id 冲突
+      if (cards.indexOf(key) < 0) { cards.push(key); localStorage.setItem('gm2_cards', JSON.stringify(cards)); }
       var b = root.querySelector('[data-pin="' + id + '"]');
       if (b) { b.textContent = '✅ 已收藏'; b.disabled = true; }
+    } catch (e) {}
+  }
+  /* 把语法错题写入主程序错题本（同域 localStorage，key 与 app.js 完全一致：wrongBook）。
+     去重按 章+节+题，避免重复刷入；配对题(match)不进错题本。 */
+  function recordGrammarWrong(m, s, qi, userAnswer) {
+    try {
+      if (!m || !s || !s.practice || !s.practice[qi]) return;
+      var q = s.practice[qi];
+      if (q.type === 'match') return;
+      var qid = 'grammar-' + m.id + '-' + s.id + '-' + qi;
+      var book = [];
+      try { book = JSON.parse(localStorage.getItem('wrongBook') || '[]'); } catch (e) {}
+      if (book.some(function (w) { return w.questionId === qid && w.sourceTitle === m.title; })) return;
+      book.unshift({
+        id: 'gw_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+        questionId: qid,
+        question: q.q,
+        options: q.type === 'mcq' ? (q.options || []) : [],
+        answer: q.answer,
+        userAnswer: userAnswer || '',
+        explanation: q.explain || '',
+        knowledgePoints: [m.title],
+        skill: q.type,
+        source: 'grammar',
+        sourceTitle: m.title,
+        date: new Date().toISOString(),
+        mastered: false
+      });
+      localStorage.setItem('wrongBook', JSON.stringify(book));
     } catch (e) {}
   }
   function cheer() {
