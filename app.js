@@ -1630,6 +1630,16 @@ function submitExam() {
   window.scrollTo(0, 0);
 }
 
+// 技能维度中文名（供能力分析与个性化建议共用）
+const SKILL_NAMES = {
+  grammar: '语法',
+  vocabulary: '词汇',
+  reading: '阅读理解',
+  cloze: '完形填空',
+  communication: '情景交际',
+  other: '其他',
+};
+
 function renderExamAnalysis(sectionResults, exam, wrongQuestions, scorePct) {
   const container = document.getElementById('exam-analysis');
 
@@ -1656,15 +1666,6 @@ function renderExamAnalysis(sectionResults, exam, wrongQuestions, scorePct) {
     skillStats[skill].total++;
     if (item.isCorrect) skillStats[skill].correct++;
   });
-
-  const skillNames = {
-    grammar: '语法',
-    vocabulary: '词汇',
-    reading: '阅读理解',
-    cloze: '完形填空',
-    communication: '情景交际',
-    other: '其他',
-  };
 
   // ===== 2. 知识点分析 =====
   const kpStats = {}; // knowledgePoint -> {total, correct}
@@ -1695,7 +1696,7 @@ function renderExamAnalysis(sectionResults, exam, wrongQuestions, scorePct) {
   const radarData = radarSkills.map(s => {
     const stat = skillStats[s] || { total: 0, correct: 0 };
     return {
-      name: skillNames[s] || s,
+      name: SKILL_NAMES[s] || s,
       pct: stat.total > 0 ? Math.round(stat.correct / stat.total * 100) : 0,
     };
   });
@@ -1961,7 +1962,7 @@ function generateRecommendations(scorePct, weakKps, diffStats, skillStats) {
     stat.total >= 2 && stat.correct / stat.total >= 0.8
   );
   if (strongSkills.length > 0) {
-    const names = strongSkills.map(([s]) => skillNames[s] || s).join('、');
+    const names = strongSkills.map(([s]) => SKILL_NAMES[s] || s).join('、');
     recs.push({ type: 'strength', text: `${names}表现突出，继续保持！` });
   }
 
@@ -2797,7 +2798,7 @@ function renderHuobao() {
 // 生成火宝宝 / 小冰人卡片 HTML。variant: 'fire'（首页）| 'ice'（雅思页）。
 // 功能完全一致（同一套等级 / 打卡 / 徽章数据），仅外观与文案主题不同。
 function buildHuobaoHtml(variant, ctx) {
-  const { current, longest, total, lvl, next, remain, progress, scale, checkedInToday } = ctx;
+  const { current, longest, total, lvl, next, remain, progress, scale, checkedInToday, growth } = ctx;
   const isIce = variant === 'ice';
   const accent = isIce ? ICE_COLOR : lvl.color;
   const mascot = isIce ? iceSvg(lvl.lv) : flameSvg(lvl.lv);
