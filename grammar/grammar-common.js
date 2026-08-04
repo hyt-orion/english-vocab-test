@@ -22,11 +22,11 @@
     return lvl;
   }
   // 读取与主页面一致的火宝宝状态（等级 / 成长值 / 主题火或冰）
-  // 主页面把成长值存于 `u:<用户名>:huobao_growth`（命名空间隔离），此处直接读同一处
+  // 注意：主页面 app.js 把成长值存于「未命名空间」的 huobao_growth（与 huobao_growth_log /
+  // huobao_theme_pref / huobao_achievements 同套 key），此处直接读同一处，保证和 App 主页完全一致。
   function getHuobaoState() {
-    var username = (localStorage.getItem('evm_current_user') || sessionStorage.getItem('evm_current_user') || '').trim();
-    var growth = parseInt(localStorage.getItem('u:' + username + ':huobao_growth') || '0', 10) || 0;
-    var variant = (((localStorage.getItem('u:' + username + ':huobao_theme_pref') || 'fire') + '').trim() === 'ice') ? 'ice' : 'fire';
+    var growth = parseInt(localStorage.getItem('huobao_growth') || '0', 10) || 0;
+    var variant = (localStorage.getItem('huobao_theme_pref') || 'fire') === 'ice' ? 'ice' : 'fire';
     var L = getHuobaoLevelByGrowth(growth);
     return { level: L.lv, growth: growth, variant: variant, name: variant === 'ice' ? L.iceName : L.name };
   }
@@ -187,6 +187,36 @@
     if (bar) bar.style.width = pct + '%';
   }
 
+  // 学完本章给火宝宝加成长值（每章仅首次发放，防止「再学一遍」刷分）
+  // 写入的 key 与 app.js 完全一致（huobao_growth / huobao_growth_log），写回 localStorage 时
+  // 主程序标签页会通过 storage 事件实时刷新火宝宝等级与成就。
+  var GRAMMAR_DONE_KEY = 'grammar_modules_done';
+  var GRAMMAR_REWARD = 5;
+  function awardGrammarGrowth(id, title) {
+    try {
+      var done = {};
+      try { done = JSON.parse(localStorage.getItem(GRAMMAR_DONE_KEY) || '{}'); } catch (e) {}
+      if (done[id]) return false; // 本章已发放过，不再加
+      done[id] = true;
+      localStorage.setItem(GRAMMAR_DONE_KEY, JSON.stringify(done));
+      var g = parseInt(localStorage.getItem('huobao_growth') || '0', 10) || 0;
+      g += GRAMMAR_REWARD;
+      localStorage.setItem('huobao_growth', String(g));
+      var log = [];
+      try { log = JSON.parse(localStorage.getItem('huobao_growth_log') || '[]'); } catch (e) {}
+      log.push({
+        t: Date.now(),
+        date: new Date().toISOString().slice(0, 10),
+        reason: '语法互动·' + (title || id),
+        points: GRAMMAR_REWARD,
+        balance: g
+      });
+      if (log.length > 200) log.splice(0, log.length - 200);
+      localStorage.setItem('huobao_growth_log', JSON.stringify(log));
+      return true;
+    } catch (e) { return false; }
+  }
+
   function finish() {
     var id = getId();
     var done = document.getElementById('gm-done');
@@ -198,6 +228,17 @@
     sub.textContent = allRight ? '火宝宝给你点了一万个赞，去挑战下一章吧！' : '错题回顾一下，火宝宝相信你可以全对！';
     done.classList.add('show');
     setProgress(id, { done: true, correct: state.correct, total: state.total, date: new Date().toISOString().slice(0, 10) });
+    // 通关发成长值（首次完成才发）+ 即时反馈
+    var m = MODULES[id];
+    var awarded = awardGrammarGrowth(id, m ? m.title : id);
+    if (awarded) {
+      var hb = getHuobaoState();
+      var lvlTag = document.querySelector('.gm-level-tag');
+      if (lvlTag) lvlTag.textContent = 'Lv.' + hb.level + ' ' + hb.name;
+      var mascotImg = document.querySelector('.gm-mascot img');
+      if (mascotImg) mascotImg.src = '../assets/qilin/qilin-' + hb.level + '.png';
+      sub.textContent += ' 🔥 火宝宝成长 +' + GRAMMAR_REWARD + '！';
+    }
     if (allRight) confetti();
   }
 
@@ -206,6 +247,7 @@
     var canvas = document.getElementById('gm-confetti');
     if (!canvas) return;
     var ctx = canvas.getContext('2d');
+    if (!ctx) return; // 环境不支持 canvas 时静默跳过（如部分无 canvas 的测试/老浏览器）
     var W = canvas.width = window.innerWidth, H = canvas.height = window.innerHeight;
     var colors = ['#ff8a00', '#ff5e3a', '#f59e0b', '#34d399', '#fb923c', '#fff'];
     var parts = [];
