@@ -848,6 +848,9 @@ function finishTest() {
   App.record.totalTests++;
   saveRecord();
 
+  // 满分成就标记（供成就检测在刷新时读取）
+  if (accuracy >= 100) localStorage.setItem('huobao_had_perfect', '1');
+
   // 记录每日目标
   recordDailyActivity('test');
   recordDailyActivity('word', correct);
@@ -2355,8 +2358,12 @@ function recordDailyActivity(type, count = 1) {
   saveDailyGoals(goals);
   // 记录到学习日历
   logStudyActivity(type, count);
+  // 学习行为成长值奖励（背词 / 测试 / 考试）
+  awardGrowthByActivity(type, count);
   // 完成今日全部学习目标 → 发放成长值奖励（每天仅一次）
   checkDailyGoalBonus();
+  // 统一刷新火宝宝（跨级自动播放升级庆祝）
+  afterGrowthChange();
 }
 
 // 今日目标全部达成时，发放一次成长值奖励
@@ -2371,7 +2378,6 @@ function checkDailyGoalBonus() {
   localStorage.setItem('huobao_goal_awarded', today);
   addGrowth(HUOBAO_GOAL_POINTS, '完成今日目标');
   showToast(`🎯 今日目标全部完成！成长值 +${HUOBAO_GOAL_POINTS}`);
-  afterGrowthChange();
 }
 
 // ==================== 学习打卡日历 ====================
@@ -2559,10 +2565,38 @@ function getGrowth() {
   return parseInt(localStorage.getItem('huobao_growth') || '0', 10) || 0;
 }
 
+// 成长值明细日志（保留最近 200 条，用于「成长值明细」展示）
+const HUOBAO_GROWTH_LOG_KEY = 'huobao_growth_log';
+function getGrowthLog() {
+  try { return JSON.parse(localStorage.getItem(HUOBAO_GROWTH_LOG_KEY) || '[]'); }
+  catch (e) { return []; }
+}
+
 function addGrowth(points, reason) {
   const g = getGrowth() + (points || 0);
   localStorage.setItem('huobao_growth', String(g));
+  // 明细：来源 + 本次增减 + 余额
+  const log = getGrowthLog();
+  log.push({
+    t: Date.now(),
+    date: new Date().toISOString().slice(0, 10),
+    reason: reason || '成长值',
+    points: points || 0,
+    balance: g,
+  });
+  if (log.length > 200) log.splice(0, log.length - 200);
+  localStorage.setItem(HUOBAO_GROWTH_LOG_KEY, JSON.stringify(log));
   return g;
+}
+
+// 按学习行为发放成长值：背单词每词 +1 / 词汇测试 +3 / 模拟考试 +8
+const HUOBAO_GROWTH_BY_ACTIVITY = { word: 1, test: 3, exam: 8 };
+function awardGrowthByActivity(type, count) {
+  const per = HUOBAO_GROWTH_BY_ACTIVITY[type];
+  if (!per) return;
+  const pts = type === 'word' ? per * (count || 1) : per;
+  const label = type === 'word' ? ('背单词 ×' + (count || 1)) : (type === 'test' ? '词汇测试' : '模拟考试');
+  addGrowth(pts, label);
 }
 
 // 成长值变化后：重渲染并检测是否跨等级（跨级则播放升级庆祝）
@@ -2572,6 +2606,7 @@ function afterGrowthChange() {
   const seen = parseInt(localStorage.getItem('huobao_seen_growth') || '1', 10);
   renderHuobao();
   renderStreakFlame();
+  checkAchievements();
   if (lvl.lv > seen) {
     localStorage.setItem('huobao_seen_growth', String(lvl.lv));
     const isIce = document.body.dataset.appMode === 'ielts';
@@ -2579,6 +2614,82 @@ function afterGrowthChange() {
     showLevelUpBanner(lvl, isIce);
     playSound('levelup');
   }
+}
+
+// ==================== 成就徽章系统（独立于等级） ====================
+const HUOBAO_ACHIEVEMENTS = [
+  { id: 'word50',    name: '初出茅庐', icon: '🌱', desc: '累计背单词 ≥ 50' },
+  { id: 'word100',   name: '百词斩',   icon: '⚔️', desc: '累计背单词 ≥ 100' },
+  { id: 'word1000',  name: '千词斩',   icon: '🗡️', desc: '累计背单词 ≥ 1000' },
+  { id: 'test10',    name: '测试达人', icon: '📝', desc: '完成词汇测试 ≥ 10 次' },
+  { id: 'exam1',     name: '考试勇士', icon: '🛡️', desc: '完成模拟考试 ≥ 1 次' },
+  { id: 'streak7',   name: '七日筑基', icon: '🔥', desc: '连续打卡 ≥ 7 天' },
+  { id: 'streak30',  name: '月度坚持', icon: '📅', desc: '连续打卡 ≥ 30 天' },
+  { id: 'growth100', name: '成长新星', icon: '⭐', desc: '累计成长值 ≥ 100' },
+  { id: 'growth1k',  name: '成长大师', icon: '🌟', desc: '累计成长值 ≥ 1000' },
+  { id: 'perfect',   name: '满分学霸', icon: '💯', desc: '单次测试正确率 100%' },
+];
+
+function getAchievements() {
+  try { return JSON.parse(localStorage.getItem('huobao_achievements') || '{}'); }
+  catch (e) { return {}; }
+}
+
+function gatherAchievementStats() {
+  const log = getStudyLog();
+  let totalWords = 0, totalExams = 0;
+  for (const d in log) {
+    totalWords += log[d].words || 0;
+    totalExams += log[d].exams || 0;
+  }
+  const { current } = getStreakState();
+  return {
+    totalWords,
+    totalExams,
+    totalTests: (typeof App !== 'undefined' && App.record) ? App.record.totalTests : 0,
+    currentStreak: current,
+    growth: getGrowth(),
+    hasPerfect: localStorage.getItem('huobao_had_perfect') === '1',
+  };
+}
+
+function achMatches(a, s) {
+  switch (a.id) {
+    case 'word50':    return s.totalWords >= 50;
+    case 'word100':   return s.totalWords >= 100;
+    case 'word1000':  return s.totalWords >= 1000;
+    case 'test10':    return s.totalTests >= 10;
+    case 'exam1':     return s.totalExams >= 1;
+    case 'streak7':   return s.currentStreak >= 7;
+    case 'streak30':  return s.currentStreak >= 30;
+    case 'growth100': return s.growth >= 100;
+    case 'growth1k':  return s.growth >= 1000;
+    case 'perfect':   return s.hasPerfect;
+    default: return false;
+  }
+}
+
+function checkAchievements() {
+  const s = gatherAchievementStats();
+  const unlocked = getAchievements();
+  const newly = [];
+  HUOBAO_ACHIEVEMENTS.forEach(a => {
+    if (!unlocked[a.id] && achMatches(a, s)) {
+      unlocked[a.id] = true;
+      newly.push(a);
+    }
+  });
+  if (!newly.length) return;
+  localStorage.setItem('huobao_achievements', JSON.stringify(unlocked));
+  newly.forEach((a, i) => {
+    setTimeout(() => {
+      spawnConfetti(80);
+      showToast(`🏆 解锁成就「${a.name}」 ${a.icon} · ${a.desc}`);
+      playSound('unlock');
+    }, 500 + i * 2600);
+  });
+  // 立即刷新成就墙，让新解锁的徽章点亮
+  renderHuobao();
 }
 
 function getStreakState() {
@@ -2601,6 +2712,19 @@ function markDailyCheckIn() {
   // 成长值：每日签到 +5（每天仅一次）
   addGrowth(HUOBAO_CHECKIN_POINTS, '签到');
   const { current } = getStreakState();
+  // 连续打卡里程碑奖励（7天+10 / 30天+30 / 100天+100，各一次性）
+  let milestoneMsg = '';
+  const streakBonus = { 7: 10, 30: 30, 100: 100 };
+  const sbAwarded = JSON.parse(localStorage.getItem('huobao_streak_bonus') || '{}');
+  for (const k in streakBonus) {
+    if (current >= Number(k) && !sbAwarded[k]) {
+      sbAwarded[k] = true;
+      addGrowth(streakBonus[k], '连续打卡' + k + '天');
+      milestoneMsg = `🎖️ 连续打卡 ${k} 天里程碑！成长值 +${streakBonus[k]}`;
+    }
+  }
+  if (milestoneMsg) localStorage.setItem('huobao_streak_bonus', JSON.stringify(sbAwarded));
+  checkAchievements();
   const lvl = getHuobaoLevel(getGrowth());
   const seen = parseInt(localStorage.getItem('huobao_seen_growth') || '1', 10);
   renderHuobao();
@@ -2616,6 +2740,8 @@ function markDailyCheckIn() {
       ? `❄️ 打卡成功！小冰人已连续冻结 ${current} 天 · ${lvl.iceName} · 成长值 +${HUOBAO_CHECKIN_POINTS}`
       : `🔥 打卡成功！火宝宝已连续燃烧 ${current} 天 · ${lvl.name} · 成长值 +${HUOBAO_CHECKIN_POINTS}`);
   }
+  // 里程碑奖励提示（延迟到签到提示之后，避免被覆盖）
+  if (milestoneMsg) setTimeout(() => showToast(milestoneMsg), 2650);
 }
 
 // ==================== 火麒麟 7 级（图片素材，严格按「火宝宝7级升级图鉴」参考图抠图） ====================
@@ -2704,6 +2830,7 @@ function showLevelUpBanner(lvl, isIce) {
     document.body.appendChild(b);
   }
   b.innerHTML = `<div class="hb-levelup-card" style="--huo-color:${lvl.color}">
+      <div class="hb-levelup-mascot">${isIce ? iceSvg(lvl.lv) : flameSvg(lvl.lv)}</div>
       <div class="hb-levelup-emoji">${isIce ? '🧊' : '🎉'}</div>
       <div class="hb-levelup-title">${isIce ? '小冰人升级啦！' : '火宝宝升级啦！'}</div>
       <div class="hb-levelup-lv" style="color:${lvl.color}">Lv.${lvl.lv} ${isIce ? lvl.iceName : lvl.name}</div>
@@ -2784,15 +2911,25 @@ function renderHuobao() {
 
   const scale = (1 + idx * 0.07).toFixed(2);
   const ctx = { current, longest, total, growth, lvl, next, remain, progress, scale, checkedInToday };
+  const pref = localStorage.getItem('huobao_theme_pref');
   const c1 = document.getElementById('huobao-card');
-  if (c1) c1.innerHTML = buildHuobaoHtml('fire', ctx);
+  if (c1) c1.innerHTML = buildHuobaoHtml(pref || 'fire', ctx);
   const c2 = document.getElementById('huobao-card-ielts');
-  if (c2) c2.innerHTML = buildHuobaoHtml('ice', ctx);
+  if (c2) c2.innerHTML = buildHuobaoHtml(pref || 'ice', ctx);
   // 首次渲染把 seen 同步到当前成长等级，避免误触发升级庆祝
   if (localStorage.getItem('huobao_seen_growth') === null) {
     localStorage.setItem('huobao_seen_growth', String(lvl.lv));
   }
   renderStreakFlame();
+}
+
+// 手动切换火 / 冰主题（全局偏好，两个卡片同步）
+function toggleHuobaoTheme() {
+  const cur = localStorage.getItem('huobao_theme_pref');
+  const next = (cur === 'ice') ? 'fire' : 'ice';
+  localStorage.setItem('huobao_theme_pref', next);
+  renderHuobao();
+  showToast(next === 'ice' ? '❄️ 已切换到小冰人主题' : '🔥 已切换到火宝宝主题');
 }
 
 // 生成火宝宝 / 小冰人卡片 HTML。variant: 'fire'（首页）| 'ice'（雅思页）。
@@ -2844,6 +2981,7 @@ function buildHuobaoHtml(variant, ctx) {
           <span class="hb-title">${title}</span>
           <span class="hb-lvname" style="color:${accent}">${lvlName}</span>
           <span class="hb-title-badge">🏅 ${isIce ? (lvl.iceTitle || lvl.title) : lvl.title}</span>
+          <button class="hb-theme-toggle" onclick="toggleHuobaoTheme()" title="切换火 / 冰主题">${isIce ? '🔥' : '❄️'}</button>
         </div>
         <div class="hb-stats">
           <div class="hb-stat"><span class="hb-num">${growth}</span><span class="hb-lbl">成长值</span></div>
@@ -2862,9 +3000,65 @@ function buildHuobaoHtml(variant, ctx) {
         </div>
         <div class="hb-badges-title">🎁 成长奖励 · 点徽章看详情</div>
         <div class="hb-badges">${badges}</div>
+        ${hbDailyTasksHtml(getDailyGoals())}
+        ${hbGrowthLogHtml(getGrowthLog())}
+        ${hbAchievementsHtml(getAchievements())}
       </div>
     </div>
   `;
+}
+
+// ==================== 火宝宝卡片内嵌区块（任务 / 明细 / 成就） ====================
+function hbDailyTasksHtml(goals) {
+  const row = (label, done, target) => {
+    if (!target) return '';
+    const pct = Math.min(100, Math.round((done / target) * 100));
+    const done2 = done >= target;
+    return `<div class="hb-task ${done2 ? 'done' : ''}">
+      <span class="hb-task-ico">${done2 ? '✅' : '🎯'}</span>
+      <span class="hb-task-name">${label}</span>
+      <span class="hb-task-prog">${Math.min(done, target)}/${target}</span>
+      <div class="hb-task-bar"><div class="hb-task-fill" style="width:${pct}%"></div></div>
+    </div>`;
+  };
+  const rows = row('背单词', goals.wordsDone || 0, goals.wordsTarget)
+    + row('做测试', goals.testDone || 0, goals.testTarget)
+    + row('模拟考', goals.examDone || 0, goals.examTarget);
+  if (!rows) return '';
+  return `<div class="hb-section">
+    <div class="hb-section-title">📋 今日任务</div>
+    <div class="hb-tasks">${rows}</div>
+  </div>`;
+}
+
+function hbGrowthLogHtml(log) {
+  const items = (log || []).slice(-6).reverse().map(r =>
+    `<div class="hb-log-row">
+      <span class="hb-log-reason">${r.reason}</span>
+      <span class="hb-log-pts">${r.points >= 0 ? '+' : ''}${r.points}</span>
+      <span class="hb-log-bal">${r.balance}</span>
+    </div>`).join('');
+  return `<details class="hb-section hb-log">
+    <summary>📜 成长值明细（${log ? log.length : 0} 条）</summary>
+    <div class="hb-log-list">${items || '<div class="hb-log-empty">还没有记录，去学习或打卡吧～</div>'}</div>
+  </details>`;
+}
+
+function hbAchievementsHtml(got) {
+  got = got || {};
+  const total = HUOBAO_ACHIEVEMENTS.length;
+  const cnt = HUOBAO_ACHIEVEMENTS.filter(a => got[a.id]).length;
+  const cells = HUOBAO_ACHIEVEMENTS.map(a => {
+    const on = !!got[a.id];
+    return `<div class="hb-ach ${on ? 'got' : ''}" title="${a.name} · ${a.desc}">
+      <div class="hb-ach-icon">${on ? a.icon : '🔒'}</div>
+      <div class="hb-ach-name">${a.name}</div>
+    </div>`;
+  }).join('');
+  return `<div class="hb-section">
+    <div class="hb-section-title">🏆 成就墙（${cnt}/${total}）</div>
+    <div class="hb-achievements">${cells}</div>
+  </div>`;
 }
 
 function showToast(msg) {
