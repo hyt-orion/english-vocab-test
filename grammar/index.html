@@ -22,6 +22,14 @@
     }
     .gm-chap.done .gm-chap-badge { background: linear-gradient(135deg, var(--huo-color), var(--huo-2)); color: #fff; }
     .gm-home-link { display: inline-block; margin-top: 18px; color: var(--huo-color); font-weight: 700; text-decoration: none; }
+    .gm-cards-link {
+      display: inline-flex; align-items: center; gap: 6px; margin-top: 14px;
+      padding: 9px 16px; border-radius: 999px; font-size: 0.85rem; font-weight: 800;
+      color: #fff; text-decoration: none;
+      background: linear-gradient(135deg, var(--huo-color), var(--huo-2));
+      box-shadow: 0 6px 18px -6px var(--huo-2); transition: var(--transition-fast);
+    }
+    .gm-cards-link:hover { transform: translateY(-2px); }
   </style>
 </head>
 <body>
@@ -32,6 +40,7 @@
     </div>
     <p style="color:var(--text-muted); font-size:.9rem; margin:0;">13 个语法大章，点开就能学一点、练一点。视频版权问题？不存在的，全是原创讲解～</p>
     <div class="gm-user-hb" id="gm-user-hb"></div>
+    <a class="gm-cards-link" id="gm-cards-link" href="cards.html">📌 我的记忆卡</a>
     <div class="gm-grid" id="gm-grid"></div>
     <a class="gm-home-link" href="../index.html">← 返回 App 首页</a>
   </div>
@@ -70,6 +79,12 @@
           '<div><div class="gm-user-hb-name">你的火宝宝 · Lv.' + hb.level + ' ' + hb.name + '</div>' +
           '<div class="gm-user-hb-sub">成长值 ' + hb.growth + ' · 和 App 主页同步</div></div>';
       }
+
+      // 记忆卡入口计数
+      var cardsCount = 0;
+      try { cardsCount = (JSON.parse(localStorage.getItem('gm2_cards') || '[]')).length; } catch (e) {}
+      var cl = document.getElementById('gm-cards-link');
+      if (cl) cl.textContent = '📌 我的记忆卡' + (cardsCount ? ' (' + cardsCount + ')' : '');
     })();
   </script>
 </body>
