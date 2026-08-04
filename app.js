@@ -2354,6 +2354,23 @@ function recordDailyActivity(type, count = 1) {
   saveDailyGoals(goals);
   // 记录到学习日历
   logStudyActivity(type, count);
+  // 完成今日全部学习目标 → 发放成长值奖励（每天仅一次）
+  checkDailyGoalBonus();
+}
+
+// 今日目标全部达成时，发放一次成长值奖励
+function checkDailyGoalBonus() {
+  const goals = getDailyGoals();
+  const allMet = goals.wordsDone >= goals.wordsTarget
+    && goals.testDone >= goals.testTarget
+    && (goals.examTarget === 0 || goals.examDone >= goals.examTarget);
+  if (!allMet) return;
+  const today = new Date().toDateString();
+  if (localStorage.getItem('huobao_goal_awarded') === today) return;
+  localStorage.setItem('huobao_goal_awarded', today);
+  addGrowth(HUOBAO_GOAL_POINTS, '完成今日目标');
+  showToast(`🎯 今日目标全部完成！成长值 +${HUOBAO_GOAL_POINTS}`);
+  afterGrowthChange();
 }
 
 // ==================== 学习打卡日历 ====================
@@ -2508,14 +2525,18 @@ function renderStudyCalendar() {
 
 // ==================== 火宝宝 · 连续打卡奖励系统 ====================
 // 每个等级含两套主题：火系（首页/标准版）+ 冰系（雅思页）。其它文案（title/reward/desc）共用。
+// 成长值发放规则
+const HUOBAO_CHECKIN_POINTS = 5;   // 每日签到可得成长值
+const HUOBAO_GOAL_POINTS = 10;     // 完成今日全部学习目标可得成长值
+// 等级按「累计成长值」定级（满级 Lv7 需累计 1000 成长值）
 const HUOBAO_LEVELS = [
-  { lv: 1, name: '小火苗',   iceName: '小冰晶',   min: 0,   emoji: '🔥', iceEmoji: '❄️', color: '#fb923c', desc: '刚刚点燃，每天都来喂火吧！',       iceDesc: '刚刚凝结，每天都来养冰吧！',         title: '萌新小火',   iceTitle: '萌新小冰',  reward: '点亮火宝宝，开启你的连续打卡之旅',       iceReward: '点亮小冰人，开启你的连续打卡之旅' },
-  { lv: 2, name: '跳跳火',   iceName: '跳跳冰',   min: 3,   emoji: '🔥', iceEmoji: '❄️', color: '#f97316', desc: '连续 3 天，火苗稳住了',         iceDesc: '连续 3 天，冰晶稳固了',           title: '三日萌新',   iceTitle: '三日萌冰',  reward: '解锁「跳跳火」头像框 · 火宝宝动作更活泼',  iceReward: '解锁「跳跳冰」头像框 · 小冰人动作更活泼' },
-  { lv: 3, name: '烈焰宝宝', iceName: '冰晶宝宝', min: 7,   emoji: '🔥', iceEmoji: '❄️', color: '#ef4444', desc: '坚持一周，超棒！',             iceDesc: '坚持一周，超棒！',             title: '周更达人',   iceTitle: '周更学徒',  reward: '解锁火焰主题光效 · 打卡卡片专属暖色底',    iceReward: '解锁冰晶主题光效 · 打卡卡片专属冷色底' },
-  { lv: 4, name: '炽焰精灵', iceName: '寒霜精灵', min: 14,  emoji: '🔥', iceEmoji: '❄️', color: '#ec4899', desc: '两周不间断，渐入佳境',         iceDesc: '两周不间断，渐入佳境',         title: '半月骑士',   iceTitle: '半月骑士',  reward: '解锁「炽焰精灵」称号牌 · 成就墙点亮',       iceReward: '解锁「寒霜精灵」称号牌 · 成就墙点亮' },
-  { lv: 5, name: '炎龙之魂', iceName: '冰龙之魂', min: 30,  emoji: '🔥', iceEmoji: '❄️', color: '#a855f7', desc: '月度学习战士',               iceDesc: '月度学习战士',               title: '月度战神',   iceTitle: '月度战神',  reward: '解锁金色流光特效 · 专属荣誉徽章',         iceReward: '解锁蓝白流光特效 · 专属荣誉徽章' },
-  { lv: 6, name: '不灭圣火', iceName: '不灭玄冰', min: 60,  emoji: '🔥', iceEmoji: '❄️', color: '#6366f1', desc: '两个月坚如磐石',             iceDesc: '两个月坚如磐石',             title: '两月磐石',   iceTitle: '两月磐冰',  reward: '解锁「不灭圣火」终身勋章 · 段位永久展示',   iceReward: '解锁「不灭玄冰」终身勋章 · 段位永久展示' },
-  { lv: 7, name: '传说火神', iceName: '传说冰神', min: 100, emoji: '🔥', iceEmoji: '❄️', color: '#f59e0b', desc: '百天传奇，封神！',           iceDesc: '百天传奇，封冰！',           title: '百天传奇',   iceTitle: '百天传奇',  reward: '解锁传说称号 + 终身荣誉墙 · 全站最靓的仔', iceReward: '解锁传说称号 + 终身荣誉墙 · 全站最靓的仔' },
+  { lv: 1, name: '小火苗',   iceName: '小冰晶',   min: 0,    emoji: '🔥', iceEmoji: '❄️', color: '#fb923c', desc: '刚刚点燃，每天来攒成长值吧！',       iceDesc: '刚刚凝结，每天来攒成长值吧！',         title: '萌新小火',   iceTitle: '萌新小冰',  reward: '点亮火宝宝，开启你的成长之旅',           iceReward: '点亮小冰人，开启你的成长之旅' },
+  { lv: 2, name: '跳跳火',   iceName: '跳跳冰',   min: 20,   emoji: '🔥', iceEmoji: '❄️', color: '#f97316', desc: '攒够 20 成长值，火苗稳住了',         iceDesc: '攒够 20 成长值，冰晶稳固了',           title: '初露锋芒',   iceTitle: '初凝霜华',  reward: '解锁「跳跳火」头像框 · 火宝宝动作更活泼',  iceReward: '解锁「跳跳冰」头像框 · 小冰人动作更活泼' },
+  { lv: 3, name: '烈焰宝宝', iceName: '冰晶宝宝', min: 50,   emoji: '🔥', iceEmoji: '❄️', color: '#ef4444', desc: '攒够 50 成长值，渐入佳境',           iceDesc: '攒够 50 成长值，渐入佳境',             title: '成长新秀',   iceTitle: '成长新秀',  reward: '解锁火焰主题光效 · 打卡卡片专属暖色底',    iceReward: '解锁冰晶主题光效 · 打卡卡片专属冷色底' },
+  { lv: 4, name: '炽焰精灵', iceName: '寒霜精灵', min: 100,  emoji: '🔥', iceEmoji: '❄️', color: '#ec4899', desc: '攒够 100 成长值，渐入佳境',          iceDesc: '攒够 100 成长值，渐入佳境',           title: '进阶骑士',   iceTitle: '进阶骑士',  reward: '解锁「炽焰精灵」称号牌 · 成就墙点亮',       iceReward: '解锁「寒霜精灵」称号牌 · 成就墙点亮' },
+  { lv: 5, name: '炎龙之魂', iceName: '冰龙之魂', min: 250,  emoji: '🔥', iceEmoji: '❄️', color: '#a855f7', desc: '攒够 250 成长值，月度战士',           iceDesc: '攒够 250 成长值，月度战士',           title: '月度战神',   iceTitle: '月度战神',  reward: '解锁金色流光特效 · 专属荣誉徽章',         iceReward: '解锁蓝白流光特效 · 专属荣誉徽章' },
+  { lv: 6, name: '不灭圣火', iceName: '不灭玄冰', min: 550,  emoji: '🔥', iceEmoji: '❄️', color: '#6366f1', desc: '攒够 550 成长值，坚如磐石',           iceDesc: '攒够 550 成长值，坚如磐石',           title: '磐石战神',   iceTitle: '磐石战冰',  reward: '解锁「不灭圣火」终身勋章 · 段位永久展示',   iceReward: '解锁「不灭玄冰」终身勋章 · 段位永久展示' },
+  { lv: 7, name: '传说火神', iceName: '传说冰神', min: 1000, emoji: '🔥', iceEmoji: '❄️', color: '#f59e0b', desc: '攒够 1000 成长值，封神！',           iceDesc: '攒够 1000 成长值，封冰！',           title: '百级传奇',   iceTitle: '百级传奇',  reward: '解锁传说称号 + 终身荣誉墙 · 全站最靓的仔', iceReward: '解锁传说称号 + 终身荣誉墙 · 全站最靓的仔' },
 ];
 
 // 按 variant 取等级展示字段（火/冰）
@@ -2526,10 +2547,37 @@ function pickLevelFields(L, variant) {
   };
 }
 
-function getHuobaoLevel(streak) {
+function getHuobaoLevel(value) {
   let lvl = HUOBAO_LEVELS[0];
-  for (const L of HUOBAO_LEVELS) if (streak >= L.min) lvl = L;
+  for (const L of HUOBAO_LEVELS) if (value >= L.min) lvl = L;
   return lvl;
+}
+
+// ==================== 成长值（替代旧的连续打卡天数定级） ====================
+function getGrowth() {
+  return parseInt(localStorage.getItem('huobao_growth') || '0', 10) || 0;
+}
+
+function addGrowth(points, reason) {
+  const g = getGrowth() + (points || 0);
+  localStorage.setItem('huobao_growth', String(g));
+  return g;
+}
+
+// 成长值变化后：重渲染并检测是否跨等级（跨级则播放升级庆祝）
+function afterGrowthChange() {
+  const growth = getGrowth();
+  const lvl = getHuobaoLevel(growth);
+  const seen = parseInt(localStorage.getItem('huobao_seen_growth') || '1', 10);
+  renderHuobao();
+  renderStreakFlame();
+  if (lvl.lv > seen) {
+    localStorage.setItem('huobao_seen_growth', String(lvl.lv));
+    const isIce = document.body.dataset.appMode === 'ielts';
+    spawnConfetti(130);
+    showLevelUpBanner(lvl, isIce);
+    playSound('levelup');
+  }
 }
 
 function getStreakState() {
@@ -2549,33 +2597,23 @@ function markDailyCheckIn() {
   log[today].checkedIn = true;
   log[today].total = Math.max(log[today].total || 0, 1);
   localStorage.setItem('studyLog', JSON.stringify(log));
+  // 成长值：每日签到 +5（每天仅一次）
+  addGrowth(HUOBAO_CHECKIN_POINTS, '签到');
   const { current } = getStreakState();
-  const lvl = getHuobaoLevel(current);
-  // 升级 / 解锁检测：在 render 之前读取旧的 seen 等级
-  const seen = parseInt(localStorage.getItem('huobao_seen_level') || '1', 10);
-  let unlocked = JSON.parse(localStorage.getItem('huobao_unlocked') || '[]');
-  const newUnlocked = HUOBAO_LEVELS.filter(L => L.min > 0 && current >= L.min && !unlocked.includes(L.lv)).map(L => L.lv);
+  const lvl = getHuobaoLevel(getGrowth());
+  const seen = parseInt(localStorage.getItem('huobao_seen_growth') || '1', 10);
   renderHuobao();
   renderStudyCalendar();
-  if (newUnlocked.length) {
-    unlocked = unlocked.concat(newUnlocked);
-    localStorage.setItem('huobao_unlocked', JSON.stringify(unlocked));
-  }
   if (lvl.lv > seen) {
-    localStorage.setItem('huobao_seen_level', String(lvl.lv));
+    localStorage.setItem('huobao_seen_growth', String(lvl.lv));
     spawnConfetti(130);
     showLevelUpBanner(lvl, isIce);
     playSound('levelup');
-  } else if (newUnlocked.length) {
-    const L = HUOBAO_LEVELS.find(x => x.lv === newUnlocked[newUnlocked.length - 1]);
-    spawnConfetti(80);
-    showLevelUpBanner(L, isIce);
-    playSound('unlock');
   } else {
     playSound('checkin');
     showToast(isIce
-      ? `❄️ 打卡成功！小冰人已连续冻结 ${current} 天 · ${lvl.iceName}`
-      : `🔥 打卡成功！火宝宝已连续燃烧 ${current} 天 · ${lvl.name}`);
+      ? `❄️ 打卡成功！小冰人已连续冻结 ${current} 天 · ${lvl.iceName} · 成长值 +${HUOBAO_CHECKIN_POINTS}`
+      : `🔥 打卡成功！火宝宝已连续燃烧 ${current} 天 · ${lvl.name} · 成长值 +${HUOBAO_CHECKIN_POINTS}`);
   }
 }
 
@@ -2680,8 +2718,8 @@ function showLevelUpBanner(lvl, isIce) {
 function showBadgeReward(lv) {
   const L = HUOBAO_LEVELS.find(x => x.lv === lv);
   if (!L) return;
-  const cur = getStreakState().current;
-  const reached = cur >= L.min;
+  const growth = getGrowth();
+  const reached = growth >= L.min;
   const isIce = document.body.dataset.appMode === 'ielts';
   const Lname = isIce ? L.iceName : L.name;
   const Lemo  = isIce ? L.iceEmoji : L.emoji;
@@ -2699,7 +2737,7 @@ function showBadgeReward(lv) {
       <div class="hb-reward-lv">Lv.${L.lv} · ${Lname}</div>
       <div class="hb-reward-title">🏅 段位称号：${isIce ? (L.iceTitle || L.title) : L.title}</div>
       <div class="hb-reward-desc">${isIce ? (L.iceReward || L.reward) : L.reward}</div>
-      <div class="hb-reward-status ${reached ? 'got' : ''}">${reached ? '✅ 已解锁，荣誉归你！' : ('🔒 还需连续 ' + (L.min - cur) + ' 天解锁')}</div>
+      <div class="hb-reward-status ${reached ? 'got' : ''}">${reached ? '✅ 已解锁，荣誉归你！' : ('🔒 还需 ' + (L.min - growth) + ' 成长值解锁')}</div>
       <button class="hb-reward-share" onclick="shareHuobaoReward(${L.lv})">📤 复制我的成就语</button>
     </div>`;
   void m.offsetWidth;
@@ -2715,13 +2753,13 @@ function closeHbReward() {
 function shareHuobaoReward(lv) {
   const L = HUOBAO_LEVELS.find(x => x.lv === lv);
   if (!L) return;
-  const cur = getStreakState().current;
+  const growth = getGrowth();
   const isIce = document.body.dataset.appMode === 'ielts';
   const who = isIce ? '小冰人' : '火宝宝';
   const Lname = isIce ? L.iceName : L.name;
   const Ltitle = isIce ? (L.iceTitle || L.title) : L.title;
   const Lreward = isIce ? (L.iceReward || L.reward) : L.reward;
-  const text = `${isIce ? '❄️' : '🔥'} 我在「英语词汇大师」连续打卡 ${cur} 天，${who}已成长为 Lv.${L.lv} ${Lname}（${Ltitle}）！${Lreward} 一起来背单词吧～`;
+  const text = `${isIce ? '❄️' : '🔥'} 我在「英语词汇大师」累计成长值 ${growth}，${who}已成长为 Lv.${L.lv} ${Lname}（${Ltitle}）！${Lreward} 一起来背单词吧～`;
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(() => showToast('📤 成就语已复制，去分享吧！')).catch(() => {});
   } else {
@@ -2732,27 +2770,26 @@ function shareHuobaoReward(lv) {
 function renderHuobao() {
   const state = getStreakState();
   const { current, longest, checkedInToday, total } = state;
-  const lvl = getHuobaoLevel(current);
+  const growth = getGrowth();
+  const lvl = getHuobaoLevel(growth);
   const idx = HUOBAO_LEVELS.indexOf(lvl);
   const next = HUOBAO_LEVELS[idx + 1] || null;
   let progress = 1, remain = 0;
   if (next) {
-    progress = (current - lvl.min) / (next.min - lvl.min);
-    remain = next.min - current;
+    progress = (growth - lvl.min) / (next.min - lvl.min);
+    remain = next.min - growth;
   }
   progress = Math.max(0, Math.min(1, progress));
 
   const scale = (1 + idx * 0.07).toFixed(2);
-  const ctx = { current, longest, total, lvl, next, remain, progress, scale, checkedInToday };
+  const ctx = { current, longest, total, growth, lvl, next, remain, progress, scale, checkedInToday };
   const c1 = document.getElementById('huobao-card');
   if (c1) c1.innerHTML = buildHuobaoHtml('fire', ctx);
   const c2 = document.getElementById('huobao-card-ielts');
   if (c2) c2.innerHTML = buildHuobaoHtml('ice', ctx);
-  // 首次渲染把 seen / 已达成就同步到当前等级，避免之后误触发升级庆祝
-  if (localStorage.getItem('huobao_seen_level') === null) {
-    localStorage.setItem('huobao_seen_level', String(lvl.lv));
-    const reached = HUOBAO_LEVELS.filter(L => L.min > 0 && current >= L.min).map(L => L.lv);
-    localStorage.setItem('huobao_unlocked', JSON.stringify(reached));
+  // 首次渲染把 seen 同步到当前成长等级，避免误触发升级庆祝
+  if (localStorage.getItem('huobao_seen_growth') === null) {
+    localStorage.setItem('huobao_seen_growth', String(lvl.lv));
   }
   renderStreakFlame();
 }
@@ -2779,8 +2816,8 @@ function buildHuobaoHtml(variant, ctx) {
 
   // 徽章按 variant 用火/冰名+图标
   const badges = HUOBAO_LEVELS.filter(L => L.min > 0).map(L => {
-    const reached = current >= L.min;
-    const sub = reached ? '已解锁' : ('还需 ' + (L.min - current) + ' 天');
+    const reached = growth >= L.min;
+    const sub = reached ? '已解锁' : ('还需 ' + (L.min - growth) + ' 成长值');
     const Lname = isIce ? L.iceName : L.name;
     const Lemo  = isIce ? L.iceEmoji : L.emoji;
     return `<div class="hb-badge ${reached ? 'reached' : ''}" style="--bc:${L.color}" title="${Lname}：${isIce ? (L.iceDesc || L.desc) : L.desc}" onclick="showBadgeReward(${L.lv})" role="button">
@@ -2808,13 +2845,13 @@ function buildHuobaoHtml(variant, ctx) {
           <span class="hb-title-badge">🏅 ${isIce ? (lvl.iceTitle || lvl.title) : lvl.title}</span>
         </div>
         <div class="hb-stats">
+          <div class="hb-stat"><span class="hb-num">${growth}</span><span class="hb-lbl">成长值</span></div>
           <div class="hb-stat"><span class="hb-num">${current}</span><span class="hb-lbl">连续天数</span></div>
           <div class="hb-stat"><span class="hb-num">${longest}</span><span class="hb-lbl">最长纪录</span></div>
-          <div class="hb-stat"><span class="hb-num">${total}</span><span class="hb-lbl">累计天数</span></div>
         </div>
         <div class="hb-progress-wrap">
           ${next
-            ? `<div class="hb-progress-label">距 <b style="color:${next.color}">${nextName}</b> 还需 <b>${remain}</b> 天</div>`
+            ? `<div class="hb-progress-label">距 <b style="color:${next.color}">${nextName}</b> 还需 <b>${remain}</b> 成长值</div>`
             : `<div class="hb-progress-label">🏆 已达最高等级 · ${lvlName}</div>`}
           <div class="hb-progress"><div class="hb-progress-fill" style="width:${Math.round(progress * 100)}%;background:${accent}"></div></div>
         </div>
@@ -2939,7 +2976,7 @@ function renderStreakFlame() {
   num.textContent = current;
   const mini = document.getElementById('nav-flame-mini');
   if (mini && !mini.dataset.built) {
-    const lvl = getHuobaoLevel(current);
+    const lvl = getHuobaoLevel(getGrowth());
     mini.innerHTML = navFlameSvg(lvl.color);
     mini.dataset.built = '1';
   }
