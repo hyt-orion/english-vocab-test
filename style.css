@@ -2807,6 +2807,39 @@ body[data-app-mode="ielts"] .ielts-tabs {
   outline: none;
 }
 
+/* 视频加载失败兜底提示 */
+.video-fallback {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 220px;
+  padding: 28px 20px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-secondary);
+  border: 1px dashed var(--border);
+  text-align: center;
+  box-sizing: border-box;
+}
+.video-fallback-icon { font-size: 2.2rem; }
+.video-fallback-title { font-size: 1rem; font-weight: 700; color: var(--text); }
+.video-fallback-sub { font-size: 0.82rem; color: var(--text-secondary); max-width: 420px; line-height: 1.5; }
+
+.video-retry {
+  margin-left: auto;
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.video-retry:hover { border-color: var(--accent); color: var(--accent-light); }
+
 /* 视频工具条：倍速 + 下载 */
 .video-wrap { position: relative; }
 .video-toolbar {
