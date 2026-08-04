@@ -3360,6 +3360,55 @@ body[data-app-mode="ielts"] .ielts-tabs {
 }
 .hb-reward-share:hover { transform: translateY(-2px); }
 
+/* ===== 火宝宝内嵌区块：今日任务 / 成长值明细 / 成就墙 ===== */
+.hb-section { margin-top: 16px; padding: 12px 14px; background: var(--bg-secondary); border-radius: 14px; }
+.hb-section-title { font-size: 0.82rem; font-weight: 800; color: var(--text-secondary); margin-bottom: 10px; }
+
+/* 今日任务清单 */
+.hb-tasks { display: flex; flex-direction: column; gap: 9px; }
+.hb-task { display: grid; grid-template-columns: 22px 1fr auto; grid-template-rows: auto auto; gap: 2px 8px; align-items: center; }
+.hb-task-ico { grid-row: 1 / span 2; font-size: 1.1rem; line-height: 1; }
+.hb-task-name { font-size: 0.84rem; font-weight: 700; color: var(--text-primary); }
+.hb-task-prog { font-size: 0.78rem; font-weight: 700; color: var(--huo-color, #fb923c); }
+.hb-task.done .hb-task-name, .hb-task.done .hb-task-prog { color: #16a34a; }
+.hb-task-bar { grid-column: 2 / span 2; height: 6px; background: rgba(128,128,128,.18); border-radius: 999px; overflow: hidden; }
+.hb-task-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--huo-color, #fb923c), #f59e0b); transition: width .5s ease; }
+.hb-task.done .hb-task-fill { background: linear-gradient(90deg, #22c55e, #16a34a); }
+
+/* 成长值明细（可折叠） */
+.hb-log { cursor: pointer; }
+.hb-log > summary { list-style: none; font-size: 0.82rem; font-weight: 800; color: var(--text-secondary); user-select: none; }
+.hb-log > summary::-webkit-details-marker { display: none; }
+.hb-log > summary::before { content: '▸ '; }
+.hb-log[open] > summary::before { content: '▾ '; }
+.hb-log-list { margin-top: 9px; display: flex; flex-direction: column; gap: 4px; max-height: 168px; overflow-y: auto; }
+.hb-log-row { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; font-size: 0.76rem; align-items: baseline; padding: 3px 2px; border-bottom: 1px dashed rgba(128,128,128,.14); }
+.hb-log-reason { color: var(--text-primary); }
+.hb-log-pts { font-weight: 800; color: #16a34a; }
+.hb-log-bal { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.hb-log-empty { font-size: 0.76rem; color: var(--text-muted); padding: 4px 2px; }
+
+/* 成就墙 */
+.hb-achievements { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.hb-ach { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 4px; border-radius: 10px; background: rgba(128,128,128,.08); opacity: .55; transition: transform .18s ease, opacity .18s ease; }
+.hb-ach.got { opacity: 1; background: linear-gradient(160deg, rgba(251,146,60,.18), rgba(245,158,11,.1)); box-shadow: 0 0 12px -3px var(--huo-color, #fb923c); }
+.hb-ach:hover { transform: translateY(-3px); }
+.hb-ach-icon { font-size: 1.35rem; line-height: 1; filter: grayscale(1); }
+.hb-ach.got .hb-ach-icon { filter: none; }
+.hb-ach-name { font-size: 0.66rem; font-weight: 700; color: var(--text-primary); text-align: center; }
+
+/* 火/冰主题切换按钮 */
+.hb-theme-toggle { margin-left: auto; width: 30px; height: 30px; border: none; border-radius: 50%; background: var(--bg-secondary); font-size: 1rem; line-height: 1; cursor: pointer; transition: transform .2s ease, background .2s ease; display: flex; align-items: center; justify-content: center; }
+.hb-theme-toggle:hover { transform: scale(1.12) rotate(12deg); background: rgba(251,146,60,.2); }
+
+/* 升级横幅里的麒麟图：呼吸 + 光晕 */
+.hb-levelup-mascot { width: 120px; height: 130px; margin: 2px auto 6px; display: flex; align-items: center; justify-content: center; animation: hbMascotGlow 1.5s ease-in-out infinite; }
+.hb-levelup-mascot .hb-img { width: auto; height: auto; max-width: 100%; max-height: 100%; }
+@keyframes hbMascotGlow {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 14px var(--huo-color, #fb923c)); }
+  50%      { transform: scale(1.07); filter: drop-shadow(0 0 32px var(--huo-color, #fb923c)); }
+}
+
 @media (max-width: 768px) {
   .huobao-card { flex-direction: column; text-align: center; gap: 14px; }
   .hb-top, .hb-stats, .hb-actions, .hb-badges { justify-content: center; }
