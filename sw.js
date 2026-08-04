@@ -1,5 +1,5 @@
 // Service Worker - 缓存离线使用
-const CACHE_NAME = 'english-vocab-v49';
+const CACHE_NAME = 'english-vocab-v50';
 const ASSETS = [
   './',
   './index.html',
@@ -46,12 +46,27 @@ self.addEventListener('fetch', (e) => {
   if (url.pathname.includes('/videos/')) {
     return;
   }
+  // 关键资源（页面与脚本）采用 network-first 并绕过 HTTP 缓存：
+  // 即便旧 Service Worker 仍在控制页面，也能拿到最新代码，避免旧缓存死锁。
+  const isCritical = /\.(html|js)$/.test(url.pathname) || url.pathname.endsWith('/') || url.pathname === '';
+  if (isCritical) {
+    e.respondWith(
+      fetch(e.request, { cache: 'no-cache' })
+        .then((response) => {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone)).catch(() => {});
+          return response;
+        })
+        .catch(() => caches.match(e.request).then((c) => c || caches.match('./')))
+    );
+    return;
+  }
+  // 其余资源（css/图片/字体等）cache-first，离线友好
   e.respondWith(
-    caches.match(e.request).then(cached => {
-      return cached || fetch(e.request).then(response => {
-        // 缓存新资源
+    caches.match(e.request).then((cached) => {
+      return cached || fetch(e.request).then((response) => {
         const clone = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone)).catch(() => {});
+        caches.open(CACHE_NAME).then((cache) => cache.put(e.request, clone)).catch(() => {});
         return response;
       }).catch(() => cached);
     })
