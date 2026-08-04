@@ -4794,6 +4794,17 @@ function init() {
   document.addEventListener('mouseup', dragSelectEnd);
   window.addEventListener('resize', evmPositionTabInd);
 
+  // 跨标签页同步：语法互动页在独立标签完成并写回 huobao_growth 等成长值 key 后，
+  // 此处通过 storage 事件实时刷新主页火宝宝等级与成就墙（无需刷新页面）
+  window.addEventListener('storage', function (e) {
+    if (!e || !e.key) return;
+    if (e.key.indexOf('huobao_') === 0) {
+      renderHuobao();
+      if (typeof renderStreakFlame === 'function') renderStreakFlame();
+      checkAchievements();
+    }
+  });
+
   // 导航事件
   document.querySelectorAll('.nav-tab').forEach(tab => {
     tab.addEventListener('click', () => navigateTo(tab.dataset.page));
