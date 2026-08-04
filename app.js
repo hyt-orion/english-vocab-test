@@ -4574,7 +4574,6 @@ function init() {
   renderQuickWords();
   renderDailyGoals();
   initKeyboardShortcuts();
-  registerSW();
 
   // 全局拖拽结束监听（鼠标松开时结束拖拽选择）
   document.addEventListener('mouseup', dragSelectEnd);
