@@ -3741,8 +3741,11 @@ function renderGrammarTopics() {
       + (learned ? '<span class="grammar-learned-badge">✓ 已学</span>' : '')
       + '<span class="grammar-topic-badge">' + t.diff + '</span>'
       + '</div></div>'
+      + '<div class="grammar-topic-actions">'
       + '<button class="grammar-learn-btn' + (learned ? ' on' : '') + '" onclick="event.stopPropagation();toggleGrammarLearned(\'' + t.id + '\')">'
       + (learned ? '↺ 取消已学' : '✓ 标记已学') + '</button>'
+      + '<button class="grammar-interactive-btn" onclick="event.stopPropagation();openGrammarInteractive(\'' + t.id + '\')">🎮 互动讲解</button>'
+      + '</div>'
       + '</div>';
   }).join('');
 }
@@ -3762,6 +3765,11 @@ function filterGrammarTopics(q) {
 function openGrammarTopic(id) {
   currentGrammarTopic = GRAMMAR_TOPICS.find(t => t.id === id);
   renderGrammarDetail(currentGrammarTopic);
+}
+
+// 跳转到语法互动讲解模块（独立页，火宝宝陪学；视频仍在详情页保留）
+function openGrammarInteractive(id) {
+  window.open('grammar/grammar.html?id=' + encodeURIComponent(id), '_blank', 'noopener');
 }
 
 // ===== 视频源配置 =====
@@ -3826,6 +3834,18 @@ function renderGrammarDetail(topic) {
       + '</div>';
   })() : '';
 
+  // 火宝宝互动讲解入口（视频保留，新增互动页跳转）
+  const interactiveBlock = `
+    <div class="grammar-interactive-banner" onclick="openGrammarInteractive('${topic.id}')">
+      <div class="gi-fire">🔥</div>
+      <div class="gi-body">
+        <div class="gi-title">火宝宝互动讲解 · 学一点练一点</div>
+        <div class="gi-sub">原创讲解 + 即时判分 + 通关撒花，火宝宝等级与 App 主页同步</div>
+      </div>
+      <div class="gi-go">进入互动 →</div>
+    </div>
+  `;
+
   container.innerHTML = `
     <div class="grammar-detail">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
@@ -3842,6 +3862,7 @@ function renderGrammarDetail(topic) {
           </div>
         `).join('')}
       `).join('')}
+      ${interactiveBlock}
       ${videoBlock}
     </div>
   `;
