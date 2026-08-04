@@ -1,12 +1,15 @@
-/* ===== 语法互动模块 · 渲染引擎（复用主页火宝宝 qilin 图） ===== */
+/* ===== 语法互动 2.0 · 渲染引擎（5 步学习环）=====
+ * 复用主页火宝宝 qilin 图；风格对齐 App 主页（深色暖橙）。
+ * 火宝宝等级 / 成长值读取与主页面完全相同的 localStorage key（huobao_growth / huobao_theme_pref）。
+ * 内容数据来自 window.GRAMMAR_MODULES（?id= 取章节）。
+ */
 (function () {
   'use strict';
 
   var MODULES = window.GRAMMAR_MODULES || {};
   var KEY = 'grammarModuleProgress';
 
-  // ===== 火宝宝等级：与主页面 app.js 完全统一 =====
-  // 阈值需与 app.js 的 HUOBAO_LEVELS 保持一致（主页调整时此处同步改）
+  /* ---------- 火宝宝等级：与主页 App 完全统一 ---------- */
   var HUOBAO_LEVELS = [
     { lv: 1, min: 0,    name: '小火苗',   iceName: '小冰晶' },
     { lv: 2, min: 20,   name: '跳跳火',   iceName: '跳跳冰' },
@@ -21,9 +24,7 @@
     for (var i = 0; i < HUOBAO_LEVELS.length; i++) if (v >= HUOBAO_LEVELS[i].min) lvl = HUOBAO_LEVELS[i];
     return lvl;
   }
-  // 读取与主页面一致的火宝宝状态（等级 / 成长值 / 主题火或冰）
-  // 注意：主页面 app.js 把成长值存于「未命名空间」的 huobao_growth（与 huobao_growth_log /
-  // huobao_theme_pref / huobao_achievements 同套 key），此处直接读同一处，保证和 App 主页完全一致。
+  // 与主页 app.js 同套「未命名空间」key：huobao_growth / huobao_theme_pref / huobao_growth_log
   function getHuobaoState() {
     var growth = parseInt(localStorage.getItem('huobao_growth') || '0', 10) || 0;
     var variant = (localStorage.getItem('huobao_theme_pref') || 'fire') === 'ice' ? 'ice' : 'fire';
@@ -31,165 +32,442 @@
     return { level: L.lv, growth: growth, variant: variant, name: variant === 'ice' ? L.iceName : L.name };
   }
 
-  function $(sel, root) { return (root || document).querySelector(sel); }
-
+  /* ---------- 取章节 ---------- */
   function getId() {
     var p = new URLSearchParams(location.search);
     var id = p.get('id');
     if (id && MODULES[id]) return id;
     return Object.keys(MODULES)[0] || null;
   }
+  function curMod() { return MODULES[getId()]; }
+  function curSec() { var m = curMod(); return m && m.sections[state.secIdx]; }
+  function isLastSec() { var m = curMod(); return m && state.secIdx >= m.sections.length - 1; }
 
-  function getProgress() {
-    try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; }
+  function practiceTotal(m) {
+    if (!m) return 0;
+    var t = 0;
+    m.sections.forEach(function (s) { t += (s.practice ? s.practice.length : 0); });
+    return t;
   }
-  function setProgress(id, val) {
-    var all = getProgress(); all[id] = val;
-    try { localStorage.setItem(KEY, JSON.stringify(all)); } catch (e) {}
+
+  /* ---------- 状态 ---------- */
+  var root, state, inited = false;
+  function init() {
+    if (inited) return;
+    inited = true;
+    root = document.getElementById('gm2-root');
+    if (!root) return; // 目录页(index.html)无 gm2-root：只暴露 getHuobaoState，不渲染详情
+    state = { secIdx: 0, step: 1, secWrong: [], streak: 0, guidedHint: 0, guidedFilled: [], matchMap: {}, matched: false };
+    render();
   }
 
-  var ENCOURAGE = ['太棒了！🔥', '你真聪明！', '继续加油～', '火宝宝为你点赞！', '就是这样！', '离通关又近一步💪'];
-
-  var state = { total: 0, answered: 0, correct: 0 };
-
+  /* ---------- 渲染骨架 ---------- */
   function render() {
-    var id = getId();
-    var m = MODULES[id];
-    var root = document.getElementById('gm-root');
-    if (!root) return; // 目录页等非详情页：不渲染详情，仅暴露 getHuobaoState
+    if (!root) return;
+    var m = curMod();
     if (!m) { root.innerHTML = '<p style="color:#a8978a">未找到该语法模块。</p>'; return; }
-
-    // 火宝宝等级与主页面统一：直接读主页面同一处成长值
+    var s = curSec();
     var hb = getHuobaoState();
-    var lvName = hb.name;
-    var img = '../assets/qilin/qilin-' + hb.level + '.png';
-    var imgCls = 'gm-img' + (hb.variant === 'ice' ? ' gm-img-ice' : '');
-    document.title = m.title + ' · 语法互动';
-
-    // 统计题目总数
-    state.total = 0;
-    m.sections.forEach(function (s) { state.total += (s.quiz ? s.quiz.length : 0); });
-
     var html = '';
-    // 顶栏
-    html += '<div class="gm-topbar">' +
-      '<a class="gm-back" href="index.html">← 全部语法</a>' +
-      '<h1>' + m.icon + ' ' + m.title + '</h1>' +
-      '<span class="gm-badge">' + m.diff + '</span></div>';
-    // 进度条
-    html += '<div class="gm-progress"><div class="gm-progress-fill" id="gm-prog"></div></div>';
-    // 火宝宝卡片
-    html += '<div class="gm-mascot-card">' +
-      '<div class="gm-flame-wrap">' +
-        '<div class="gm-mascot" id="gm-mascot" title="戳一戳火宝宝"><img class="' + imgCls + '" src="' + img + '" alt="火宝宝" draggable="false"></div>' +
-        '<span class="gm-level-tag">Lv.' + hb.level + ' ' + lvName + '</span>' +
-      '</div>' +
-      '<div class="gm-mascot-right">' +
-        '<div class="gm-mascot-title"><span class="gm-emoji">🔥</span>火宝宝陪你学</div>' +
-        '<div class="gm-speech" id="gm-speech">' + (m.intro || '一起来学 ' + m.title + '！') + '</div>' +
-        '<div class="gm-poke-tip">👆 戳一戳火宝宝，它会给你打气</div>' +
-      '</div></div>';
-    // 小节
-    m.sections.forEach(function (s, si) {
-      html += '<div class="gm-section">' +
-        '<h3 class="gm-section-title">' + s.title + '</h3>' +
-        '<div class="gm-content">' + escapeHtml(s.content) + '</div>';
-      if (s.examples && s.examples.length) {
-        html += '<div class="gm-examples">';
-        s.examples.forEach(function (ex) {
-          html += '<div class="gm-ex"><span class="gm-ex-en">' + escapeHtml(ex.en) + '</span><span class="gm-ex-cn">' + escapeHtml(ex.cn) + '</span></div>';
-        });
-        html += '</div>';
-      }
-      if (s.quiz && s.quiz.length) {
-        html += '<div class="gm-quiz"><div class="gm-quiz-h">✍️ 小测验 · 学一点练一点</div>';
-        s.quiz.forEach(function (q, qi) {
-          var qid = 'q-' + si + '-' + qi;
-          html += '<div class="gm-q" data-qid="' + qid + '">' +
-            '<div class="gm-q-text">' + escapeHtml(q.q) + '</div>' +
-            '<div class="gm-opts">';
-          q.options.forEach(function (opt, oi) {
-            html += '<button class="gm-opt" data-q="' + qid + '" data-oi="' + oi + '" onclick="GM.answer(this)">' + escapeHtml(opt) + '</button>';
-          });
-          html += '</div><div class="gm-explain" id="ex-' + qid + '"></div></div>';
-        });
-        html += '</div>';
-      }
-      html += '</div>';
-    });
-    // 完成面板
-    html += '<div class="gm-done" id="gm-done">' +
-      '<div class="gm-done-emoji">🎉</div>' +
-      '<div class="gm-done-title" id="gm-done-title"></div>' +
-      '<div class="gm-done-sub" id="gm-done-sub"></div>' +
-      '<button class="gm-done-btn" onclick="location.reload()">🔁 再学一遍</button></div>';
-
-    html += '<canvas id="gm-confetti"></canvas>';
+    html += '<div class="gm2-bar">'
+      + '<a class="gm2-back" href="index.html">← 全部语法</a>'
+      + '<div class="gm2-ch">' + m.title + '</div>'
+      + mascotHtml(hb)
+      + '</div>';
+    html += stepBar(state.step);
+    html += '<div class="gm2-body">' + stepHtml(s, state.step, hb) + '</div>';
     root.innerHTML = html;
-
-    // 交互绑定
-    var mascot = document.getElementById('gm-mascot');
-    mascot.addEventListener('click', function () {
-      mascot.classList.remove('wave'); void mascot.offsetWidth; mascot.classList.add('wave');
-      var sp = document.getElementById('gm-speech');
-      sp.textContent = ENCOURAGE[Math.floor(Math.random() * ENCOURAGE.length)];
-    });
-
-    updateProgress();
+    bind(s, state.step);
+    document.title = m.title + ' · 语法互动2.0';
   }
 
-  function escapeHtml(s) {
-    return String(s == null ? '' : s)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  function mascotHtml(hb) {
+    var cls = hb.variant === 'ice' ? 'gm2-mascot gm2-ice' : 'gm2-mascot';
+    return '<div class="' + cls + '" id="gm2-mascot" title="戳一戳火宝宝"><img src="../assets/qilin/qilin-' + hb.level + '.png" alt="火宝宝" draggable="false">'
+      + '<span class="gm2-lv">Lv.' + hb.level + ' ' + hb.name + '</span></div>';
   }
 
-  // 选项点击判分（暴露到全局供 onclick）
-  window.GM = {
-    answer: function (btn) {
-      var qid = btn.getAttribute('data-q');
-      var oi = parseInt(btn.getAttribute('data-oi'), 10);
-      var wrap = btn.closest('.gm-q');
-      if (!wrap || wrap.getAttribute('data-done') === '1') return;
-      // 找到对应题目数据
-      var parts = qid.split('-'); var si = +parts[1], qi = +parts[2];
-      var m = MODULES[getId()];
-      var q = m.sections[si].quiz[qi];
-      var opts = wrap.querySelectorAll('.gm-opt');
-      opts.forEach(function (o) { o.disabled = true; });
-      if (oi === q.answer) {
-        btn.classList.add('correct'); state.correct++;
-        pokeMascot();
-      } else {
-        btn.classList.add('wrong');
-        opts[q.answer].classList.add('correct');
-      }
-      var ex = document.getElementById('ex-' + qid);
-      ex.innerHTML = (oi === q.answer ? '✅ 答对了！ ' : '❌ 正确答案：<b>' + escapeHtml(q.options[q.answer]) + '</b>。 ') + q.explain;
-      ex.classList.add('show');
-      wrap.setAttribute('data-done', '1');
-      state.answered++;
-      updateProgress();
-      if (state.answered >= state.total) finish();
+  var STEP_LABELS = ['引你入门', '带析例句', '引导练习', '独立练习', '巩固复盘'];
+  function stepBar(step) {
+    var h = '<div class="gm2-stepbar">';
+    for (var i = 0; i < 5; i++) {
+      var n = i + 1;
+      var cls = n < step ? 'done' : (n === step ? 'cur' : '');
+      h += '<div class="gm2-step ' + cls + '"><span class="gm2-dot">' + (n < step ? '✓' : n) + '</span>' + STEP_LABELS[i] + '</div>';
+      if (n < 5) h += '<span class="gm2-line ' + (n < step ? 'on' : '') + '"></span>';
     }
-  };
-
-  function pokeMascot() {
-    var mascot = document.getElementById('gm-mascot');
-    if (!mascot) return;
-    mascot.classList.remove('wave'); void mascot.offsetWidth; mascot.classList.add('wave');
-    var sp = document.getElementById('gm-speech');
-    if (sp) sp.textContent = ENCOURAGE[Math.floor(Math.random() * ENCOURAGE.length)];
+    h += '</div><div class="gm2-progress"><i style="width:' + (step / 5 * 100) + '%"></i></div>';
+    return h;
   }
 
-  function updateProgress() {
-    var pct = state.total ? Math.round(state.answered / state.total * 100) : 0;
-    var bar = document.getElementById('gm-prog');
-    if (bar) bar.style.width = pct + '%';
+  /* ---------- 各步骤内容 ---------- */
+  function stepHtml(s, step, hb) {
+    if (step === 1) return stepIntro(s);
+    if (step === 2) return stepWorked(s);
+    if (step === 3) return stepGuided(s);
+    if (step === 4) return stepPractice(s);
+    if (step === 5) return stepRecap(s, hb);
+    return '';
   }
 
-  // 学完本章给火宝宝加成长值（每章仅首次发放，防止「再学一遍」刷分）
-  // 写入的 key 与 app.js 完全一致（huobao_growth / huobao_growth_log），写回 localStorage 时
-  // 主程序标签页会通过 storage 事件实时刷新火宝宝等级与成就。
+  function stepIntro(s) {
+    return '<div class="gm2-card">'
+      + '<div class="gm2-kicker">STEP 1 · 火宝宝引你入门</div>'
+      + '<h2>' + s.title + '</h2>'
+      + '<p class="gm2-concept">' + s.intro.concept + '</p>'
+      + '<div class="gm2-mnem"><span class="gm2-tag">📌 记忆口诀</span><button class="gm2-pin" data-pin="' + s.id + '">收藏记忆卡</button>'
+      + '<div class="gm2-mnem-txt">' + s.intro.mnemonic + '</div></div>'
+      + '<div class="gm2-analogy">🧠 类比理解：' + s.intro.analogy + '</div>'
+      + '<button class="gm2-next" data-go="2">开始学习 →</button>'
+      + '</div>';
+  }
+
+  function stepWorked(s) {
+    var h = '<div class="gm2-card"><div class="gm2-kicker">STEP 2 · 带析例句（火宝宝一步步讲）</div>';
+    s.worked.forEach(function (w, wi) {
+      h += '<div class="gm2-worked">'
+        + '<div class="gm2-sent">' + w.sentence.replace('___', '<u>___</u>')
+        + ' <button class="gm2-spk" data-spk="' + wi + '">🔊 朗读</button></div>'
+        + '<button class="gm2-reveal" data-wi="' + wi + '">👉 看火宝宝怎么想</button>'
+        + '<ol class="gm2-steps" id="ws-' + wi + '" style="display:none">' + w.steps.map(function (st) { return '<li>' + st + '</li>'; }).join('') + '</ol>'
+        + (w.diagram ? '<div class="gm2-diagram">🖼 ' + w.diagram + '</div>' : '')
+        + '</div>';
+    });
+    h += '<button class="gm2-next" data-go="3">我懂了，练练 →</button></div>';
+    return h;
+  }
+
+  function stepGuided(s) {
+    var g = s.guided;
+    var text = g.text;
+    for (var i = 0; i < g.blanks; i++) {
+      text = text.replace('___', '<span class="gm2-blank" data-bi="' + i + '">＿＿＿</span>');
+    }
+    var bank = g.bank.map(function (b, bi) {
+      var label = (b === '' || b === '∅') ? '∅ 零冠词' : b;
+      return '<button class="gm2-bank" data-bi="' + bi + '" data-val="' + b + '">' + label + '</button>';
+    }).join('');
+    return '<div class="gm2-card"><div class="gm2-kicker">STEP 3 · 引导练习（先扶你一把）</div>'
+      + '<p class="gm2-guide-tip">点空白框选中，再点下面的词填进去。填错火宝宝会给提示，可以重试～</p>'
+      + '<div class="gm2-guided-text">' + text + '</div>'
+      + '<div class="gm2-bank-row">' + bank + '</div>'
+      + '<div class="gm2-hint" id="gm2-hint" style="display:none"></div>'
+      + '<div class="gm2-fb" id="gm2-guided-fb"></div>'
+      + '<div class="gm2-actions"><button class="gm2-check" data-check="guided">检查</button>'
+      + '<button class="gm2-next" data-go="4" style="display:none">下一步 →</button></div>'
+      + '</div>';
+  }
+
+  function stepPractice(s) {
+    var h = '<div class="gm2-card"><div class="gm2-kicker">STEP 4 · 独立练习（多题型混搭）</div>';
+    h += '<div id="gm2-practice">';
+    s.practice.forEach(function (q, qi) { h += renderQuestion(q, qi); });
+    h += '</div>';
+    h += '<div class="gm2-streak" id="gm2-streak" style="display:none"></div>';
+    h += '<button class="gm2-next" data-go="5" id="gm2-prac-next" disabled>复盘 →</button>';
+    return h + '</div>';
+  }
+
+  function renderQuestion(q, qi) {
+    var h = '<div class="gm2-q" data-qi="' + qi + '" data-type="' + q.type + '">';
+    h += '<div class="gm2-qno">第 ' + (qi + 1) + ' 题 · ' + typeName(q.type) + '</div>';
+    if (q.note) h += '<div class="gm2-qnote">' + q.note + '</div>';
+    h += '<div class="gm2-qtext">' + q.q + '</div>';
+    if (q.type === 'mcq') {
+      h += '<div class="gm2-opts">';
+      q.options.forEach(function (o) {
+        h += '<button class="gm2-opt" data-val="' + o + '">' + o + '</button>';
+      });
+      h += '</div>';
+    } else if (q.type === 'fill') {
+      h += '<div class="gm2-inrow"><input class="gm2-input" data-qi="' + qi + '" placeholder="填入答案">';
+      if (q.bank) h += '<div class="gm2-minibank">' + q.bank.map(function (b) { return '<button class="gm2-mini" data-val="' + b + '">' + (b === '' || b === '∅' ? '∅' : b) + '</button>'; }).join('') + '</div>';
+      h += '</div>';
+    } else if (q.type === 'correct') {
+      h += '<div class="gm2-inrow"><input class="gm2-input" data-qi="' + qi + '" placeholder="写出正确句子"></div>';
+    } else if (q.type === 'transform') {
+      h += '<div class="gm2-inrow"><input class="gm2-input" data-qi="' + qi + '" placeholder="改写句子"></div>';
+    } else if (q.type === 'match') {
+      h += renderMatch(q);
+    }
+    if (q.type !== 'match') {
+      h += '<button class="gm2-check" data-check="' + qi + '">检查</button>';
+    }
+    h += '<div class="gm2-fb" data-fb="' + qi + '"></div>';
+    h += '</div>';
+    return h;
+  }
+  function typeName(t) { return { mcq: '选择题', fill: '填空题', correct: '改错题', transform: '转换题', match: '匹配题' }[t] || '题'; }
+
+  function renderMatch(q) {
+    var exs = q.pairs.map(function (p, i) { return { ex: p.ex, match: i }; });
+    for (var i = exs.length - 1; i > 0; i--) { var j = (i * 7 + 3) % (i + 1); var t = exs[i]; exs[i] = exs[j]; exs[j] = t; }
+    var h = '<div class="gm2-match"><div class="gm2-col"><div class="gm2-col-h">规则</div>';
+    q.pairs.forEach(function (p, i) { h += '<button class="gm2-rule" data-ri="' + i + '">' + p.rule + '</button>'; });
+    h += '</div><div class="gm2-col"><div class="gm2-col-h">例子</div>';
+    exs.forEach(function (e) { h += '<button class="gm2-ex" data-ei="' + e.match + '">' + e.ex + '</button>'; });
+    h += '</div></div><button class="gm2-check" data-check="match">检查配对</button>';
+    return h;
+  }
+
+  function stepRecap(s, hb) {
+    var h = '<div class="gm2-card"><div class="gm2-kicker">STEP 5 · 巩固复盘</div>';
+    h += '<div class="gm2-recap">📣 火宝宝划重点：<b>' + s.recap + '</b></div>';
+    h += '<button class="gm2-next" data-recap="1">我记住了 ✓</button>';
+    if (state.secWrong.length) {
+      h += '<div class="gm2-review"><div class="gm2-rv-h">🔁 易错点回炉（刚才错过的，再练一次）</div><div id="gm2-review-list">';
+      state.secWrong.forEach(function (qi) { h += renderQuestion(s.practice[qi], 'r' + qi); });
+      h += '</div></div>';
+    }
+    h += '</div>';
+    return h;
+  }
+
+  /* ---------- 事件绑定 ---------- */
+  function bind(s, step) {
+    var m = document.getElementById('gm2-mascot');
+    if (m) m.addEventListener('click', cheer);
+    root.querySelectorAll('[data-go]').forEach(function (b) { b.addEventListener('click', function () { gotoStep(parseInt(b.getAttribute('data-go'), 10)); }); });
+    root.querySelectorAll('[data-pin]').forEach(function (b) { b.addEventListener('click', function () { pin(b.getAttribute('data-pin'), s); }); });
+    root.querySelectorAll('.gm2-reveal').forEach(function (b) { b.addEventListener('click', function () {
+      var ol = document.getElementById('ws-' + b.getAttribute('data-wi'));
+      if (ol) { ol.style.display = ol.style.display === 'none' ? 'block' : 'none'; }
+    }); });
+    root.querySelectorAll('.gm2-spk').forEach(function (b) { b.addEventListener('click', function () { speak(s.worked[parseInt(b.getAttribute('data-spk'), 10)].sentence); }); });
+
+    if (step === 3) bindGuided(s);
+    if (step === 4) bindPractice(s);
+    if (step === 5) bindRecap(s);
+  }
+
+  function bindGuided(s) {
+    var g = s.guided;
+    var sel = -1;
+    root.querySelectorAll('.gm2-blank').forEach(function (el) {
+      el.addEventListener('click', function () {
+        root.querySelectorAll('.gm2-blank').forEach(function (x) { x.classList.remove('sel'); });
+        el.classList.add('sel'); sel = parseInt(el.getAttribute('data-bi'), 10);
+      });
+    });
+    root.querySelectorAll('.gm2-bank').forEach(function (el) {
+      el.addEventListener('click', function () {
+        if (sel < 0) { flashHint('先点一下要填的空白框～'); return; }
+        state.guidedFilled[sel] = el.getAttribute('data-val');
+        var b = root.querySelector('.gm2-blank[data-bi="' + sel + '"]');
+        var v = state.guidedFilled[sel];
+        if (b) b.textContent = v === '' ? '∅' : v;
+        sel = -1;
+        root.querySelectorAll('.gm2-blank').forEach(function (x) { x.classList.remove('sel'); });
+      });
+    });
+    var check = root.querySelector('[data-check="guided"]');
+    if (check) check.addEventListener('click', function () {
+      var ok = true;
+      for (var i = 0; i < g.blanks; i++) { if ((state.guidedFilled[i] || '') !== g.answers[i]) ok = false; }
+      var fb = document.getElementById('gm2-guided-fb');
+      var next = root.querySelector('[data-go="4"]');
+      if (ok) {
+        state.streak = Math.max(0, state.streak) + 1;
+        fb.className = 'gm2-fb ok'; fb.textContent = praise();
+        if (next) next.style.display = 'inline-block';
+      } else {
+        state.streak = -1;
+        state.guidedHint = Math.min(state.guidedHint + 1, g.hints.length);
+        var hi = document.getElementById('gm2-hint');
+        if (state.guidedHint <= g.hints.length) { hi.style.display = 'block'; hi.textContent = '💡 提示 ' + state.guidedHint + '：' + g.hints[state.guidedHint - 1]; }
+        fb.className = 'gm2-fb bad';
+        if (state.guidedHint >= g.hints.length) { fb.textContent = '🔑 答案：' + g.answers.join(' / '); if (next) next.style.display = 'inline-block'; }
+        else fb.textContent = '再试试看，火宝宝相信你～';
+        gentle();
+      }
+    });
+  }
+
+  function bindPractice(s) {
+    root.querySelectorAll('.gm2-opt').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var q = el.closest('.gm2-q');
+        q.querySelectorAll('.gm2-opt').forEach(function (x) { x.classList.remove('pick'); });
+        el.classList.add('pick');
+      });
+    });
+    root.querySelectorAll('.gm2-mini').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var inp = el.closest('.gm2-inrow').querySelector('.gm2-input');
+        if (inp) inp.value = el.getAttribute('data-val') === '' ? '' : el.getAttribute('data-val');
+      });
+    });
+    root.querySelectorAll('.gm2-check').forEach(function (el) {
+      var v = el.getAttribute('data-check');
+      if (v === 'match') el.addEventListener('click', function () { checkMatch(s); });
+      else el.addEventListener('click', function () { checkQ(s, parseInt(v, 10)); });
+    });
+    bindMatch(s);
+  }
+
+  function checkQ(s, qi) {
+    var q = s.practice[qi];
+    var qEl = root.querySelector('.gm2-q[data-qi="' + qi + '"]');
+    var fb = root.querySelector('[data-fb="' + qi + '"]');
+    var user;
+    if (q.type === 'mcq') {
+      var pick = qEl.querySelector('.gm2-opt.pick');
+      if (!pick) { flashFb(fb, '先选一个答案哦'); return; }
+      user = pick.getAttribute('data-val');
+    } else {
+      user = (qEl.querySelector('.gm2-input').value || '').trim();
+      if (!user) { flashFb(fb, '先写点什么～'); return; }
+    }
+    var correct = normalize(user) === normalize(q.answer);
+    if (correct) {
+      qEl.classList.add('solved');
+      fb.className = 'gm2-fb ok'; fb.innerHTML = praise() + ' <span class="gm2-exp">' + q.explain + '</span>';
+      state.streak = state.streak >= 0 ? state.streak + 1 : 1;
+      removeWrong(s, qi);
+    } else {
+      state.streak = -1;
+      fb.className = 'gm2-fb bad';
+      var retry = (q.type === 'fill' || q.type === 'correct' || q.type === 'transform');
+      fb.innerHTML = (retry ? '❌ 不对，再想想。' : '❌ 不对哦。') + ' <span class="gm2-exp">' + q.explain + '</span>';
+      addWrong(s, qi);
+      gentle();
+    }
+    updateStreakBanner();
+    updatePracNext(s);
+  }
+  function normalize(s) { return (s || '').toString().replace(/\s+/g, ' ').replace(/\.*$/, '').trim().toLowerCase(); }
+
+  function bindMatch(s) {
+    var selRule = null;
+    root.querySelectorAll('.gm2-rule').forEach(function (r) {
+      r.addEventListener('click', function () {
+        root.querySelectorAll('.gm2-rule').forEach(function (x) { x.classList.remove('sel'); });
+        r.classList.add('sel'); selRule = parseInt(r.getAttribute('data-ri'), 10);
+      });
+    });
+    root.querySelectorAll('.gm2-ex').forEach(function (e) {
+      e.addEventListener('click', function () {
+        if (selRule === null) { flashHint('先点左边的规则，再点右边的例子'); return; }
+        if (e.classList.contains('paired')) return;
+        state.matchMap[selRule] = parseInt(e.getAttribute('data-ei'), 10);
+        e.classList.add('paired'); e.classList.add('sel2');
+        var r = root.querySelector('.gm2-rule[data-ri="' + selRule + '"]');
+        if (r) { r.classList.add('paired'); r.classList.remove('sel'); }
+        selRule = null;
+      });
+    });
+  }
+  function checkMatch(s) {
+    var allOk = true;
+    Object.keys(state.matchMap).forEach(function (ri) {
+      var correctEi = parseInt(ri, 10);
+      if (state.matchMap[ri] !== correctEi) {
+        allOk = false;
+        var ex = root.querySelector('.gm2-ex[data-ei="' + state.matchMap[ri] + '"]');
+        var ru = root.querySelector('.gm2-rule[data-ri="' + ri + '"]');
+        if (ex) ex.classList.add('wrong');
+        if (ru) ru.classList.add('wrong');
+      } else {
+        var ex2 = root.querySelector('.gm2-ex[data-ei="' + correctEi + '"]');
+        var ru2 = root.querySelector('.gm2-rule[data-ri="' + correctEi + '"]');
+        if (ex2) ex2.classList.add('right'); if (ru2) ru2.classList.add('right');
+      }
+    });
+    var fb = root.querySelector('[data-fb]');
+    var next = document.getElementById('gm2-prac-next');
+    if (allOk) { if (next) next.disabled = false; if (fb) { fb.className = 'gm2-fb ok'; fb.textContent = praise() + ' 全部连对！'; } }
+    else { if (fb) { fb.className = 'gm2-fb bad'; fb.textContent = '有连错的，红色的是错的，拆开重连～'; } }
+  }
+
+  function bindRecap(s) {
+    var btn = root.querySelector('[data-recap]');
+    if (btn) btn.addEventListener('click', function () {
+      btn.disabled = true; btn.textContent = '火宝宝已收到 👍';
+      confetti();
+      var m = document.getElementById('gm2-mascot');
+      if (m) { var sp = m.querySelector('span'); if (sp) sp.textContent = '🔥 学完啦！'; }
+      setTimeout(function () {
+        if (isLastSec()) { chapterDone(); }
+        else { state.secIdx++; state.step = 1; state.secWrong = []; state.streak = 0; state.guidedHint = 0; state.guidedFilled = []; state.matchMap = {}; render(); }
+      }, 900);
+    });
+    root.querySelectorAll('#gm2-review-list .gm2-q').forEach(function (qEl) {
+      var qi = qEl.getAttribute('data-qi');
+      if (qi.indexOf('r') === 0) qi = parseInt(qi.slice(1), 10);
+      var type = qEl.getAttribute('data-type');
+      if (type === 'mcq') {
+        qEl.querySelectorAll('.gm2-opt').forEach(function (o) { o.addEventListener('click', function () { qEl.querySelectorAll('.gm2-opt').forEach(function (x) { x.classList.remove('pick'); }); o.classList.add('pick'); }); });
+      }
+      var chk = qEl.querySelector('.gm2-check');
+      if (chk) chk.addEventListener('click', function () {
+        var q = s.practice[qi];
+        var fb = qEl.querySelector('.gm2-fb');
+        var user;
+        if (type === 'mcq') { var p = qEl.querySelector('.gm2-opt.pick'); if (!p) { fb.className = 'gm2-fb bad'; fb.textContent = '先选一个'; return; } user = p.getAttribute('data-val'); }
+        else { user = (qEl.querySelector('.gm2-input').value || '').trim(); if (!user) { fb.className = 'gm2-fb bad'; fb.textContent = '先写'; return; } }
+        if (normalize(user) === normalize(q.answer)) { qEl.classList.add('solved'); fb.className = 'gm2-fb ok'; fb.innerHTML = '✅ 这回对了！ ' + q.explain; removeWrong(s, qi); }
+        else { fb.className = 'gm2-fb bad'; fb.innerHTML = '❌ 还是不对，看解析：' + q.explain; }
+      });
+    });
+  }
+
+  /* ---------- 进度 / 反馈 ---------- */
+  function addWrong(s, qi) { if (state.secWrong.indexOf(qi) < 0) state.secWrong.push(qi); }
+  function removeWrong(s, qi) { var i = state.secWrong.indexOf(qi); if (i >= 0) state.secWrong.splice(i, 1); }
+  function updatePracNext(s) {
+    var next = document.getElementById('gm2-prac-next');
+    if (!next) return;
+    var total = s.practice.length;
+    var solved = root.querySelectorAll('.gm2-q.solved').length;
+    next.disabled = solved < total;
+    next.textContent = solved < total ? ('还差 ' + (total - solved) + ' 题 →') : '复盘 →';
+  }
+  function updateStreakBanner() {
+    var el = document.getElementById('gm2-streak');
+    if (!el) return;
+    if (state.streak <= -2) { el.style.display = 'block'; el.className = 'gm2-streak soft'; el.textContent = '🌱 别急，火宝宝陪你慢慢来～ 回去看一眼口诀和带析例句？'; }
+    else { el.style.display = 'none'; }
+  }
+
+  function praise() { var p = ['太棒了！🔥', '完全正确！', '火宝宝给你点赞👍', '就是这样！', '稳！']; var k = Math.max(0, state.streak); return p[k % p.length]; }
+  function gentle() { /* 连错已由 updateStreakBanner 处理 */ }
+  function flashHint(t) { var h = document.getElementById('gm2-hint'); if (h) { h.style.display = 'block'; h.textContent = '💡 ' + t; } }
+  function flashFb(fb, t) { if (fb) { fb.className = 'gm2-fb bad'; fb.textContent = t; } }
+
+  function pin(id, s) {
+    try {
+      var cards = JSON.parse(localStorage.getItem('gm2_cards') || '[]');
+      if (cards.indexOf(id) < 0) { cards.push(id); localStorage.setItem('gm2_cards', JSON.stringify(cards)); }
+      var b = root.querySelector('[data-pin="' + id + '"]');
+      if (b) { b.textContent = '✅ 已收藏'; b.disabled = true; }
+    } catch (e) {}
+  }
+  function cheer() {
+    var m = document.getElementById('gm2-mascot');
+    if (!m) return;
+    m.classList.remove('bounce'); void m.offsetWidth; m.classList.add('bounce');
+    var sp = m.querySelector('span');
+    if (sp) { var old = sp.textContent; sp.textContent = '加油，你可以的！🔥'; setTimeout(function () { var hb = getHuobaoState(); sp.textContent = 'Lv.' + hb.level + ' ' + hb.name; }, 1200); }
+  }
+
+  /* ---------- 章节完成 + 成长值（与主页同 key） ---------- */
+  function chapterDone() {
+    var m = curMod();
+    var awarded = awardGrammarGrowth(getId(), m ? m.title : getId());
+    state.step = 6;
+    var total = practiceTotal(m);
+    setProgress(getId(), { done: true, correct: total, total: total, date: new Date().toISOString().slice(0, 10) });
+    root.innerHTML = '<div class="gm2-card gm2-done">'
+      + '<div class="gm2-kicker">本章通关 🎉</div>'
+      + '<h2>' + (m ? m.title : '本章') + ' 全学完啦！</h2>'
+      + (awarded ? '<p class="gm2-done-grow">🔥 火宝宝成长 +5！（与主页面同步）</p>' : '<p class="gm2-done-grow">（本章已学过，不重复发成长值）</p>')
+      + '<canvas id="gm2-confetti" class="gm2-confetti"></canvas>'
+      + '<a class="gm2-next" href="index.html">返回全部语法</a></div>';
+    confetti();
+  }
+
+  /* 学完本章给火宝宝加成长值（每章仅首次发放，防止「再学一遍」刷分）
+     写入的 key 与 app.js 完全一致（huobao_growth / huobao_growth_log / grammar_modules_done）。 */
   var GRAMMAR_DONE_KEY = 'grammar_modules_done';
   var GRAMMAR_REWARD = 5;
   function awardGrammarGrowth(id, title) {
@@ -213,69 +491,43 @@
       });
       if (log.length > 200) log.splice(0, log.length - 200);
       localStorage.setItem('huobao_growth_log', JSON.stringify(log));
+      try { window.dispatchEvent(new StorageEvent('storage', { key: 'huobao_growth' })); } catch (e) {}
       return true;
     } catch (e) { return false; }
   }
 
-  function finish() {
-    var id = getId();
-    var done = document.getElementById('gm-done');
-    var title = document.getElementById('gm-done-title');
-    var sub = document.getElementById('gm-done-sub');
-    if (!done) return;
-    var allRight = state.correct === state.total;
-    title.textContent = allRight ? '全对！本章通关🔥' : ('本章完成！正确 ' + state.correct + ' / ' + state.total);
-    sub.textContent = allRight ? '火宝宝给你点了一万个赞，去挑战下一章吧！' : '错题回顾一下，火宝宝相信你可以全对！';
-    done.classList.add('show');
-    setProgress(id, { done: true, correct: state.correct, total: state.total, date: new Date().toISOString().slice(0, 10) });
-    // 通关发成长值（首次完成才发）+ 即时反馈
-    var m = MODULES[id];
-    var awarded = awardGrammarGrowth(id, m ? m.title : id);
-    if (awarded) {
-      var hb = getHuobaoState();
-      var lvlTag = document.querySelector('.gm-level-tag');
-      if (lvlTag) lvlTag.textContent = 'Lv.' + hb.level + ' ' + hb.name;
-      var mascotImg = document.querySelector('.gm-mascot img');
-      if (mascotImg) mascotImg.src = '../assets/qilin/qilin-' + hb.level + '.png';
-      sub.textContent += ' 🔥 火宝宝成长 +' + GRAMMAR_REWARD + '！';
-    }
-    if (allRight) confetti();
-  }
+  function getProgress() { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { return {}; } }
+  function setProgress(id, val) { var all = getProgress(); all[id] = val; try { localStorage.setItem(KEY, JSON.stringify(all)); } catch (e) {} }
 
-  /* 轻量撒花（无外部库） */
+  /* ---------- 朗读 / 撒花 ---------- */
+  function speak(text) {
+    try { if (window.speechSynthesis) { window.speechSynthesis.cancel(); var u = new SpeechSynthesisUtterance(text); u.lang = 'en-US'; u.rate = 0.9; window.speechSynthesis.speak(u); } } catch (e) {}
+  }
   function confetti() {
-    var canvas = document.getElementById('gm-confetti');
-    if (!canvas) return;
-    var ctx = canvas.getContext('2d');
-    if (!ctx) return; // 环境不支持 canvas 时静默跳过（如部分无 canvas 的测试/老浏览器）
-    var W = canvas.width = window.innerWidth, H = canvas.height = window.innerHeight;
-    var colors = ['#ff8a00', '#ff5e3a', '#f59e0b', '#34d399', '#fb923c', '#fff'];
+    var canvas = document.getElementById('gm2-confetti');
+    if (!canvas || !canvas.getContext) return;
+    var ctx;
+    try { ctx = canvas.getContext('2d'); } catch (e) { return; }
+    if (!ctx) return;
+    canvas.width = canvas.offsetWidth || 320; canvas.height = canvas.offsetHeight || 200;
+    var colors = ['#ff9a3c', '#ff5e3a', '#ffd166', '#ff7eb3', '#06d6a0'];
     var parts = [];
-    for (var i = 0; i < 160; i++) {
-      parts.push({
-        x: Math.random() * W, y: -20 - Math.random() * H * 0.4,
-        vx: (Math.random() - 0.5) * 4, vy: 2 + Math.random() * 4,
-        s: 5 + Math.random() * 7, c: colors[i % colors.length],
-        r: Math.random() * Math.PI
-      });
-    }
+    for (var i = 0; i < 120; i++) parts.push({ x: Math.random() * canvas.width, y: Math.random() * -canvas.height, r: Math.random() * 4 + 2, c: colors[i % colors.length], v: Math.random() * 3 + 2, a: Math.random() * Math.PI });
     var t = 0;
-    function tick() {
-      ctx.clearRect(0, 0, W, H);
-      parts.forEach(function (p) {
-        p.x += p.vx; p.y += p.vy; p.r += 0.1;
-        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r);
-        ctx.fillStyle = p.c; ctx.fillRect(-p.s / 2, -p.s / 2, p.s, p.s * 0.6); ctx.restore();
-      });
-      t++;
-      if (t < 160) requestAnimationFrame(tick); else ctx.clearRect(0, 0, W, H);
-    }
-    tick();
+    (function loop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      parts.forEach(function (p) { p.y += p.v; p.x += Math.sin(p.a + t / 10) * 0.6; ctx.beginPath(); ctx.fillStyle = p.c; ctx.arc(p.x, p.y, p.r, 0, 7); ctx.fill(); if (p.y > canvas.height) { p.y = -10; p.x = Math.random() * canvas.width; } });
+      t++; if (t < 160) requestAnimationFrame(loop);
+    })();
   }
 
-  // 供目录页读取与主页面统一的火宝宝状态
-  window.getHuobaoState = getHuobaoState;
+  /* ---------- 步骤跳转 ---------- */
+  function gotoStep(n) { state.step = n; render(); }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render);
-  else render();
+  /* ---------- 暴露 ---------- */
+  window.getHuobaoState = getHuobaoState;
+  window.GM2 = { init: init, goto: gotoStep, state: function () { return state; }, curMod: curMod, getId: getId, awardGrammarGrowth: awardGrammarGrowth, practiceTotal: practiceTotal };
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
 })();
