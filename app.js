@@ -2246,7 +2246,7 @@ function renderWrongBook() {
       <div class="wrong-item-header">
         <div class="wrong-item-tags">
           ${w.knowledgePoints.map(kp => `<span class="wrong-kp-tag">${kp}</span>`).join('')}
-          <span class="wrong-source-tag">${w.source === 'exam' ? '📋' : '📝'} ${w.sourceTitle.substring(0, 20)}</span>
+          <span class="wrong-source-tag">${w.source === 'grammar' ? '📚' : w.source === 'exam' ? '📋' : '📝'} ${w.sourceTitle.substring(0, 20)}</span>
         </div>
         <span style="font-size:0.72rem; color:var(--text-muted);">${new Date(w.date).toLocaleDateString('zh-CN')}</span>
       </div>
@@ -2628,6 +2628,7 @@ const HUOBAO_ACHIEVEMENTS = [
   { id: 'growth100', name: '成长新星', icon: '⭐', desc: '累计成长值 ≥ 100' },
   { id: 'growth1k',  name: '成长大师', icon: '🌟', desc: '累计成长值 ≥ 1000' },
   { id: 'perfect',   name: '满分学霸', icon: '💯', desc: '单次测试正确率 100%' },
+  { id: 'grammarAll', name: '语法大师', icon: '📚', desc: '通关全部语法互动章节' },
 ];
 
 function getAchievements() {
@@ -2650,6 +2651,13 @@ function gatherAchievementStats() {
     currentStreak: current,
     growth: getGrowth(),
     hasPerfect: localStorage.getItem('huobao_had_perfect') === '1',
+    grammarDone: (function () {
+      try {
+        var p = JSON.parse(localStorage.getItem('grammarModuleProgress') || '{}');
+        return Object.keys(p).filter(function (k) { return p[k] && p[k].done; }).length;
+      } catch (e) { return 0; }
+    })(),
+    grammarTotal: (typeof GRAMMAR_TOPICS !== 'undefined' && GRAMMAR_TOPICS.length) ? GRAMMAR_TOPICS.length : 13,
   };
 }
 
@@ -2665,6 +2673,7 @@ function achMatches(a, s) {
     case 'growth100': return s.growth >= 100;
     case 'growth1k':  return s.growth >= 1000;
     case 'perfect':   return s.hasPerfect;
+    case 'grammarAll': return s.grammarDone >= s.grammarTotal;
     default: return false;
   }
 }
