@@ -3539,6 +3539,24 @@ function openGrammarTopic(id) {
 //   const VIDEO_BASE_URL = 'https://your-bucket.cos.ap-guangzhou.myqcloud.com/grammar-videos/';
 const VIDEO_BASE_URL = 'https://english-vocab-video-1462496247.cos.ap-guangzhou.myqcloud.com/grammar-videos/';
 
+// 视频加载失败兜底：隐藏破播放器，显示友好提示
+function onGrammarVideoError(videoEl) {
+  const wrap = videoEl.closest('.video-wrap');
+  if (!wrap) return;
+  videoEl.style.display = 'none';
+  const fb = wrap.querySelector('.video-fallback');
+  if (fb) fb.style.display = 'flex';
+}
+// 重试：恢复 video 元素并重新加载
+function retryGrammarVideo(btn) {
+  const wrap = btn.closest('.video-wrap');
+  if (!wrap) return;
+  const fb = wrap.querySelector('.video-fallback');
+  if (fb) fb.style.display = 'none';
+  const v = wrap.querySelector('video');
+  if (v) { v.style.display = ''; v.load(); }
+}
+
 function renderGrammarDetail(topic) {
   const container = document.getElementById('grammar-topics');
   const videoBlock = (topic.videos && topic.videos.length) ? (() => {
@@ -3549,9 +3567,14 @@ function renderGrammarDetail(topic) {
       return '<div class="grammar-video-item">'
         + '<div class="grammar-video-title">&#9654; ' + t + '</div>'
         + '<div class="video-wrap">'
-        + '<video class="grammar-video" controls preload="none" src="' + src + '">'
+        + '<video class="grammar-video" controls preload="none" src="' + src + '" onerror="onGrammarVideoError(this)">'
         + '<track kind="subtitles" srclang="zh" label="中文字幕" src="' + vttSrc + '">'
         + '</video>'
+        + '<div class="video-fallback" style="display:none">'
+        + '<div class="video-fallback-icon">⚠️</div>'
+        + '<div class="video-fallback-title">视频源暂时无法播放</div>'
+        + '<div class="video-fallback-sub">可能是存储服务（COS）欠费或网络问题。可稍后重试，或点下方按钮下载到本地观看。</div>'
+        + '</div>'
         + '<div class="video-toolbar">'
         + '<label class="video-speed">倍速'
         + '<select onchange="this.closest(\'.video-wrap\').querySelector(\'video\').playbackRate=parseFloat(this.value)">'
@@ -3560,6 +3583,7 @@ function renderGrammarDetail(topic) {
         + '<option value="1.5">1.5x</option><option value="2">2.0x</option>'
         + '</select></label>'
         + '<a class="video-dl" href="' + src + '" download target="_blank" rel="noopener">⬇ 下载视频</a>'
+        + '<button class="video-retry" onclick="retryGrammarVideo(this)">↻ 重试</button>'
         + '</div>'
         + '</div>';
     }).join('');
