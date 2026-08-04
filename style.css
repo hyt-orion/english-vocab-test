@@ -2709,7 +2709,7 @@ body[data-app-mode="ielts"] .ielts-tabs {
   box-shadow: 0 2px 8px rgba(99,102,241,0.4);
 }
 .grammar-learn-btn {
-  margin-top: 14px;
+  margin-top: 0;
   padding: 8px 16px;
   border: 1px solid var(--border-strong);
   border-radius: 999px;
@@ -2729,6 +2729,32 @@ body[data-app-mode="ielts"] .ielts-tabs {
   background: var(--accent-dim);
   border-color: var(--accent);
   color: var(--accent-light);
+}
+.grammar-topic-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+/* 列表卡片：进入互动讲解按钮（暖橙，对齐主页火宝宝） */
+.grammar-interactive-btn {
+  margin-top: 0;
+  padding: 8px 16px;
+  border: 1px solid var(--huo-color, #ff8a00);
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(255,138,0,.14), rgba(255,94,58,.08));
+  color: var(--huo-color, #ff8a00);
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-family: var(--font-main);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.grammar-interactive-btn:hover {
+  background: linear-gradient(135deg, rgba(255,138,0,.26), rgba(255,94,58,.16));
+  box-shadow: 0 6px 18px -8px var(--huo-color, #ff8a00);
+  transform: translateY(-1px);
 }
 .empty-hint {
   text-align: center;
@@ -2775,6 +2801,37 @@ body[data-app-mode="ielts"] .ielts-tabs {
 
 .grammar-example strong { color: var(--text-primary); }
 
+/* 详情页：火宝宝互动讲解入口横幅（视频保留，新增互动页跳转） */
+.grammar-interactive-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 22px 0 4px;
+  padding: 16px 18px;
+  background: linear-gradient(135deg, rgba(255,138,0,.10), rgba(255,94,58,.05));
+  border: 1px solid var(--huo-color, #ff8a00);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.grammar-interactive-banner:hover {
+  box-shadow: 0 10px 28px -12px var(--huo-color, #ff8a00);
+  transform: translateY(-2px);
+}
+.grammar-interactive-banner .gi-fire {
+  font-size: 1.8rem;
+  filter: drop-shadow(0 0 10px var(--huo-color, #ff8a00));
+  animation: giFloat 2.6s ease-in-out infinite;
+}
+@keyframes giFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+.grammar-interactive-banner .gi-body { flex: 1; min-width: 0; }
+.grammar-interactive-banner .gi-title { font-weight: 800; font-size: 1rem; color: var(--text-primary); }
+.grammar-interactive-banner .gi-sub { font-size: 0.8rem; color: var(--text-muted); margin-top: 3px; }
+.grammar-interactive-banner .gi-go {
+  font-weight: 800; font-size: 0.9rem; color: #fff;
+  background: linear-gradient(135deg, var(--huo-color, #ff8a00), #ff5e3a);
+  padding: 8px 16px; border-radius: 999px; white-space: nowrap;
+}
 .grammar-video-section {
   margin-top: 28px;
   padding-top: 20px;
