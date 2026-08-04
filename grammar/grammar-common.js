@@ -233,7 +233,7 @@
       var ol = document.getElementById('ws-' + b.getAttribute('data-wi'));
       if (ol) { ol.style.display = ol.style.display === 'none' ? 'block' : 'none'; }
     }); });
-    root.querySelectorAll('.gm2-spk').forEach(function (b) { b.addEventListener('click', function () { speak(s.worked[parseInt(b.getAttribute('data-spk'), 10)].sentence); }); });
+    root.querySelectorAll('.gm2-spk').forEach(function (b) { b.addEventListener('click', function () { speak(cleanSentence(s.worked[parseInt(b.getAttribute('data-spk'), 10)])); }); });
 
     if (step === 3) bindGuided(s);
     if (step === 4) bindPractice(s);
@@ -500,8 +500,40 @@
   function setProgress(id, val) { var all = getProgress(); all[id] = val; try { localStorage.setItem(KEY, JSON.stringify(all)); } catch (e) {} }
 
   /* ---------- 朗读 / 撒花 ---------- */
+  // 生成"可朗读"的句子：优先取 steps 里 ✅ 开头的完整正确句；否则去掉 ___ / 星号 / 标签，
+  // 避免把填空下划线念成"underscore underscore underscore"（听感像卡住重复念一个词）。
+  function cleanSentence(w) {
+    if (!w) return '';
+    var steps = w.steps || [];
+    for (var i = 0; i < steps.length; i++) {
+      var st = steps[i];
+      if (typeof st === 'string' && st.indexOf('✅') === 0) {
+        var eng = st.slice(1).trim().replace(/[（(][^）)]*[）)]/g, '');
+        // 仅当这句以英文为主（含字母且无中文）才采用，避免念中文注释
+        if (/[A-Za-z]/.test(eng) && !/[\u4e00-\u9fff]/.test(eng)) {
+          return eng.replace(/\s+/g, ' ').trim();
+        }
+      }
+    }
+    return (w.sentence || '')
+      .replace(/<[^>]+>/g, '')
+      .replace(/_{2,}/g, ' ')
+      .replace(/\*/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
   function speak(text) {
-    try { if (window.speechSynthesis) { window.speechSynthesis.cancel(); var u = new SpeechSynthesisUtterance(text); u.lang = 'en-US'; u.rate = 0.9; window.speechSynthesis.speak(u); } } catch (e) {}
+    try {
+      if (!window.speechSynthesis || !text) return;
+      window.speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      u.lang = 'en-US';
+      u.rate = 0.9;
+      // 兜底：部分 Chromium 版本 end 事件偶发不触发会导致重复/卡住，结束后强制 cancel
+      u.onend = function () { try { window.speechSynthesis.cancel(); } catch (e) {} };
+      u.onerror = function () { try { window.speechSynthesis.cancel(); } catch (e) {} };
+      window.speechSynthesis.speak(u);
+    } catch (e) {}
   }
   function confetti() {
     var canvas = document.getElementById('gm2-confetti');
